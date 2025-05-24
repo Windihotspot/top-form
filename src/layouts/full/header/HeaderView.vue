@@ -24,9 +24,14 @@ const status = ref(true)
             v-bind="props"
             class="flex items-center cursor-pointer bg-white rounded-md px-2 py-1 hover:bg-gray-100 transition"
           >
-            <v-avatar start size="30" color="#1F5AA3" class="text-white font-bold p-4 text-sm">
-              WA
-            </v-avatar>
+           <v-avatar size="30" class="p-0">
+  <img
+    src="https://images.unsplash.com/photo-1623605931891-d5b95ee98459?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTZ8fGZhY2VzfGVufDB8fDB8fHww"
+    alt="Avatar"
+    class="w-full h-full object-cover rounded-full"
+  />
+</v-avatar>
+
 
             <div class="ml-2 text-left">
               <div class="font-semibold text-black text-sm">Williams</div>

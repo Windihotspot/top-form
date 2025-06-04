@@ -1,8 +1,6 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-import axios from 'axios'
-import { useAuthStore } from '@/stores/auth'
-const authStore = useAuthStore()
+import { ref } from 'vue'
+
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
@@ -22,86 +20,22 @@ const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 // Handle Login Submission
-const submitForm = async () => {
-  loginForm.value.processing = true
-  loginForm.value.errors = {} // Clear previous errors
-
-  try {
-    const response = await axios.post('https://dev02201.getjupita.com/api/login', {
-      email: loginForm.value.email,
-      password: loginForm.value.password
-    })
-
-    console.log('Login successful:', response.data)
-    // Extract data from the response properly
-    const { token, user, verification_status } = response.data.data
-
-    localStorage.setItem('data', JSON.stringify(response.data.data))
-
-    // Pass the data correctly to the store
-    authStore.setAuthData({ token, verification_status, user })
-
-    router.push('/dashboard')
-
-    // Handle success (e.g., store token, redirect user)
-  } catch (error) {
-    console.log('Login failed:', error.response?.data)
-
-    // Handle errors
-    if (error.response?.data?.errors) {
-      loginForm.value.errors = error.response.data.errors
-    } else {
-      loginForm.value.errors.email = 'Invalid email or password'
-    }
-  } finally {
-    loginForm.value.processing = false
-  }
-}
-
-const images = [
-  'https://images.unsplash.com/photo-1705948354275-d55101017fb6?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTZ8fGNyZWRpdCUyMHNlYXJjaHxlbnwwfHwwfHx8MA%3D%3D',
-  'https://images.unsplash.com/photo-1654263937085-48fb17a63d66?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTR8fGNyZWRpdCUyMHNlYXJjaHxlbnwwfHwwfHx8MA%3D%3D',
-  'https://plus.unsplash.com/premium_photo-1702634273888-1999beb6120b?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OXx8bmlnZXJpYW4lMjBidXNpbmVzcyUyMHdvbWFuJTIwbWFya2V0fGVufDB8fDB8fHww'
-]
-
-const currentImage = ref(images[0])
-const showImage = ref(true)
-let intervalId
-
-const changeImage = () => {
-  showImage.value = false // Start fade-out transition
-
-  setTimeout(() => {
-    const currentIndex = images.indexOf(currentImage.value)
-    currentImage.value = images[(currentIndex + 1) % images.length]
-    showImage.value = true // Start fade-in transition
-  }, 500) // Match with CSS transition duration
-}
-
-onMounted(() => {
-  intervalId = setInterval(changeImage, 6000)
-})
-
-onUnmounted(() => {
-  clearInterval(intervalId)
-})
 </script>
 
 <template>
   <div class="flex flex-col md:flex-row h-auto h-screen bg-white">
     <!-- Image Section -->
-    <!-- Image Section -->
-    <div class="w-full sm:w-full md:w-1/2 h-full justify-center items-center p-4">
+
+    <div class="w-full sm:w-full md:w-1/2 h-full p-8 bg-[#1f5aa3]">
       <!-- Logo -->
       <div class="flex items-center px-2">
-        <img src="/src/assets/logo.png" alt="Logo" class="w-10 h-10 object-contain" />
-        <span class="text-md font-semibold text-[#1F5AA3]">Jupita</span>
+        <span class="text-md font-semibold text-white">FlowkyAI</span>
       </div>
-      <img
-        src="/src/assets/new-logo.jpg"
-        alt="Onboarding Image"
-        class="w-full h-full max-h-full object-contain"
-      />
+
+      <!-- Vertically centered text -->
+      <div class="flex flex-1 items-center h-[calc(100%-2rem)]">
+        <p class="font-bold text-white text-3xl">Credit Decision With AI</p>
+      </div>
     </div>
 
     <!-- Login Form Section -->

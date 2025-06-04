@@ -7,16 +7,16 @@ export default [
   {
     title: 'Job List',
     icon: 'fa-solid fa-list-check', // Represents a checklist or task list
-    path: '/wallet' // Consider renaming this path if unrelated to finance
+    path: '/' // Consider renaming this path if unrelated to finance
   },
   {
     title: 'Business Logic',
     icon: 'fa-solid fa-diagram-project', // Represents structured processes/workflows
-    path: '/settings'
+    path: '/'
   },
   {
     title: 'Logs',
     icon: 'fa-solid fa-file-lines', // Represents textual logs or documents
-    path: '/logs' // Avoid reusing the same path as above
+    path: '/' // Avoid reusing the same path as above
   }
 ]

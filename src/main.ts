@@ -20,6 +20,8 @@ import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import VueApexCharts from 'vue3-apexcharts'
 import '@fortawesome/fontawesome-free/css/all.css'
 
+import { useUserStore } from '@/stores/user'
+
 let vuetify = createVuetify({
   components,
   directives,
@@ -42,13 +44,27 @@ app.use(vuetify)
 app.use(VueApexCharts)
 app.use(ElementPlus);
 
+// 🔥 Load user data from localStorage into Pinia store
+const userStore = useUserStore()
+
+const savedUser = localStorage.getItem('user')
+const savedRole = localStorage.getItem('role')
+const savedPermissions = localStorage.getItem('permissions')
+const savedToken = localStorage.getItem('token')
+
+if (savedUser && savedRole && savedPermissions) {
+  userStore.user = JSON.parse(savedUser)
+  userStore.role = JSON.parse(savedRole)
+  userStore.permissions = JSON.parse(savedPermissions)
+  userStore.token = savedToken || ''
+}
+
 const urlParams = new URLSearchParams(window.location.search)
 const redirectPath = urlParams.get('redirect')
 
 if (redirectPath) {
   router.push(redirectPath).catch(() => {})
 }
-
 app.mount('#app')
 
 AOS.init()

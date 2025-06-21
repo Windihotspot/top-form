@@ -4,17 +4,17 @@ import { defineStore } from 'pinia'
 export const useUserStore = defineStore('user', {
   state: () => ({
     token: '',
-    user: null as any, // you can replace 'any' with a proper type if you want
-    dashboardStats: null,
-    role: null as any,  // holds role info
-    permissions: [] as string[], // holds permission strings
+    user: null as any,
+    dashboardStats: null as any,
+    permissions: [] as string[]
   }),
   actions: {
     setUserData(data: any) {
       this.token = data.token
       this.user = data.user
-      this.role = data.user.role
-      this.permissions = data.user.role?.permissions || []
+
+      // extract permissions
+      this.permissions = data.user?.role?.permissions || []
 
       this.dashboardStats = {
         total_accepted_jobs: data.total_accepted_jobs,
@@ -29,22 +29,32 @@ export const useUserStore = defineStore('user', {
       // Store in localStorage
       localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
-      localStorage.setItem('dashboardStats', JSON.stringify(this.dashboardStats))
-      localStorage.setItem('role', JSON.stringify(this.role))
       localStorage.setItem('permissions', JSON.stringify(this.permissions))
+      localStorage.setItem('dashboardStats', JSON.stringify(this.dashboardStats))
+    },
+
+    hasPermission(permission: string) {
+      return this.permissions.includes(permission)
+    },
+
+    initFromStorage() {
+      const user = localStorage.getItem('user')
+      const permissions = localStorage.getItem('permissions')
+      const dashboardStats = localStorage.getItem('dashboardStats')
+      const token = localStorage.getItem('token')
+
+      if (user) this.user = JSON.parse(user)
+      if (permissions) this.permissions = JSON.parse(permissions)
+      if (dashboardStats) this.dashboardStats = JSON.parse(dashboardStats)
+      if (token) this.token = token
     },
 
     logout() {
       this.token = ''
       this.user = null
-      this.role = null
       this.permissions = []
       this.dashboardStats = null
       localStorage.clear()
-    },
-
-    hasPermission(permission: string) {
-      return this.permissions.includes(permission)
     }
   }
 })

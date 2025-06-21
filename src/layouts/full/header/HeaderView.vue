@@ -1,7 +1,30 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 
 const status = ref(true)
+import { useRoute, useRouter } from 'vue-router'
+
+import { useUserStore } from '@/stores/user' // 👈 You should be using userStore here
+
+const route = useRoute()
+const router = useRouter()
+const userStore = useUserStore()
+
+console.log('User store inside header:', {
+  user: userStore.user,
+  permissions: userStore.permissions
+})
+
+const userName = computed(() => userStore.user?.name || 'User')
+const userRole = computed(() => userStore.user?.role?.name || 'Role')
+const userInitials = computed(() => {
+  const name = userStore.user?.name || ''
+  const parts = name.trim().split(' ')
+  if (parts.length === 1) {
+    return parts[0].substring(0, 2).toUpperCase()
+  }
+  return (parts[0][0] + parts[1][0]).toUpperCase()
+})
 </script>
 
 <template>
@@ -10,13 +33,12 @@ const status = ref(true)
     <div class="space-x-4 flex">
       <div class="mt-2">
         <el-switch
-        v-model="status"
-        class="mb-2"
-        style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
-        active-text="Live"
-      />
+          v-model="status"
+          class="mb-2"
+          style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
+          active-text="Live"
+        />
       </div>
-      
 
       <v-menu offset-y location="bottom left" origin="top left" min-width="200">
         <template v-slot:activator="{ props }">
@@ -24,18 +46,13 @@ const status = ref(true)
             v-bind="props"
             class="flex items-center cursor-pointer bg-white rounded-md px-2 py-1 hover:bg-gray-100 transition"
           >
-           <v-avatar size="30" class="p-0">
-  <img
-    src="https://images.unsplash.com/photo-1623605931891-d5b95ee98459?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTZ8fGZhY2VzfGVufDB8fDB8fHww"
-    alt="Avatar"
-    class="w-full h-full object-cover rounded-full"
-  />
-</v-avatar>
-
+            <v-avatar size="30" color="#1F5AA3" class="text-white font-bold p-4 text-sm">
+              {{ userInitials }}
+            </v-avatar>
 
             <div class="ml-2 text-left">
-              <div class="font-semibold text-black text-sm">Williams</div>
-              <div class="text-xs text-gray-500">Super admin</div>
+              <div class="font-semibold text-black text-sm">{{ userName }}</div>
+              <div class="text-xs text-gray-500">{{ userRole }}</div>
             </div>
           </div>
         </template>

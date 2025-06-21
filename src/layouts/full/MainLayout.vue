@@ -17,7 +17,7 @@ onMounted(() => {
   <v-app>
     <!--- Header -->
     <!-- ---------------------------------------------- -->
-    <v-app-bar app elevation="4" class="pa-2">
+    <v-app-bar app elevation="1" class="pa-2">
      
       <v-btn class="hidden-md-and-up" icon @click="drawer = !drawer">
         <v-icon>fa-solid fa-bars</v-icon>

@@ -2,48 +2,37 @@
 import { ref, computed } from 'vue'
 import sidebarItems from './sidebarItem'
 import { useRoute, useRouter } from 'vue-router'
-import axios from 'axios'
+
+import { useUserStore } from '@/stores/user' // 👈 You should be using userStore here
+
+
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
+
+console.log('User permissions:', {
+  permissions: userStore.permissions
+})
+
+
+// Determine which routes the user can see
+const filteredSidebar = computed(() => {
+  return sidebarItems.filter(item => {
+    if (!item.permission) return true // If no permission needed, allow
+    return userStore.hasPermission(item.permission) // Check permission via userStore
+  })
+  
+})
+
+
+
 // Function to check if the current route is active
 const isActive = (path) => {
   return route.path === path
 }
-import { useAuthStore } from '@/stores/auth'
-const authStore = useAuthStore()
-const token = computed(() => authStore.token)
-const tenantId = computed(() => authStore.tenant_id)
 
-const sidebarMenu = ref(sidebarItems)
-const logout = async () => {
-  const savedAuth = JSON.parse(localStorage.getItem('data') || '{}')
-  const token = savedAuth?.token || authStore.token
-  const tenantId = savedAuth?.user?.tenant_id || authStore.tenant_id
 
-  try {
-    const response = await axios.post(
-      `https://dev02201.getjupita.com/api/${tenantId}/logout`,
-      {},
-      {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    )
 
-    // Handle the successful logout
-    console.log('Logged out successfully:', response.data)
-
-    // Redirect to login page or any other page
-    router.push('/')
-  } catch (error) {
-    // Handle errors
-    errorMessage.value = error.response?.data?.message || error.message
-    console.error('Logout failed:', errorMessage.value)
-  } finally {
-    isLoading.value = false
-  }
-}
 </script>
 
 <template>
@@ -59,7 +48,7 @@ const logout = async () => {
     <!-- Navigation -->
     <div class="flex-grow mt-4">
       <v-list class="pa-4">
-        <template v-for="(item, i) in sidebarMenu" :key="i">
+        <template v-for="(item, i) in filteredSidebar" :key="i">
           <v-list-item
             @click="router.push(item.path)"
             class="mb-4 pr-4 custom-btn no-uppercase relative"

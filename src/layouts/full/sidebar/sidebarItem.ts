@@ -1,22 +1,28 @@
-export default [
+const sidebarItems = [
   {
     title: 'Dashboard',
-    icon: 'fa-solid fa-chart-line', // Better fit for analytics/overview
-    path: '/dashboard'
+    path: '/dashboard',
+        icon: 'fa-solid fa-chart-area', 
+    permission: null
   },
   {
-    title: 'Job List',
-    icon: 'fa-solid fa-list-check', // Represents a checklist or task list
-    path: '/' // Consider renaming this path if unrelated to finance
+    title: 'Jobs',
+    path: '/joblist',
+    icon: 'fas fa-briefcase',
+    permission: 'view_jobs'
   },
   {
     title: 'Business Logic',
-    icon: 'fa-solid fa-diagram-project', // Represents structured processes/workflows
-    path: '/'
+    path: '/business-logic',
+    icon: 'fas fa-cogs',
+    permission: 'view_logic'
   },
   {
     title: 'Logs',
-    icon: 'fa-solid fa-file-lines', // Represents textual logs or documents
-    path: '/' // Avoid reusing the same path as above
+    path: '/logs',
+    icon: 'fas fa-file-alt',
+    permission: 'view_logs'
   }
 ]
+
+export default sidebarItems

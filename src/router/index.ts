@@ -1,13 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import VerifiedEmail from '@/views/VerifiiedEmail.vue'
 import DashboardView from '@/views/dashboard/DashboardView.vue'
 import Login from '@/views/Login.vue'
-import SignUp from '@/views/SignUp.vue'
-import Wallet from '@/views/Wallet.vue'
-import Settings from '@/views/Settings.vue'
-import Analysis from '@/views/Analysis.vue'
 import ResetPassword from '@/views/ResetPassword.vue'
-import PasswordReset from '@/views/PasswordReset.vue'
+import JobList from '@/views/JobList.vue'
+import BusinessLogic from '@/views/BusinessLogic.vue'
+import Logs from '@/views/Logs.vue'
+import ForgotPassword from '@/views/ForgotPassword.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -18,36 +16,28 @@ const router = createRouter({
       component: Login
     },
     {
-      path: '/signup',
-      name: 'signup',
-      component: SignUp
-    },
-    {
-      path: '/verified',
-      name: 'verified',
-      component: VerifiedEmail
-    },
-
-    {
       path: '/dashboard',
       name: 'dashboard',
-      component: DashboardView
-    },
-
-    {
-      path: '/wallet',
-      name: 'wallet',
-      component: Wallet
+      component: DashboardView,
+      meta: { requiresAuth: true } // all logged in users can access
     },
     {
-      path: '/settings',
-      name: 'settings',
-      component: Settings
+      path: '/joblist',
+      name: 'joblist',
+      component: JobList,
+      meta: { requiresAuth: true, permission: 'view_jobs' } // only users with this permission
     },
     {
-      path: '/analysis',
-      name: 'analysis',
-      component: Analysis
+      path: '/business-logic',
+      name: 'business-logic',
+      component: BusinessLogic,
+      meta: { requiresAuth: true, permission: 'view_logic' }
+    },
+    {
+      path: '/logs',
+      name: 'logs',
+      component: Logs,
+      meta: { requiresAuth: true, permission: 'view_logs' }
     },
     {
       path: '/resetpassword',
@@ -55,22 +45,51 @@ const router = createRouter({
       component: ResetPassword
     },
     {
-      path: '/passwordreset',
-      name: 'passwordreset',
-      component: PasswordReset
-    },
-    {
-      path: '/statement-analysis/:id',
-      name: 'StatementAnalysis',
-      component: () => import('@/views/StatementAnalysis.vue'),
-      props: true
-    },
-    {
-      path: '/acceptinvite',
-      name: 'acceptinvite',
-      component: () => import('@/views/AcceptInviteSuccess.vue')
+      path: '/forgotpassword',
+      name: 'forgotpassword',
+      component: ForgotPassword
     }
   ]
 })
+
+
+import { useUserStore } from '@/stores/user'
+
+router.beforeEach((to, from, next) => {
+  const userStore = useUserStore()
+  const isAuthenticated = !!localStorage.getItem('data')
+  const publicPages = ['/', '/signup', '/resetpassword', '/passwordreset', '/acceptinvite']
+
+  // Allow access to public pages
+  if (!isAuthenticated && !publicPages.includes(to.path)) {
+    return next('/')
+  }
+
+  // If route requires auth but user is not authenticated
+  if (to.meta.requiresAuth && !isAuthenticated) {
+    return next('/')
+  }
+
+  // If route requires a specific permission
+  if (to.meta.permission) {
+    const requiredPermission = to.meta.permission
+
+    // If userStore is not yet populated from localStorage
+    if (userStore.permissions.length === 0) {
+      const savedPermissions = localStorage.getItem('permissions')
+      if (savedPermissions) {
+        userStore.permissions = JSON.parse(savedPermissions)
+      }
+    }
+
+    if (!userStore.hasPermission(requiredPermission)) {
+      return next('/dashboard') 
+    }
+  }
+
+  next()
+})
+
+
 
 export default router

@@ -286,7 +286,7 @@
 import MainLayout from '@/layouts/full/MainLayout.vue'
 import { ref } from 'vue'
 
-const tab = ref('assignScores')
+const tab = ref('scoreWeights')
 
 const tabs = [
   { label: 'Score Weights', value: 'scoreWeights' },

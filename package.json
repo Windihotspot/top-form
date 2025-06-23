@@ -22,7 +22,7 @@
     "@mdi/js": "^7.4.47",
     "@supabase/supabase-js": "^2.43.4",
     "aos": "^2.3.4",
-    "apexcharts": "^3.49.1",
+    "apexcharts": "^3.54.1",
     "axios": "^1.7.7",
     "canvas-confetti": "^1.9.3",
     "chart.js": "^4.4.3",
@@ -38,7 +38,7 @@
     "vue-chartjs": "^5.3.1",
     "vue-material-design-icons": "^5.3.0",
     "vue-router": "^4.3.0",
-    "vue3-apexcharts": "^1.5.3",
+    "vue3-apexcharts": "^1.8.0",
     "vuetify": "^3.6.0-beta.0.0"
   },
   "devDependencies": {

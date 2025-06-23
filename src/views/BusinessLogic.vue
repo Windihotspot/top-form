@@ -30,7 +30,16 @@
               <v-btn color="primary" variant="flat" size="small">Add new</v-btn>
 
               <div class="space-x-2">
-                <v-btn size="small" color="primary" variant="flat">Apply Changes</v-btn>
+                <v-btn
+                  color="primary"
+                  variant="flat"
+                  size="small"
+                  @click="applyScoreWeights"
+                  :loading="saving"
+                  :disabled="saving"
+                >
+                  Apply Changes
+                </v-btn>
                 <v-btn size="small" color="success" variant="flat">Deploy Changes</v-btn>
               </div>
             </div>
@@ -279,12 +288,37 @@
         </v-tabs-window-item>
       </v-tabs-window>
     </div>
+    <v-snackbar
+      v-model="snackbar.show"
+      :color="snackbar.color"
+      location="top end"
+      timeout="4000"
+      class="text-white"
+    >
+      {{ snackbar.message }}
+    </v-snackbar>
   </MainLayout>
 </template>
 
 <script setup>
 import MainLayout from '@/layouts/full/MainLayout.vue'
-import { ref } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
+import api from '@/api'
+
+const saving = ref(false)
+const loading = ref(false)
+
+const snackbar = ref({
+  show: false,
+  message: '',
+  color: 'success' // success, error, warning, info
+})
+
+function showSnackbar(message, color = 'success') {
+  snackbar.value.message = message
+  snackbar.value.color = color
+  snackbar.value.show = true
+}
 
 const tab = ref('scoreWeights')
 
@@ -296,102 +330,134 @@ const tabs = [
   { label: 'General Settings', value: 'generalSettings' }
 ]
 
-const sliders = ref([
-  { label: 'Client Type', value: 10 },
-  { label: 'Income', value: 10 },
-  { label: 'Industry Classification', value: 10 },
-  { label: 'Duration in current employment', value: 10 },
-  { label: 'Level of Education', value: 10 },
-  { label: 'KYC Level', value: 10 },
-  { label: 'Age', value: 10 },
-  { label: 'Marital Status', value: 10 },
-  { label: 'Gender', value: 10 },
-  { label: 'Credit Score', value: 10 }
-])
+const sliders = ref([])
 
-import { reactive } from 'vue'
+const scoreData = reactive({})
 
-const scoreData = reactive({
-  'Client Type': [
-    { label: 'New', score: 2 },
-    { label: 'Repeat', score: 10 }
-  ],
-  Income: [
-    { label: '500,000 and above', score: 10 },
-    { label: '200,000 - 499,999', score: 8 },
-    { label: '100,000 - 199,999', score: 6 },
-    { label: '50,000 - 99,999', score: 4 },
-    { label: 'Below 50,000', score: 2 }
-  ],
-  Gender: [
-    { label: 'Male', score: 5 },
-    { label: 'Female', score: 10 }
-  ],
-  'Marital Status': [
-    { label: 'Married', score: 2 },
-    { label: 'Single', score: 1.5 },
-    { label: 'Divorced', score: 1 },
-    { label: 'Widowed', score: 1 }
-  ],
-  'Residence Status': [
-    { label: 'Owned', score: 10 },
-    { label: 'Rented', score: 5 }
-  ],
-  Location: [
-    { label: 'Lagos', score: 10 },
-    { label: 'Abuja', score: 10 },
-    { label: 'Rivers', score: 8 },
-    { label: 'Ogun', score: 5 },
-    { label: 'Others', score: 2 } // You can add more as needed
-  ],
-  'Level of Education': [
-    { label: 'Post Graduate', score: 2 },
-    { label: 'Graduate', score: 1.5 },
-    { label: 'Secondary', score: 1 },
-    { label: 'Primary', score: 1 }
-  ],
-  'Employment Duration': [
-    { label: '6 years and above', score: 2 },
-    { label: '3 - 5 years', score: 1.5 },
-    { label: '2 years', score: 1 },
-    { label: '1 year', score: 1 }
-  ],
-  'Employment Type': [
-    { label: 'Employed', score: 2 },
-    { label: 'Self Employed', score: 1.5 },
-    { label: 'Student', score: 1 },
-    { label: 'NYSC', score: 1 }
-  ],
-  'Industry Classification': [
-    { label: 'Regulatory Agencies', score: 10 },
-    { label: 'Telecommunication', score: 9 },
-    { label: 'Financial Institutions (Banking)', score: 8 },
-    { label: 'Others', score: 1 }
-  ],
-  'KYC Level': [
-    { label: 'Level 3', score: 2 },
-    { label: 'Level 2', score: 1.5 },
-    { label: 'Level 1', score: 1 }
-  ],
-  'Credit Score': [
-    { label: '850 and above', score: 10 },
-    { label: 'Below 350', score: 2 }
-  ],
-  'Number of Closed Loans': [
-    { label: 'Above 50', score: 10 },
-    { label: 'Below 2', score: 2 }
-  ],
-  'Number of Written Off Loans': [
-    { label: '0', score: 2 },
-    { label: '3 and above', score: 1 }
-  ],
-  Age: [
-    { label: '21 - 30 years', score: 2 },
-    { label: '31 - 40 years', score: 1.5 },
-    { label: '41 - 50 years', score: 1 },
-    { label: '51 - 60 years', score: 1 },
-    { label: '18 - 20 years', score: 1 }
-  ]
+// Original field labels mapped to API keys
+const weightFields = [
+  { label: 'Client Type', key: 'client_type' },
+  { label: 'Income', key: 'stated_income' },
+  { label: 'Industry Classification', key: 'industry_classification' },
+  { label: 'Duration in current employment', key: 'duration_in_current_employment' },
+  { label: 'Level of Education', key: 'level_of_education' },
+  { label: 'KYC Level', key: 'kyc_score' },
+  { label: 'Age', key: 'age' },
+  { label: 'Marital Status', key: 'marital_status' },
+  { label: 'Gender', key: 'gender' },
+  { label: 'Credit Score', key: 'credit_bureau_score' }
+  // You can add more fields below if needed
+]
+
+// Fetch weights
+const fetchWeights = async () => {
+  loading.value = true
+  try {
+    const response = await api.get('/get-sofri-weights') // replace with your actual endpoint
+    console.log('sofri weights:', response.data.data)
+    const weights = response.data.data
+
+    sliders.value = weightFields.map((field) => ({
+      label: field.label,
+      key: field.key,
+      value: weights[field.key] ?? 10 // fallback to 10 if key not in response
+    }))
+  } catch (error) {
+    console.log('Failed to fetch score weights:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+const applyScoreWeights = async () => {
+  saving.value = true
+  const weightsPayload = {}
+  sliders.value.forEach((slider) => {
+    weightsPayload[slider.key] = slider.value
+  })
+  console.log('adjust weights payload:', weightsPayload)
+  try {
+    const response = await api.post('/adjust-weights', {
+      weights: weightsPayload
+    })
+    console.log('adjust weights response:', response)
+    showSnackbar(response.data.data.message, 'success')
+  } catch (error) {
+    const errorMessage = error?.response?.data?.data?.error || 'Failed to apply score weights'
+    console.log('Failed to save weights:', errorMessage)
+    showSnackbar(errorMessage, 'error')
+  } finally {
+    saving.value = false
+  }
+}
+
+const formatScoreData = (rawData) => {
+  const result = {}
+
+  for (const key in rawData) {
+    const value = rawData[key]
+
+    // Handle range arrays like income, age, etc.
+    if (Array.isArray(value) && Array.isArray(value[0])) {
+      result[formatKey(key)] = value.map(([min, max, score]) => ({
+        label: `${formatNumber(min)} – ${formatNumber(max)}`,
+        score
+      }))
+    }
+
+    // Handle key-value object mappings
+    else if (typeof value === 'object' && value !== null) {
+      result[formatKey(key)] = Object.entries(value).map(([label, score]) => ({
+        label,
+        score
+      }))
+    }
+  }
+
+  return result
+}
+
+const formatKey = (key) => {
+  const mappings = {
+    client_type: 'Client Type',
+    stated_income: 'Income',
+    gender: 'Gender',
+    marital_status: 'Marital Status',
+    duration_in_current_employment: 'Employment Duration',
+    employment_type: 'Employment Type',
+    level_of_education: 'Level of Education',
+    age: 'Age',
+    industry_classification: 'Industry Classification',
+    residence_status: 'Residence Status',
+    location: 'Location',
+    kyc_score: 'KYC Level',
+    credit_bureau_score: 'Credit Score',
+    Count_AccountStatus_Closed: 'Number of Closed Loans',
+    Count_AccountStatus_Written_Off: 'Number of Written Off Loans',
+    Count_AccountStatus_Delinquent_30_over_60_days: 'Number of Delinquent Loans'
+  }
+
+  return mappings[key] || key
+}
+
+const formatNumber = (num) => (num >= 1000 ? Intl.NumberFormat().format(num) : num.toString())
+
+const fetchScoreData = async () => {
+  try {
+    const response = await api.get('/get-sofri-scores') 
+    console.log('score data response:', response.data.data)
+
+    const formatted = formatScoreData(response.data.data)
+    Object.assign(scoreData, formatted) // reactive assignment
+  } catch (error) {
+    console.log('Failed to fetch score data:', error)
+    showSnackbar('Failed to load score data', 'error')
+  }
+}
+
+onMounted(() => {
+  fetchWeights()
+  fetchScoreData()
 })
 </script>
 

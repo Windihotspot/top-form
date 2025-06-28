@@ -5,7 +5,6 @@ import { useRoute, useRouter } from 'vue-router'
 
 import { useUserStore } from '@/stores/user' // 👈 You should be using userStore here
 
-
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
@@ -14,25 +13,18 @@ console.log('User permissions:', {
   permissions: userStore.permissions
 })
 
-
 // Determine which routes the user can see
 const filteredSidebar = computed(() => {
-  return sidebarItems.filter(item => {
+  return sidebarItems.filter((item) => {
     if (!item.permission) return true // If no permission needed, allow
     return userStore.hasPermission(item.permission) // Check permission via userStore
   })
-  
 })
-
-
 
 // Function to check if the current route is active
 const isActive = (path) => {
   return route.path === path
 }
-
-
-
 </script>
 
 <template>
@@ -46,12 +38,12 @@ const isActive = (path) => {
       <i class="fa-solid fa-columns text-gray-700 text-xl"></i>
     </div>
     <!-- Navigation -->
-    <div class="flex-grow mt-4">
+    <div class="flex-grow">
       <v-list class="pa-4">
         <template v-for="(item, i) in filteredSidebar" :key="i">
           <v-list-item
             @click="router.push(item.path)"
-            class="mb-4 pr-4 custom-btn no-uppercase relative"
+            class="mb-4 custom-btn no-uppercase relative"
             size="small"
             rounded="lg"
             block
@@ -61,29 +53,26 @@ const isActive = (path) => {
               <v-icon left>{{ item.icon }}</v-icon>
               <span class="menu-item ml-4" v-text="item.title"></span>
             </div>
-
-            <!-- Active bar INSIDE the v-list-item -->
           </v-list-item>
+
           <!-- <div v-if="isActive(item.path)" class="active-bar"></div> -->
         </template>
       </v-list>
     </div>
-
-    <!-- Footer Logout -->
-    <!-- <div class="pa-4">
-      <v-list-item @click="logout" class="custom-btn logout-btn" rounded="lg" block>
-        <v-icon class="text-lg" left>
-          <i class="fas fa-sign-out-alt"></i>
-        </v-icon>
-        <span class="menu-item ml-4">Logout</span>
-      </v-list-item>
-    </div> -->
   </div>
 </template>
 
 <style scoped>
 .side-bar {
-  overflow: hidden !important;
+  width: 250px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100vh;
 }
 
 .logout-btn:hover {
@@ -94,7 +83,7 @@ const isActive = (path) => {
   width: 50%;
 }
 .menu-item {
-  font-size: 36px;
+  font-size: 12px;
   text-transform: none;
   color: #1e1e1e;
 }
@@ -125,7 +114,7 @@ const isActive = (path) => {
     'Segoe UI Emoji';
   font-style: normal;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 28px;
 }
 .custom-link {
@@ -135,8 +124,9 @@ const isActive = (path) => {
 .custom-active {
   color: #1f5aa3 !important; /* Active state color */
   background-color: rgba(0, 0, 255, 0.1); /* Light blue background */
-
-  border-radius: 12px;
+ border-radius: 12px;
+  position: relative;
+  overflow: visible;
 }
 
 .custom-active .menu-item {
@@ -156,4 +146,25 @@ const isActive = (path) => {
   background-color: #1f5aa3;
   border-radius: 8px;
 }
+.custom-active::after {
+  content: '';
+  position: absolute;
+  right: -4px;
+  top: 12px;
+  bottom: 12px;
+  width: 4px;
+  background-color: #1f5aa3; /* Blue vertical bar */
+  border-radius: 4px;
+}
+::v-deep(.custom-active::after) {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  right: -4px;
+  width: 4px;
+  background-color: #1f5aa3;
+  border-radius: 4px;
+}
+
 </style>

@@ -26,9 +26,7 @@
           </div>
 
           <div class="p-6 bg-white rounded mt-4">
-            <div class="flex justify-between mb-6">
-              <v-btn color="primary" variant="flat" size="small">Add new</v-btn>
-
+            <div class="flex justify-end mb-6">
               <div class="space-x-2">
                 <v-btn
                   color="primary"
@@ -261,28 +259,14 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <!-- Left Side -->
-              <div class="space-y-4">
+              
                 <v-text-field label="Base Loan Value (₦)" variant="outlined" hide-details />
                 <v-text-field label="Minimum Loan Amount (₦)" variant="outlined" hide-details />
                 <v-text-field label="Maximum Loan Amount (₦)" variant="outlined" hide-details />
-              </div>
-
-              <!-- Right Side -->
-              <div class="space-y-4">
                 <v-text-field label="Minimum Age for Loans" variant="outlined" hide-details />
+              
 
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-2">Tenors</label>
-                  <div class="bg-gray-100 p-4 rounded-md flex flex-wrap gap-2">
-                    <span class="bg-blue-600 text-white text-sm px-3 py-1 rounded-md">30 ×</span>
-                    <span class="bg-blue-600 text-white text-sm px-3 py-1 rounded-md">60 ×</span>
-                    <span class="bg-blue-600 text-white text-sm px-3 py-1 rounded-md">90 ×</span>
-                    <span class="bg-blue-600 text-white text-sm px-3 py-1 rounded-md">120 ×</span>
-                    <span class="bg-blue-600 text-white text-sm px-3 py-1 rounded-md">180 ×</span>
-                    <span class="bg-blue-600 text-white text-sm px-3 py-1 rounded-md">270 ×</span>
-                  </div>
-                </div>
-              </div>
+              
             </div>
           </div>
         </v-tabs-window-item>
@@ -444,7 +428,7 @@ const formatNumber = (num) => (num >= 1000 ? Intl.NumberFormat().format(num) : n
 
 const fetchScoreData = async () => {
   try {
-    const response = await api.get('/get-sofri-scores') 
+    const response = await api.get('/get-sofri-scores')
     console.log('score data response:', response.data.data)
 
     const formatted = formatScoreData(response.data.data)

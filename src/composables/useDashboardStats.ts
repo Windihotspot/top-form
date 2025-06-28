@@ -28,8 +28,18 @@ const approvalChartOptions = {
 }
 
 const monthNames = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec'
 ]
 
 function getMonthlyData(source, months: number[]) {
@@ -45,19 +55,20 @@ export function useDashboardStats() {
   const totalApplications = computed(() => stats.value.total_jobs ?? 0)
   const totalAccepted = computed(() => stats.value.total_accepted_jobs ?? 0)
   const totalDeclined = computed(() => stats.value.total_rejected_jobs ?? 0)
-  const totalErrors = computed(() => 0) // Placeholder
+  const totalErrors = computed(() => stats.value.total_failed_jobs ?? 0)
+  const percentageAceepted = computed(() => stats.value.percentage_increase_accepted_job ?? 0)
 
   const accepted = computed(() => stats.value.accepted_jobs_by_month ?? [])
   const rejected = computed(() => stats.value.rejected_jobs_by_months ?? [])
 
   const monthNumbers = computed(() => {
     const set = new Set()
-    accepted.value.forEach(item => set.add(item.month))
-    rejected.value.forEach(item => set.add(item.month))
+    accepted.value.forEach((item) => set.add(item.month))
+    rejected.value.forEach((item) => set.add(item.month))
     return [...set].sort((a, b) => a - b)
   })
 
-  const categories = computed(() => monthNumbers.value.map(m => monthNames[m - 1]))
+  const categories = computed(() => monthNumbers.value.map((m) => monthNames[m - 1]))
 
   const series = computed(() => [
     {
@@ -72,7 +83,7 @@ export function useDashboardStats() {
 
   const chartOptions = computed(() => ({
     chart: { type: 'line', toolbar: { show: false }, zoom: { enabled: false } },
-    stroke: { curve: 'smooth', width: [1, 2], dashArray: [0, 5] },
+    stroke: { curve: 'smooth', width: [1, 2] },
     colors: ['#22c55e', '#ef4444'],
     fill: {
       type: 'gradient',
@@ -91,11 +102,21 @@ export function useDashboardStats() {
     },
     yaxis: {
       labels: {
-        formatter: val => `${Math.round(val / 1000)}K`,
+       formatter: (val) => (val >= 1000 ? `${(val / 1000).toFixed(0)}K` : val),
         style: { colors: '#6b7280', fontSize: '14px' }
       }
     },
-    grid: { borderColor: '#e5e7eb', strokeDashArray: 4 },
+    grid: { borderColor: '#e5e7eb', strokeDashArray: 0,  xaxis: {
+        lines: {
+          show: false // disables X-axis grid lines
+        }
+      },
+      yaxis: {
+        lines: {
+          show: false // keep Y-axis grid lines if needed
+        }
+      } },
+    
     legend: {
       position: 'top',
       horizontalAlign: 'right',
@@ -104,12 +125,8 @@ export function useDashboardStats() {
     tooltip: { theme: 'light' }
   }))
 
-  const locationLabels = computed(() =>
-    stats.value.jobs_by_location?.map(loc => loc.state) ?? []
-  )
-  const locationSeries = computed(() =>
-    stats.value.jobs_by_location?.map(loc => loc.count) ?? []
-  )
+  const locationLabels = computed(() => stats.value.jobs_by_location?.map((loc) => loc.state) ?? [])
+  const locationSeries = computed(() => stats.value.jobs_by_location?.map((loc) => loc.count) ?? [])
 
   const locationChartOptions = computed(() => ({
     labels: locationLabels.value,
@@ -117,41 +134,62 @@ export function useDashboardStats() {
     dataLabels: { enabled: false },
     legend: {
       position: 'right',
-      formatter: (val, opts) =>
-        `${val} - ${locationSeries.value[opts.seriesIndex]}`
+      formatter: (val, opts) => `${val} - ${locationSeries.value[opts.seriesIndex]}`
     },
     stroke: { show: false },
     chart: { toolbar: { show: false } },
     plotOptions: { pie: { donut: { size: '65%' } } }
   }))
 
-  const osLabels = computed(() =>
-    stats.value.jobs_by_os?.map(os => os.user_agent) ?? []
-  )
-  const osData = computed(() =>
-    stats.value.jobs_by_os?.map(os => os.count) ?? []
-  )
+  const osLabels = computed(() => stats.value.jobs_by_os?.map((os) => os.user_agent) ?? [])
+  const osData = computed(() => stats.value.jobs_by_os?.map((os) => os.count) ?? [])
+  const osColorMap = {
+  'Safari/17.0': '#99F6E4',     // Mint (e.g. Mac)
+  'Chrome/120.0': '#8b8bba',    // Sky Blue (e.g. Windows)
+  'OneUi/7.0': '#BFDBFE',       // Light Blue (e.g. Android)
+  'DummyAgent/1.0': '#000000'   // Black (e.g. Unknown/Other)
+}
 
-  const deviceSeries = computed(() => [
-    { name: 'Jobs', data: osData.value }
-  ])
+const osColors = computed(() =>
+  osLabels.value.map(label => osColorMap[label] ?? '#E5E7EB') // fallback to light gray
+)
+
+
+  const deviceSeries = computed(() => [{ name: 'Jobs', data: osData.value }])
 
   const deviceChartOptions = computed(() => ({
     chart: { toolbar: { show: false } },
-    plotOptions: { bar: { borderRadius: 6, columnWidth: '40%' } },
+    plotOptions: { bar: { borderRadius: 3, columnWidth: '40%',distributed: true } },
     dataLabels: { enabled: false },
     xaxis: {
       categories: osLabels.value,
-      labels: { style: { colors: '#6B7280' } }
+      labels: { style: { colors: '#6B7280' } },
+      axisBorder: { show: false }, // removes bottom line
+      axisTicks: { show: false }
     },
     yaxis: {
       labels: {
-        formatter: (val) => `${(val / 1000).toFixed(0)}K`,
+        formatter: (val) => (val >= 1000 ? `${(val / 1000).toFixed(0)}K` : val),
+
         style: { colors: '#6B7280' }
       }
     },
-    colors: ['#A78BFA', '#99F6E4', '#000000', '#93C5FD', '#BFDBFE', '#86EFAC'],
-    grid: { strokeDashArray: 4 }
+     
+    grid: {
+      strokeDashArray: 0, // make all lines solid
+      xaxis: {
+        lines: {
+          show: false // disables X-axis grid lines
+        }
+      },
+      yaxis: {
+        lines: {
+          show: false // keep Y-axis grid lines if needed
+        }
+      }
+    },
+    colors: osColors.value,
+      legend: { show: false } 
   }))
 
   return {
@@ -169,9 +207,10 @@ export function useDashboardStats() {
     osData,
     deviceSeries,
     deviceChartOptions,
-     approvalChartSeries,
-  approvalChartOptions,
-  approvalRiskLabels,
-  approvalRiskColors
+    approvalChartSeries,
+    approvalChartOptions,
+    approvalRiskLabels,
+    approvalRiskColors,
+    percentageAceepted
   }
 }

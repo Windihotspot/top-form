@@ -17,12 +17,12 @@ onMounted(() => {
   <v-app>
     <!--- Header -->
     <!-- ---------------------------------------------- -->
-    <v-app-bar app elevation="1" class="pa-2">
+    <v-app-bar app elevation="2" class="pa-2">
      
       <v-btn class="hidden-md-and-up" icon @click="drawer = !drawer">
         <v-icon>fa-solid fa-bars</v-icon>
       </v-btn>
-      <div class="logo pa-4">
+      <div class="logo pa-2">
         <p class="font-semibold text-lg">FlowkyAi</p>
         <!-- <img src="/src/assets/images/white.png" class="" /> -->
       </div>
@@ -35,7 +35,7 @@ onMounted(() => {
     <v-navigation-drawer
       left
       :permanent="$vuetify.display.mdAndUp"
-      elevation="10"
+      elevation="2"
       app
       :temporary="$vuetify.display.mdAndDown"
       v-model="drawer"

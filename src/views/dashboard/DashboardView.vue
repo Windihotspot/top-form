@@ -3,12 +3,13 @@ import { ref, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import MainLayout from '@/layouts/full/MainLayout.vue'
 import VueApexCharts from 'vue3-apexcharts'
+import AnimatedStats from '@/components/AnimatedStats.vue'
 
 import { useDashboardStats } from '@/composables/useDashboardStats'
 const userStore = useUserStore()
 
 const stats = computed(() => userStore.dashboardStats ?? {})
-console.log ("dashboard stats from store:", stats.value)
+console.log('dashboard stats from store:', stats.value)
 
 const {
   totalApplications,
@@ -27,10 +28,30 @@ const {
   approvalChartSeries,
   approvalChartOptions,
   approvalRiskLabels,
-  approvalRiskColors
+  approvalRiskColors,
+  percentageAceepted
 } = useDashboardStats()
 
-console.log("📊 Composable Dashboard Data:", {
+const selectedLocation = ref('All')
+
+// Get all unique locations
+const locationOptions = computed(() => {
+  return ['All', ...new Set(stats.value.jobs_by_location?.map((loc) => loc.state) ?? [])]
+})
+
+// Filtered labels and series for the chart
+const filteredLocationData = computed(() => {
+  const all = stats.value.jobs_by_location ?? []
+  return selectedLocation.value === 'All'
+    ? all
+    : all.filter((loc) => loc.state === selectedLocation.value)
+})
+
+const filteredLocationLabels = computed(() => filteredLocationData.value.map((loc) => loc.state))
+
+const filteredLocationSeries = computed(() => filteredLocationData.value.map((loc) => loc.count))
+
+console.log('📊 Composable Dashboard Data:', {
   totals: {
     totalApplications: totalApplications.value,
     totalAccepted: totalAccepted.value,
@@ -57,7 +78,8 @@ console.log("📊 Composable Dashboard Data:", {
     options: approvalChartOptions,
     labels: approvalRiskLabels,
     colors: approvalRiskColors
-  }
+  },
+  percentageAceepted: percentageAceepted.value
 })
 </script>
 
@@ -65,33 +87,18 @@ console.log("📊 Composable Dashboard Data:", {
   <MainLayout>
     <!-- Analytics -->
     <div class="bg-white p-6 rounded shadow">
-      <h2 class="text-xl font-semibold text-gray-800 mb-2">Analytics</h2>
-      <p class="text-sm text-gray-500 mb-4">Key Metrics</p>
+      <h2 class="text-xl font-bold mb-2">Analytics</h2>
+      <p class="text-sm mb-4 font-normal">Key Metrics</p>
 
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-        <!-- Total Applications -->
-        <div class="bg-indigo-50 p-4 rounded shadow">
-          <p class="text-sm text-gray-600">Total Applications</p>
-          <p class="text-2xl font-semibold text-gray-800">{{ totalApplications }}</p>
-        </div>
-
-        <!-- Total Accepted -->
-        <div class="bg-blue-50 p-4 rounded shadow">
-          <p class="text-sm text-gray-600">Total Accepted</p>
-          <p class="text-2xl font-semibold text-gray-800">{{ totalAccepted }}</p>
-        </div>
-
-        <!-- Total Declined -->
-        <div class="bg-purple-50 p-4 rounded shadow">
-          <p class="text-sm text-gray-600">Total Declined</p>
-          <p class="text-2xl font-semibold text-gray-800">{{ totalDeclined }}</p>
-        </div>
-
-        <!-- Total Errors -->
-        <div class="bg-blue-100 p-4 rounded shadow">
-          <p class="text-sm text-gray-600">Total Errors</p>
-          <p class="text-2xl font-semibold text-gray-800">{{ totalErrors }}</p>
-        </div>
+        <AnimatedStats
+          label="Total Applications"
+          :value="totalApplications"
+          colorClass="bg-indigo-50"
+        />
+        <AnimatedStats label="Total Accepted" :value="totalAccepted" colorClass="bg-blue-50" />
+        <AnimatedStats label="Total Declined" :value="totalDeclined" colorClass="bg-purple-50" />
+        <AnimatedStats label="Total Errors" :value="totalErrors" colorClass="bg-blue-100" />
       </div>
     </div>
 
@@ -102,12 +109,20 @@ console.log("📊 Composable Dashboard Data:", {
     </div>
 
     <!-- Location & Device -->
-    <div class="bg-white mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded shadow">
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
       <!-- Location -->
-      <div class="bg-white p-4 rounded shadow">
+      <div class="p-4 bg-white rounded">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-sm font-semibold text-gray-700">Traffic by Location</h2>
-          <div class="text-sm text-gray-500">All ▼</div>
+          <!-- <v-select
+            v-model="selectedLocation"
+            :items="locationOptions"
+            density="compact"
+            variant="outlined"
+            class="min-w-[60px] max-w-[100px] h-8 text-xs"
+            hide-details
+            style="padding: 0; font-size: 6px"
+          /> -->
         </div>
         <apexchart
           type="donut"
@@ -118,10 +133,10 @@ console.log("📊 Composable Dashboard Data:", {
       </div>
 
       <!-- Device -->
-      <div class="bg-white p-4 rounded shadow">
+      <div class="bg-white p-4 rounded">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-sm font-semibold text-gray-700">Traffic by Device</h2>
-          <div class="text-sm text-gray-500">All ▼</div>
+          
         </div>
         <apexchart type="bar" height="300" :options="deviceChartOptions" :series="deviceSeries" />
       </div>

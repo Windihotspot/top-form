@@ -3,6 +3,18 @@ import { ref, onMounted, computed } from 'vue'
 import api from '@/api'
 import MainLayout from '@/layouts/full/MainLayout.vue'
 
+import moment from 'moment'
+
+const formatCurrency = (amount) => {
+  if (isNaN(amount)) return amount
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN',
+    minimumFractionDigits: 2
+  }).format(amount)
+}
+
+
 const jobs = ref([])
 const isLoading = ref(true)
 const selectedStatus = ref(null)
@@ -32,15 +44,58 @@ const fetchJobs = async () => {
 onMounted(fetchJobs)
 
 // Filtered jobs for search and/or status filter
+
+
 const filteredJobs = computed(() => {
+  const query = searchQuery.value.toLowerCase()
+
   return jobs.value.filter((job) => {
-    const matchStatus = selectedStatus.value ? job.overall_decision === selectedStatus.value : true
-    const matchSearch = Object.values(job).some((val) =>
-      String(val).toLowerCase().includes(searchQuery.value.toLowerCase())
-    )
+    // 1. Filter by status
+    const matchStatus = selectedStatus.value
+      ? job.overall_decision === selectedStatus.value
+      : true
+
+    // 2. Filter by search query (across visible fields)
+    const searchableFields = [
+      'application_date',
+      'application_id',
+      'requested_amount',
+      'internal_score',
+      'credit_score',
+      'age',
+      'income',
+      'employment_type',
+      'industry',
+      'risk_level',
+      'education_level',
+      'residence',
+      'kyc_level',
+      'marital_status',
+      'state',
+      'overall_decision'
+    ]
+
+    const matchSearch = searchableFields.some((field) => {
+      const value = job[field]
+
+      // Format dates and currency to match what user sees
+      if (field === 'application_date') {
+        return moment(value).format('LL').toLowerCase().includes(query)
+      }
+
+      if (['income', 'requested_amount'].includes(field)) {
+        return formatCurrency(value).toLowerCase().includes(query)
+      }
+
+      return String(value ?? '').toLowerCase().includes(query)
+    })
+
     return matchStatus && matchSearch
   })
 })
+
+
+
 </script>
 
 <template>
@@ -48,7 +103,7 @@ const filteredJobs = computed(() => {
     <div class="p-4 rounded shadow bg-white m-4">
       <!-- Title -->
       <div class="mb-2 border-b">
-        <h1 class="text-2xl font-bold text-gray-900">Job List</h1>
+        <h1 class="text-xl font-bold">Job List</h1>
       </div>
 
       <div class="flex items-center justify-between p-2">
@@ -60,7 +115,7 @@ const filteredJobs = computed(() => {
             color="#1f5aa3"
             v-model="selectedStatus"
             :items="statuses"
-            label="Status"
+            label="Filter"
             density="compact"
             hide-details
             variant="outlined"
@@ -96,20 +151,28 @@ const filteredJobs = computed(() => {
 
       <!-- Table -->
       <div v-else>
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-lg font-semibold">Income Table</h2>
+        <div class="flex justify-end items-center mb-4">
+          
           <button
             class="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black"
           >
-            <i class="mdi mdi-download"></i>
+            <i class="fas fa-download"></i>
+
             Export as CSV
           </button>
         </div>
 
         <div class="overflow-x-auto bg-white shadow rounded-lg">
-          <table class="min-w-full text-sm text-left text-gray-700">
-            <thead class="bg-gray-100 text-gray-900 font-semibold">
+          <table class="min-w-full text-sm text-center text-gray-700">
+            <thead class="bg-gray-100 text-gray-900 font-semibold text-sm">
               <tr>
+                <th class="px-4 py-3">S/N</th>
+                <th class="px-4 py-3">Application Date/Time</th>
+                <th class="px-4 py-3">Application ID</th>
+                <th class="px-4 py-3">Requested Amount</th>
+                <th class="px-4 py-3">Internal Score</th>
+                <th class="px-4 py-3">Credit Score</th>
+                <th class="px-4 py-3">Age</th>
                 <th class="px-4 py-3">Income</th>
                 <th class="px-4 py-3">Employment Type</th>
                 <th class="px-4 py-3">Industry</th>
@@ -125,15 +188,21 @@ const filteredJobs = computed(() => {
             </thead>
             <tbody class="divide-y divide-gray-200">
               <tr v-for="(job, index) in filteredJobs" :key="index" class="hover:bg-gray-50">
-                <td class="px-4 py-3">
-                  ₦{{ Number(job.income).toLocaleString('en-NG', { minimumFractionDigits: 2 }) }}
-                </td>
-                <td class="px-4 py-3">{{ job.employment_type }}</td>
+               
+                <td class="px-4 py-3">{{ index + 1 }}</td>
+                <td class=" py-3">{{ moment(job.application_date).format('LL') }}</td>
+                <td class="px-4 py-3">{{ job.application_id }}</td>
+                <td class="px-4 py-3">{{ formatCurrency(job.requested_amount) }}</td>
+                <td class="px-4 py-3">{{ job.internal_score }}</td>
+                <td class="px-4 py-3">{{ job.credit_score }}</td>
+                <td class="px-4 py-3">{{ job.age }}</td>
+                <td class="px-4 py-3">{{ job.income }}</td>
+                <td class=" py-3">{{ job.employment_type }}</td>
                 <td class="px-4 py-3">{{ job.industry }}</td>
                 <td class="px-4 py-3">{{ job.risk_level }}</td>
                 <td class="px-4 py-3">{{ job.education_level }}</td>
                 <td class="px-4 py-3">{{ job.residence }}</td>
-                <td class="px-4 py-3">{{ job.kyc_level }}</td>
+                <td class=" py-3">{{ job.kyc_level }}</td>
                 <td class="px-4 py-3">{{ job.marital_status }}</td>
                 <td class="px-4 py-3">{{ job.state }}</td>
                 <td class="px-4 py-3">

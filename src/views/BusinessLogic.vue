@@ -1,5 +1,7 @@
 <template>
   <MainLayout>
+    <v-btn @click="() => showSnackbar('Test message', 'success')">Test Snackbar</v-btn>
+
     <div class="px-6 py-4">
       <h2 class="text-lg font-semibold mb-4">Business Logic</h2>
 
@@ -24,6 +26,25 @@
           <div>
             <p class="text-sm text-gray-600">Adjust your weights used in the scoring mechanism</p>
           </div>
+          <v-snackbar
+            v-model="snackbar.show"
+            location="top end"
+            timeout="4000"
+            :multi-line="false"
+            :color="null"
+            class="z-50 p-0 bg-transparent shadow-none"
+          >
+            <div
+              class="flex items-start p-4 border-2 border-white rounded-lg shadow-md bg-gradient-to-r from-green-100 to-green-200"
+            >
+              <i class="fas fa-check-circle text-green-600 text-xl sm:text-2xl"></i>
+              <div class="ml-3">
+                <p class="text-green-700 text-sm sm:text-base font-medium">
+                  {{ snackbar.message }}
+                </p>
+              </div>
+            </div>
+          </v-snackbar>
 
           <div class="p-6 bg-white rounded mt-4">
             <div class="flex justify-end mb-6">
@@ -32,13 +53,23 @@
                   color="primary"
                   variant="flat"
                   size="small"
-                  @click="applyScoreWeights"
-                  :loading="saving"
-                  :disabled="saving"
+                  @click="() => runWeightAction('apply')"
+                  :loading="savingApply"
+                  :disabled="savingApply"
                 >
                   Apply Changes
                 </v-btn>
-                <v-btn size="small" color="success" variant="flat">Deploy Changes</v-btn>
+
+                <v-btn
+                  size="small"
+                  color="success"
+                  variant="flat"
+                  @click="() => runWeightAction('deploy')"
+                  :loading="savingDeploy"
+                  :disabled="!batchId || savingDeploy"
+                >
+                  Deploy Changes
+                </v-btn>
               </div>
             </div>
 
@@ -70,8 +101,27 @@
 
             <div class="mt-4 mb-4 flex justify-end gap-4">
               <div class="space-x-2">
-                <v-btn size="small" color="primary" variant="flat">Apply Changes</v-btn>
-                <v-btn size="small" color="success" variant="flat">Deploy Changes</v-btn>
+                <v-btn
+                  size="small"
+                  color="primary"
+                  variant="flat"
+                  :loading="savingScoreApply"
+                  :disabled="savingScoreApply"
+                  @click="() => runScoreDataAction('apply')"
+                >
+                  Apply Changes
+                </v-btn>
+
+                <v-btn
+                  size="small"
+                  color="success"
+                  variant="flat"
+                  :loading="savingScoreDeploy"
+                  :disabled="!scoreBatchId || savingScoreDeploy"
+                  @click="() => runScoreDataAction('deploy')"
+                >
+                  Deploy Changes
+                </v-btn>
               </div>
             </div>
 
@@ -103,83 +153,61 @@
           <div class="p-6 bg-white rounded">
             <div class="flex justify-between mb-6 justify-end">
               <div class="space-x-2">
-                <v-btn size="small" color="primary" variant="flat">Apply Changes</v-btn>
-                <v-btn size="small" color="success" variant="flat">Deploy Changes</v-btn>
+                <v-btn
+                  size="small"
+                  color="primary"
+                  variant="flat"
+                  :loading="savingThresholdApply"
+                  :disabled="savingThresholdApply"
+                  @click="() => runThresholdAction('apply')"
+                >
+                  Apply Changes
+                </v-btn>
+
+                <v-btn
+                  size="small"
+                  color="success"
+                  variant="flat"
+                  :loading="savingThresholdDeploy"
+                  :disabled="!thresholdBatchId || savingThresholdDeploy"
+                  @click="() => runThresholdAction('deploy')"
+                >
+                  Deploy Changes
+                </v-btn>
               </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-              <!-- Left Column -->
-              <div>
-                <v-text-field
-                  label="Minimum Credit Score"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                ></v-text-field>
-              </div>
+              <v-text-field
+                label="Minimum Loan Amount (₦)"
+                v-model.number="thresholds.minimum_loan_amount"
+                variant="outlined"
+                density="compact"
+                hide-details
+              />
 
-              <div>
-                <v-text-field
-                  label="Minimum Tenor"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                ></v-text-field>
-              </div>
+              <v-text-field
+                label="Maximum Loan Amount (₦)"
+                v-model.number="thresholds.maximum_loan_amount"
+                variant="outlined"
+                density="compact"
+                hide-details
+              />
 
-              <div>
-                <v-text-field
-                  label="Maximum Written Off Loan"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                ></v-text-field>
-              </div>
+              <v-text-field
+                label="Minimum Loan Age"
+                v-model.number="thresholds.minimum_loan_age"
+                variant="outlined"
+                density="compact"
+                hide-details
+              />
 
-              <div>
-                <v-text-field
-                  label="Maximum Tenor"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                ></v-text-field>
-              </div>
-
-              <div>
-                <v-text-field
-                  label="Maximum Delinquent Loans"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                ></v-text-field>
-              </div>
-
-              <div>
-                <v-text-field
-                  label="Minimum Age"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                ></v-text-field>
-              </div>
-
-              <div>
-                <v-text-field
-                  label="Minimum Internal Score"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                ></v-text-field>
-              </div>
-
-              <div>
-                <v-text-field
-                  label="Maximum Age"
-                  variant="outlined"
-                  density="compact"
-                  hide-details
-                ></v-text-field>
-              </div>
+              <v-text-field
+                label="Maximum Loan Age"
+                v-model.number="thresholds.maximum_loan_age"
+                variant="outlined"
+                density="compact"
+                hide-details
+              />
             </div>
           </div>
         </v-tabs-window-item>
@@ -259,28 +287,16 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <!-- Left Side -->
-              
-                <v-text-field label="Base Loan Value (₦)" variant="outlined" hide-details />
-                <v-text-field label="Minimum Loan Amount (₦)" variant="outlined" hide-details />
-                <v-text-field label="Maximum Loan Amount (₦)" variant="outlined" hide-details />
-                <v-text-field label="Minimum Age for Loans" variant="outlined" hide-details />
-              
 
-              
+              <v-text-field label="Base Loan Value (₦)" variant="outlined" hide-details />
+              <v-text-field label="Minimum Loan Amount (₦)" variant="outlined" hide-details />
+              <v-text-field label="Maximum Loan Amount (₦)" variant="outlined" hide-details />
+              <v-text-field label="Minimum Age for Loans" variant="outlined" hide-details />
             </div>
           </div>
         </v-tabs-window-item>
       </v-tabs-window>
     </div>
-    <v-snackbar
-      v-model="snackbar.show"
-      :color="snackbar.color"
-      location="top end"
-      timeout="4000"
-      class="text-white"
-    >
-      {{ snackbar.message }}
-    </v-snackbar>
   </MainLayout>
 </template>
 
@@ -289,19 +305,25 @@ import MainLayout from '@/layouts/full/MainLayout.vue'
 import { ref, reactive, onMounted } from 'vue'
 import api from '@/api'
 
-const saving = ref(false)
+const savingApply = ref(false)
+const savingDeploy = ref(false)
 const loading = ref(false)
 
 const snackbar = ref({
   show: false,
   message: '',
-  color: 'success' // success, error, warning, info
+  color: 'success'
 })
 
 function showSnackbar(message, color = 'success') {
+  console.log('SNACKBAR CALLED:', message, color)
   snackbar.value.message = message
   snackbar.value.color = color
   snackbar.value.show = true
+
+  setTimeout(() => {
+    snackbar.value.show = false
+  }, 4000)
 }
 
 const tab = ref('scoreWeights')
@@ -353,25 +375,172 @@ const fetchWeights = async () => {
   }
 }
 
-const applyScoreWeights = async () => {
-  saving.value = true
-  const weightsPayload = {}
-  sliders.value.forEach((slider) => {
-    weightsPayload[slider.key] = slider.value
-  })
-  console.log('adjust weights payload:', weightsPayload)
+const batchId = ref(null)
+
+const runWeightAction = async (action = 'apply') => {
+  if (action === 'apply') savingApply.value = true
+  if (action === 'deploy') savingDeploy.value = true
+
   try {
-    const response = await api.post('/adjust-weights', {
-      weights: weightsPayload
+    // Only adjust weights when action is "apply"
+    if (action === 'apply') {
+      const weightsPayload = {}
+      sliders.value.forEach((slider) => {
+        weightsPayload[slider.key] = slider.value
+      })
+
+      const adjustResponse = await api.post('/adjust-weights', {
+        weights: weightsPayload
+      })
+      const adjustData = adjustResponse.data?.data
+      batchId.value = adjustData?.batch_id
+      console.log(`${action} adjust weights response:`, adjustResponse)
+    }
+
+    // For deploy, just use existing batchId
+    if (!batchId.value) {
+      showSnackbar(`Please apply changes before you deploy`, 'warning')
+      return
+    }
+
+    const integrateResponse = await api.post('/integrate-batch', {
+      batch_id: batchId.value,
+      action
     })
-    console.log('adjust weights response:', response)
-    showSnackbar(response.data.data.message, 'success')
+    console.log(`${action} integrate response:`, integrateResponse)
+    fetchWeights()
+    showSnackbar(`Weights ${action}ed successfully`, 'success')
   } catch (error) {
-    const errorMessage = error?.response?.data?.data?.error || 'Failed to apply score weights'
-    console.log('Failed to save weights:', errorMessage)
+    const errorMessage =
+      error?.response?.data?.data?.error ||
+      error?.response?.data?.message ||
+      `An error occurred during ${action}`
+    console.error(`${action} process failed:`, errorMessage)
     showSnackbar(errorMessage, 'error')
   } finally {
-    saving.value = false
+    if (action === 'apply') savingApply.value = false
+    if (action === 'deploy') savingDeploy.value = false
+  }
+}
+
+const savingScoreApply = ref(false)
+const savingScoreDeploy = ref(false)
+
+const scoreBatchId = ref(null)
+
+const runScoreDataAction = async (action = 'apply') => {
+  if (action === 'apply') savingScoreApply.value = true
+  if (action === 'deploy') savingScoreDeploy.value = true
+
+  try {
+    // Prepare score payload only if applying
+    if (action === 'apply') {
+      const payload = {}
+
+      for (const key in scoreData) {
+        const formattedKey = key.toLowerCase().replace(/\s+/g, '_') // match API keys
+        const values = scoreData[key]
+
+        if (!Array.isArray(values)) continue
+
+        if (values.length && values[0]?.label?.includes('–')) {
+          // This is a range score
+          payload[formattedKey] = values.map((item) => {
+            const [min, max] = item.label.split('–').map((n) => parseFloat(n.trim()))
+            return [min, max, item.score]
+          })
+        } else {
+          // Simple key-value map
+          payload[formattedKey] = {}
+          values.forEach((item) => {
+            payload[formattedKey][item.label] = item.score
+          })
+        }
+      }
+      console.log('adjust scores payload:', payload)
+      const applyRes = await api.post('/adjust-scores', {
+        scores: payload
+      })
+
+      console.log(`${action} score data response:`, applyRes)
+      scoreBatchId.value = applyRes?.data?.data?.batch_id
+    }
+
+    // Make sure a batch ID exists before deploying
+    if (!scoreBatchId.value) {
+      showSnackbar(`Please apply changes before you deploy`, 'warning')
+      return
+    }
+
+    const deployRes = await api.post('/integrate-batch', {
+      batch_id: scoreBatchId.value,
+      action
+    })
+    console.log(`${action} score deploy response:`, deployRes)
+
+    fetchScoreData()
+    showSnackbar(`Score data ${action}ed successfully`, 'success')
+  } catch (error) {
+    const errorMessage =
+      error?.response?.data?.data?.error ||
+      error?.response?.data?.message ||
+      `An error occurred during score ${action}`
+    console.error(`${action} score process failed:`, errorMessage)
+    showSnackbar(errorMessage, 'error')
+  } finally {
+    if (action === 'apply') savingScoreApply.value = false
+    if (action === 'deploy') savingScoreDeploy.value = false
+  }
+}
+
+const savingThresholdApply = ref(false)
+const savingThresholdDeploy = ref(false)
+const thresholdBatchId = ref(null)
+
+const thresholds = reactive({
+  minimum_loan_amount: null,
+  maximum_loan_amount: null,
+  minimum_loan_age: null,
+  maximum_loan_age: null
+})
+
+const runThresholdAction = async (action = 'apply') => {
+  if (action === 'apply') savingThresholdApply.value = true
+  if (action === 'deploy') savingThresholdDeploy.value = true
+
+  try {
+    if (action === 'apply') {
+      const payload = {
+        thresholds: { ...thresholds }
+      }
+
+      const response = await api.post('/adjust-thresholds', payload)
+      console.log(`${action} thresholds response:`, response)
+      thresholdBatchId.value = response?.data?.data?.batch_id
+    }
+
+    if (!thresholdBatchId.value) {
+      showSnackbar('Please apply changes before deploying', 'warning')
+      return
+    }
+
+    const deployResponse = await api.post('/integrate-batch', {
+      batch_id: thresholdBatchId.value,
+      action
+    })
+    console.log(`${action} threshold deploy response:`, deployResponse)
+
+    showSnackbar(`Thresholds ${action}ed successfully`, 'success')
+  } catch (error) {
+    const errorMessage =
+      error?.response?.data?.data?.error ||
+      error?.response?.data?.message ||
+      `An error occurred during thresholds ${action}`
+    console.error(`${action} thresholds process failed:`, errorMessage)
+    showSnackbar(errorMessage, 'error')
+  } finally {
+    if (action === 'apply') savingThresholdApply.value = false
+    if (action === 'deploy') savingThresholdDeploy.value = false
   }
 }
 
@@ -451,5 +620,13 @@ onMounted(() => {
 }
 .v-btn {
   text-transform: none;
+}
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>

@@ -22,7 +22,7 @@
     "@mdi/js": "^7.4.47",
     "@supabase/supabase-js": "^2.43.4",
     "aos": "^2.3.4",
-    "apexcharts": "3.49.1",
+    "apexcharts": "^4.7.0",
     "axios": "^1.7.7",
     "canvas-confetti": "^1.9.3",
     "chart.js": "^4.4.3",

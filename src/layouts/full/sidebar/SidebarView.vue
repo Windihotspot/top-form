@@ -34,7 +34,7 @@ const isActive = (path) => {
       <img src="/src/assets/images/white.png" class="" />
     </div> -->
 
-    <div class="flex items-center space-x-3 p-4 border-b">
+    <div class="flex items-center space-x-3 p-4 m-4 border-b">
       <i class="fa-solid fa-columns text-gray-700 text-xl"></i>
     </div>
     <!-- Navigation -->

@@ -22,7 +22,7 @@ onMounted(() => {
       <v-btn class="hidden-md-and-up" icon @click="drawer = !drawer">
         <v-icon>fa-solid fa-bars</v-icon>
       </v-btn>
-      <div class="logo pa-2">
+      <div class="logo pa-6">
         <p class="font-semibold text-lg">FlowkyAi</p>
         <!-- <img src="/src/assets/images/white.png" class="" /> -->
       </div>

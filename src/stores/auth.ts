@@ -27,9 +27,11 @@ export const useUserStore = defineStore('user', {
         rejected_jobs_by_months: data.rejected_jobs_by_months,
         percentage_increase_accepted_job: data.percentage_increase_accepted_job,
         percentage_increase_rejected_job: data.percentage_increase_rejected_job,
-        percentage_increase_failed_job: data.percentage_increase_failed_job
+        percentage_increase_failed_job: data.percentage_increase_failed_job,
+        accepted_credit_jobs_by_risk_level: data.accepted_credit_jobs_by_risk_level,
+        
       }
-
+      console.log("stats:", this.dashboardStats)
       // Store in localStorage
       localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))

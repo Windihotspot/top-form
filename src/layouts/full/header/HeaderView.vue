@@ -1,14 +1,29 @@
 <script setup>
 import { ref, computed } from 'vue'
-
+import api from '@/api'
 const status = ref(true)
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 
-import { useUserStore } from '@/stores/user' // 👈 You should be using userStore here
-
-const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+
+const logout = async () => {
+  try {
+    const response = await api.post('/logout')
+
+    // Handle the successful logout
+    console.log('Logged out successfully:', response.data)
+
+    // Redirect to login page or any other page
+    router.push('/')
+  } catch (error) {
+    // Handle errors
+
+    console.log('Logout failed:', error.response?.data?.message)
+  } finally {
+  }
+}
 
 console.log('User store inside header:', {
   user: userStore.user,
@@ -58,7 +73,7 @@ const userInitials = computed(() => {
         </template>
 
         <v-list>
-          <v-list-item link class="text-gray-700 hover:text-red-500">
+          <v-list-item @click="logout" link class="text-gray-700 hover:text-red-500">
             <div class="flex items-center gap-2">
               <i class="fas fa-sign-out-alt text-gray-500 hover:text-red-500"></i>
               <v-list-item-title>Logout</v-list-item-title>

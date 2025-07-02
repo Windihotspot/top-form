@@ -5,7 +5,8 @@ import { CountUp } from 'countup.js'
 const props = defineProps({
   label: String,
   value: Number,
-  colorClass: String
+  colorClass: String,
+  percentage: Number
 })
 
 const el = ref(null)
@@ -30,7 +31,8 @@ onMounted(() => {
     <div class="flex items-center justify-between mb-8">
       <p ref="el" class="text-2xl font-bold">0</p>
       <div class="flex items-center space-x-1 text-sm font-medium">
-        <span>+0%</span>
+       <span>{{ percentage + '%' }}</span>
+
         <i class="fas fa-arrow-up-right"></i>
       </div>
     </div>

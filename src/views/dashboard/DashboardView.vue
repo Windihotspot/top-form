@@ -7,7 +7,6 @@ import AnimatedStats from '@/components/AnimatedStats.vue'
 
 import { useDashboardStats } from '@/composables/useDashboardStats'
 const userStore = useUserStore()
-
 const stats = computed(() => userStore.dashboardStats ?? {})
 console.log('dashboard stats from store:', stats.value)
 
@@ -29,27 +28,8 @@ const {
   approvalChartOptions,
   approvalRiskLabels,
   approvalRiskColors,
-  percentageAceepted
+  percentageAccepted
 } = useDashboardStats()
-
-const selectedLocation = ref('All')
-
-// Get all unique locations
-const locationOptions = computed(() => {
-  return ['All', ...new Set(stats.value.jobs_by_location?.map((loc) => loc.state) ?? [])]
-})
-
-// Filtered labels and series for the chart
-const filteredLocationData = computed(() => {
-  const all = stats.value.jobs_by_location ?? []
-  return selectedLocation.value === 'All'
-    ? all
-    : all.filter((loc) => loc.state === selectedLocation.value)
-})
-
-const filteredLocationLabels = computed(() => filteredLocationData.value.map((loc) => loc.state))
-
-const filteredLocationSeries = computed(() => filteredLocationData.value.map((loc) => loc.count))
 
 console.log('📊 Composable Dashboard Data:', {
   totals: {
@@ -79,14 +59,14 @@ console.log('📊 Composable Dashboard Data:', {
     labels: approvalRiskLabels,
     colors: approvalRiskColors
   },
-  percentageAceepted: percentageAceepted.value
+  percentageAccepted: percentageAccepted.value
 })
 </script>
 
 <template>
   <MainLayout>
     <!-- Analytics -->
-    <div class="bg-white p-6 rounded shadow">
+    <div class="bg-white p-6 rounded">
       <h2 class="text-xl font-bold mb-2">Analytics</h2>
       <p class="text-sm mb-4 font-normal">Key Metrics</p>
 
@@ -95,25 +75,41 @@ console.log('📊 Composable Dashboard Data:', {
           label="Total Applications"
           :value="totalApplications"
           colorClass="bg-indigo-50"
+          :percentage="percentageAccepted"
         />
-        <AnimatedStats label="Total Accepted" :value="totalAccepted" colorClass="bg-blue-50" />
-        <AnimatedStats label="Total Declined" :value="totalDeclined" colorClass="bg-purple-50" />
-        <AnimatedStats label="Total Errors" :value="totalErrors" colorClass="bg-blue-100" />
+        <AnimatedStats
+          label="Total Accepted"
+          :percentage="percentageAccepted"
+          :value="totalAccepted"
+          colorClass="bg-blue-50"
+        />
+        <AnimatedStats
+          label="Total Declined"
+          :percentage="percentageAccepted"
+          :value="totalDeclined"
+          colorClass="bg-purple-50"
+        />
+        <AnimatedStats
+          label="Total Errors"
+          :percentage="percentageAccepted"
+          :value="totalErrors"
+          colorClass="bg-blue-100"
+        />
       </div>
     </div>
 
     <!-- Application Trends -->
-    <div class="bg-white p-6 rounded shadow mt-4">
-      <h2 class="text-xl font-semibold text-gray-800 mb-4">Application Trends</h2>
+    <div class="bg-white p-6 rounded mt-4">
+      <h2 class="text-sm font-semibold mb-4">Application Trends</h2>
       <apexchart type="area" width="100%" height="320" :options="chartOptions" :series="series" />
     </div>
 
     <!-- Location & Device -->
-    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
       <!-- Location -->
       <div class="p-4 bg-white rounded">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-sm font-semibold text-gray-700">Traffic by Location</h2>
+          <h2 class="text-sm font-semibold ">Traffic by Location</h2>
           <!-- <v-select
             v-model="selectedLocation"
             :items="locationOptions"
@@ -135,16 +131,15 @@ console.log('📊 Composable Dashboard Data:', {
       <!-- Device -->
       <div class="bg-white p-4 rounded">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-sm font-semibold text-gray-700">Traffic by Device</h2>
-          
+          <h2 class="text-sm font-semibold">Traffic by Device</h2>
         </div>
         <apexchart type="bar" height="300" :options="deviceChartOptions" :series="deviceSeries" />
       </div>
     </div>
 
     <!-- Approval Rate -->
-    <div class="bg-white p-6 rounded shadow mt-4">
-      <h2 class="text-xl font-semibold text-gray-800 mb-1">Approval Rate</h2>
+    <div class="bg-white p-6 rounded mt-4">
+      <h2 class="text-sm font-semibold mb-1">Approval Rate</h2>
       <p class="text-sm text-gray-600 mb-4">Approval rate by customer risk level</p>
 
       <!-- Legend -->

@@ -13,9 +13,10 @@ export const useLogin = () => {
 
       if (response.data.status === 'success') {
         const userData = response.data.data
+        console.log('✅ Calling setUserData...')
         userStore.setUserData(userData)
-        console.log('login response:', response)
-        
+        console.log('login response:', userData)
+
         // ✅ Save to localStorage so guards can allow access
         localStorage.setItem('data', JSON.stringify(userData))
         localStorage.setItem('permissions', JSON.stringify(userData.user.role.permissions || []))

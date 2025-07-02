@@ -6,11 +6,13 @@ export const useUserStore = defineStore('user', {
     token: '',
     user: null as any, // you can replace 'any' with a proper type if you want
     dashboardStats: null,
-    role: null as any,  // holds role info
-    permissions: [] as string[], // holds permission strings
+    role: null as any, // holds role info
+    permissions: [] as string[] // holds permission strings
   }),
   actions: {
     setUserData(data: any) {
+      console.log('✅ setUserData called')
+      console.log('🚀 Raw user data from API:', data)
       this.token = data.token
       this.user = data.user
       this.role = data.user.role
@@ -28,10 +30,9 @@ export const useUserStore = defineStore('user', {
         percentage_increase_accepted_job: data.percentage_increase_accepted_job,
         percentage_increase_rejected_job: data.percentage_increase_rejected_job,
         percentage_increase_failed_job: data.percentage_increase_failed_job,
-        accepted_credit_jobs_by_risk_level: data.accepted_credit_jobs_by_risk_level,
-        
+        accepted_credit_jobs_by_risk_level: data.accepted_credit_jobs_by_risk_level
       }
-      console.log("stats:", this.dashboardStats)
+      console.log('stats:', this.dashboardStats)
       // Store in localStorage
       localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))

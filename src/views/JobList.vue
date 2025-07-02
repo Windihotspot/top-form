@@ -130,8 +130,8 @@ const filteredJobs = computed(() => {
   <MainLayout>
     <div class="p-4 rounded shadow bg-white m-4">
       <!-- Title -->
-      <div class="mb-2 border-b">
-        <h1 class="text-xl font-bold">Job List</h1>
+      <div class="mb-2 ">
+        <h1 class="text-lg font-bold">Job List</h1>
       </div>
 
       <div class="flex items-center justify-between p-2">
@@ -147,7 +147,7 @@ const filteredJobs = computed(() => {
             density="compact"
             hide-details
             variant="outlined"
-            class="w-32"
+              class="w-32 min-h-0 h-8 text-sm"
           ></v-select>
         </div>
 
@@ -168,6 +168,14 @@ const filteredJobs = computed(() => {
           </template>
         </v-text-field>
       </div>
+         <el-date-picker
+      type="daterange"
+      range-separator="to"
+      start-placeholder="Start date"
+      end-placeholder="End date"
+      class="w-20 m-2"
+      size="small"
+    ></el-date-picker>
     </div>
 
     <div class="p-4">

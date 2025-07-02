@@ -3,30 +3,6 @@ import { useUserStore } from '@/stores/user'
 const approvalRiskLabels = ['very low', 'low', 'medium', 'high', 'very high']
 const approvalRiskColors = ['#1D7F3C', '#3B82F6', '#D9E86C', '#FCA5A5', '#DC2626']
 
-const approvalChartSeries = [
-  { name: 'very low', data: [40, 38, 41, 42, 39, 40] },
-  { name: 'low', data: [10, 0, 9, 9, 0, 8] },
-  { name: 'medium', data: [20, 19, 20, 20, 18, 19] },
-  { name: 'high', data: [10, 0, 10, 10, 0, 9] },
-  { name: 'very high', data: [10, 0, 10, 10, 0, 9] }
-]
-
-const approvalChartOptions = {
-  chart: { stacked: true, toolbar: { show: false } },
-  colors: approvalRiskColors,
-  xaxis: {
-    categories: ['May 1', 'May 2', 'May 3', 'May 4', 'May 5', 'May 6'],
-    labels: { style: { colors: '#4B5563' } }
-  },
-  yaxis: {
-    labels: { style: { colors: '#4B5563' } }
-  },
-  legend: { show: false },
-  plotOptions: { bar: { borderRadius: 4, columnWidth: '40%' } },
-  grid: { strokeDashArray: 4 },
-  dataLabels: { enabled: false }
-}
-
 const monthNames = [
   'Jan',
   'Feb',
@@ -52,11 +28,74 @@ export function useDashboardStats() {
 
   const stats = computed(() => userStore.dashboardStats ?? {})
 
+  const approvalRiskData = computed(() => stats.value.accepted_credit_jobs_by_risk_level ?? [])
+
+  // ✅ Simplified static bar chart for approval risk levels (no month info)
+  const approvalChartSeries = computed(() => [
+    {
+      name: 'Approved Jobs',
+      data: approvalRiskLabels.map((label) => {
+        const match = approvalRiskData.value.find((item) => item.risk_level.toLowerCase() === label)
+        return match ? match.count : 0
+      })
+    }
+  ])
+
+  const approvalChartOptions = computed(() => ({
+    chart: {
+      type: 'bar',
+      toolbar: { show: false }
+    },
+    plotOptions: {
+      bar: {
+        horizontal: false,
+        columnWidth: '45%',
+        borderRadius: 4,
+        distributed: true
+      }
+    },
+    xaxis: {
+      categories: approvalRiskLabels, // still required for correct bar positions/colors
+      labels: {
+        show: false // 👈 hides the x-axis text
+      }
+    },
+    yaxis: {
+    
+      labels: {
+        show: false 
+      }
+    },
+    colors: approvalRiskColors,
+    dataLabels: {
+      enabled: false
+    },
+    grid: {
+      strokeDashArray: 4,
+      xaxis: {
+        lines: {
+          show: false // disables X-axis grid lines
+        }
+      },
+      yaxis: {
+        lines: {
+          show: false // keep Y-axis grid lines if needed
+        }
+      }
+    },
+    legend: {
+      show: false
+    },
+    tooltip: {
+      theme: 'light'
+    }
+  }))
+
   const totalApplications = computed(() => stats.value.total_jobs ?? 0)
   const totalAccepted = computed(() => stats.value.total_accepted_jobs ?? 0)
   const totalDeclined = computed(() => stats.value.total_rejected_jobs ?? 0)
   const totalErrors = computed(() => stats.value.total_failed_jobs ?? 0)
-  const percentageAceepted = computed(() => stats.value.percentage_increase_accepted_job ?? 0)
+  const percentageAccepted = computed(() => stats.value?.percentage_increase_accepted_job ?? 0)
 
   const accepted = computed(() => stats.value.accepted_jobs_by_month ?? [])
   const rejected = computed(() => stats.value.rejected_jobs_by_months ?? [])
@@ -102,11 +141,14 @@ export function useDashboardStats() {
     },
     yaxis: {
       labels: {
-       formatter: (val) => (val >= 1000 ? `${(val / 1000).toFixed(0)}K` : val),
+        formatter: (val) => (val >= 1000 ? `${(val / 1000).toFixed(0)}K` : val),
         style: { colors: '#6b7280', fontSize: '14px' }
       }
     },
-    grid: { borderColor: '#e5e7eb', strokeDashArray: 0,  xaxis: {
+    grid: {
+      borderColor: '#e5e7eb',
+      strokeDashArray: 0,
+      xaxis: {
         lines: {
           show: false // disables X-axis grid lines
         }
@@ -115,8 +157,9 @@ export function useDashboardStats() {
         lines: {
           show: false // keep Y-axis grid lines if needed
         }
-      } },
-    
+      }
+    },
+
     legend: {
       position: 'top',
       horizontalAlign: 'right',
@@ -144,22 +187,21 @@ export function useDashboardStats() {
   const osLabels = computed(() => stats.value.jobs_by_os?.map((os) => os.user_agent) ?? [])
   const osData = computed(() => stats.value.jobs_by_os?.map((os) => os.count) ?? [])
   const osColorMap = {
-  'Safari/17.0': '#99F6E4',     // Mint (e.g. Mac)
-  'Chrome/120.0': '#8b8bba',    // Sky Blue (e.g. Windows)
-  'OneUi/7.0': '#BFDBFE',       // Light Blue (e.g. Android)
-  'DummyAgent/1.0': '#000000'   // Black (e.g. Unknown/Other)
-}
+    'Safari/17.0': '#99F6E4', // Mint (e.g. Mac)
+    'Chrome/120.0': '#8b8bba', // Sky Blue (e.g. Windows)
+    'OneUi/7.0': '#BFDBFE', // Light Blue (e.g. Android)
+    'DummyAgent/1.0': '#000000' // Black (e.g. Unknown/Other)
+  }
 
-const osColors = computed(() =>
-  osLabels.value.map(label => osColorMap[label] ?? '#E5E7EB') // fallback to light gray
-)
-
+  const osColors = computed(
+    () => osLabels.value.map((label) => osColorMap[label] ?? '#E5E7EB') // fallback to light gray
+  )
 
   const deviceSeries = computed(() => [{ name: 'Jobs', data: osData.value }])
 
   const deviceChartOptions = computed(() => ({
     chart: { toolbar: { show: false } },
-    plotOptions: { bar: { borderRadius: 3, columnWidth: '40%',distributed: true } },
+    plotOptions: { bar: { borderRadius: 3, columnWidth: '40%', distributed: true } },
     dataLabels: { enabled: false },
     xaxis: {
       categories: osLabels.value,
@@ -174,7 +216,7 @@ const osColors = computed(() =>
         style: { colors: '#6B7280' }
       }
     },
-     
+
     grid: {
       strokeDashArray: 0, // make all lines solid
       xaxis: {
@@ -189,7 +231,7 @@ const osColors = computed(() =>
       }
     },
     colors: osColors.value,
-      legend: { show: false } 
+    legend: { show: false }
   }))
 
   return {
@@ -211,6 +253,6 @@ const osColors = computed(() =>
     approvalChartOptions,
     approvalRiskLabels,
     approvalRiskColors,
-    percentageAceepted
+    percentageAccepted
   }
 }

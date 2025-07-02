@@ -1,60 +1,77 @@
 // src/stores/user.ts
 import { defineStore } from 'pinia'
+import type { User, Role, DashboardStats, LoginResponseData } from './types' 
 
 export const useUserStore = defineStore('user', {
   state: () => ({
     token: '',
-    user: null as any,
-    dashboardStats: null as any,
+    user: null as User | null,
+    dashboardStats: null as DashboardStats | null,
+    role: null as Role | null,
     permissions: [] as string[]
   }),
   actions: {
-    setUserData(data: any) {
+    setUserData(data: LoginResponseData) {
+      console.log('✅ setUserData called')
+      console.log('🚀 Raw user data from API:', data)
       this.token = data.token
       this.user = data.user
-
-      // extract permissions
-      this.permissions = data.user?.role?.permissions || []
+      this.role = data.user.role
+      this.permissions = data.user.role?.permissions || []
 
       this.dashboardStats = {
         total_accepted_jobs: data.total_accepted_jobs,
         total_rejected_jobs: data.total_rejected_jobs,
+        total_failed_jobs: data.total_failed_jobs,
         total_jobs: data.total_jobs,
         jobs_by_location: data.jobs_by_location,
         jobs_by_os: data.jobs_by_os,
         accepted_jobs_by_month: data.accepted_jobs_by_month,
-        rejected_jobs_by_months: data.rejected_jobs_by_months
+        rejected_jobs_by_months: data.rejected_jobs_by_months,
+        percentage_increase_accepted_job: data.percentage_increase_accepted_job,
+        percentage_increase_rejected_job: data.percentage_increase_rejected_job,
+        percentage_increase_failed_job: data.percentage_increase_failed_job,
+        accepted_credit_jobs_by_risk_level: data.accepted_credit_jobs_by_risk_level
       }
-
+      console.log('stats:', this.dashboardStats)
       // Store in localStorage
       localStorage.setItem('token', data.token)
       localStorage.setItem('user', JSON.stringify(data.user))
-      localStorage.setItem('permissions', JSON.stringify(this.permissions))
       localStorage.setItem('dashboardStats', JSON.stringify(this.dashboardStats))
-    },
-
-    hasPermission(permission: string) {
-      return this.permissions.includes(permission)
+      localStorage.setItem('role', JSON.stringify(this.role))
+      localStorage.setItem('permissions', JSON.stringify(this.permissions))
     },
 
     initFromStorage() {
-      const user = localStorage.getItem('user')
-      const permissions = localStorage.getItem('permissions')
-      const dashboardStats = localStorage.getItem('dashboardStats')
       const token = localStorage.getItem('token')
+      const user = localStorage.getItem('user')
+      const dashboardStats = localStorage.getItem('dashboardStats')
+      const role = localStorage.getItem('role')
+      const permissions = localStorage.getItem('permissions')
 
-      if (user) this.user = JSON.parse(user)
-      if (permissions) this.permissions = JSON.parse(permissions)
-      if (dashboardStats) this.dashboardStats = JSON.parse(dashboardStats)
-      if (token) this.token = token
+      if (token && user && dashboardStats && role && permissions) {
+        this.token = token
+        this.user = JSON.parse(user)
+        this.dashboardStats = JSON.parse(dashboardStats)
+        this.role = JSON.parse(role)
+        this.permissions = JSON.parse(permissions)
+        console.log('✅ User store initialized')
+      } else {
+        console.warn('⚠️ No valid user data found in localStorage')
+      }
     },
 
     logout() {
       this.token = ''
       this.user = null
+      this.role = null
       this.permissions = []
       this.dashboardStats = null
       localStorage.clear()
+    },
+
+    hasPermission(permission: string) {
+      return this.permissions.includes(permission)
     }
   }
 })

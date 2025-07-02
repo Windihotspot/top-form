@@ -1,7 +1,5 @@
 <template>
   <MainLayout>
-    <v-btn @click="() => showSnackbar('Test message', 'success')">Test Snackbar</v-btn>
-
     <div class="px-6 py-4">
       <h2 class="text-lg font-semibold mb-4">Business Logic</h2>
 
@@ -26,25 +24,7 @@
           <div>
             <p class="text-sm text-gray-600">Adjust your weights used in the scoring mechanism</p>
           </div>
-          <v-snackbar
-            v-model="snackbar.show"
-            location="top end"
-            timeout="4000"
-            :multi-line="false"
-            :color="null"
-            class="z-50 p-0 bg-transparent shadow-none"
-          >
-            <div
-              class="flex items-start p-4 border-2 border-white rounded-lg shadow-md bg-gradient-to-r from-green-100 to-green-200"
-            >
-              <i class="fas fa-check-circle text-green-600 text-xl sm:text-2xl"></i>
-              <div class="ml-3">
-                <p class="text-green-700 text-sm sm:text-base font-medium">
-                  {{ snackbar.message }}
-                </p>
-              </div>
-            </div>
-          </v-snackbar>
+          <!-- Toast Notification -->
 
           <div class="p-6 bg-white rounded mt-4">
             <div class="flex justify-end mb-6">
@@ -304,6 +284,7 @@
 import MainLayout from '@/layouts/full/MainLayout.vue'
 import { ref, reactive, onMounted } from 'vue'
 import api from '@/api'
+import { ElMessage } from 'element-plus'
 
 const savingApply = ref(false)
 const savingDeploy = ref(false)
@@ -315,15 +296,13 @@ const snackbar = ref({
   color: 'success'
 })
 
-function showSnackbar(message, color = 'success') {
-  console.log('SNACKBAR CALLED:', message, color)
-  snackbar.value.message = message
-  snackbar.value.color = color
-  snackbar.value.show = true
-
-  setTimeout(() => {
-    snackbar.value.show = false
-  }, 4000)
+function showSnackbar(message, type = 'success') {
+  ElMessage({
+    message,
+    type, // 'success', 'warning', 'info', 'error'
+    duration: 4000,
+    showClose: true
+  })
 }
 
 const tab = ref('scoreWeights')
@@ -615,6 +594,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.v-slider {
+  --v-slider-track-size: 4px;
+  --v-slider-thumb-size: 12px;
+}
+
 .v-tab {
   text-transform: none;
 }

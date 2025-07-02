@@ -13,8 +13,7 @@ const formatCurrency = (amount) => {
     minimumFractionDigits: 2
   }).format(amount)
 }
-
-
+const loading = ref(false)
 const jobs = ref([])
 const isLoading = ref(true)
 const selectedStatus = ref(null)
@@ -41,19 +40,49 @@ const fetchJobs = async () => {
   }
 }
 
+const exportCsv = async () => {
+  loading.value = true
+
+  try {
+    const response = await api.get('/export-csv', {
+      params: {
+        per_page: 2,
+        page: 1
+      },
+      responseType: 'blob' // Ensure we receive it as a Blob
+    })
+
+    // Create a URL for the Blob
+    const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' })
+    const url = window.URL.createObjectURL(blob)
+
+    // Create a temporary link and trigger download
+    const link = document.createElement('a')
+    link.href = url
+    link.setAttribute('download', `exported-jobs-${Date.now()}.csv`)
+    document.body.appendChild(link)
+    link.click()
+
+    // Clean up
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+  } catch (error) {
+    console.log('Failed to export csv:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
 onMounted(fetchJobs)
 
 // Filtered jobs for search and/or status filter
-
 
 const filteredJobs = computed(() => {
   const query = searchQuery.value.toLowerCase()
 
   return jobs.value.filter((job) => {
     // 1. Filter by status
-    const matchStatus = selectedStatus.value
-      ? job.overall_decision === selectedStatus.value
-      : true
+    const matchStatus = selectedStatus.value ? job.overall_decision === selectedStatus.value : true
 
     // 2. Filter by search query (across visible fields)
     const searchableFields = [
@@ -87,15 +116,14 @@ const filteredJobs = computed(() => {
         return formatCurrency(value).toLowerCase().includes(query)
       }
 
-      return String(value ?? '').toLowerCase().includes(query)
+      return String(value ?? '')
+        .toLowerCase()
+        .includes(query)
     })
 
     return matchStatus && matchSearch
   })
 })
-
-
-
 </script>
 
 <template>
@@ -152,8 +180,8 @@ const filteredJobs = computed(() => {
       <!-- Table -->
       <div v-else>
         <div class="flex justify-end items-center mb-4">
-          
           <button
+            @click="exportCsv"
             class="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-black"
           >
             <i class="fas fa-download"></i>
@@ -188,21 +216,20 @@ const filteredJobs = computed(() => {
             </thead>
             <tbody class="divide-y divide-gray-200">
               <tr v-for="(job, index) in filteredJobs" :key="index" class="hover:bg-gray-50">
-               
                 <td class="px-4 py-3">{{ index + 1 }}</td>
-                <td class=" py-3">{{ moment(job.application_date).format('LL') }}</td>
+                <td class="py-3">{{ moment(job.application_date).format('LL') }}</td>
                 <td class="px-4 py-3">{{ job.application_id }}</td>
                 <td class="px-4 py-3">{{ formatCurrency(job.requested_amount) }}</td>
                 <td class="px-4 py-3">{{ job.internal_score }}</td>
                 <td class="px-4 py-3">{{ job.credit_score }}</td>
                 <td class="px-4 py-3">{{ job.age }}</td>
-                <td class="px-4 py-3">{{ job.income }}</td>
-                <td class=" py-3">{{ job.employment_type }}</td>
+                <td class="px-4 py-3">{{ formatCurrency(job.income) }}</td>
+                <td class="py-3">{{ job.employment_type }}</td>
                 <td class="px-4 py-3">{{ job.industry }}</td>
                 <td class="px-4 py-3">{{ job.risk_level }}</td>
                 <td class="px-4 py-3">{{ job.education_level }}</td>
                 <td class="px-4 py-3">{{ job.residence }}</td>
-                <td class=" py-3">{{ job.kyc_level }}</td>
+                <td class="py-3">{{ job.kyc_level }}</td>
                 <td class="px-4 py-3">{{ job.marital_status }}</td>
                 <td class="px-4 py-3">{{ job.state }}</td>
                 <td class="px-4 py-3">

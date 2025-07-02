@@ -4,6 +4,7 @@ import api from '@/api'
 import MainLayout from '@/layouts/full/MainLayout.vue'
 
 import moment from 'moment'
+const dateRange = ref([])
 
 const formatCurrency = (amount) => {
   if (isNaN(amount)) return amount
@@ -18,7 +19,7 @@ const jobs = ref([])
 const isLoading = ref(true)
 const selectedStatus = ref(null)
 const searchQuery = ref('')
-const statuses = ['ACCEPT', 'REJECT', 'PENDING'] // Adjust as needed
+const statuses = ['all', 'accept', 'reject', 'pending']
 
 const fetchJobs = async () => {
   isLoading.value = true
@@ -59,7 +60,7 @@ const exportCsv = async () => {
     // Create a temporary link and trigger download
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download', `exported-jobs-${Date.now()}.csv`)
+    link.setAttribute('download',  `exported-jobs-${moment().format('YYYY-MM-DD_HH-mm-ss')}.csv`)
     document.body.appendChild(link)
     link.click()
 
@@ -81,10 +82,20 @@ const filteredJobs = computed(() => {
   const query = searchQuery.value.toLowerCase()
 
   return jobs.value.filter((job) => {
-    // 1. Filter by status
-    const matchStatus = selectedStatus.value ? job.overall_decision === selectedStatus.value : true
+    const jobDate = job.application_date // should be in 'YYYY-MM-DD' format
 
-    // 2. Filter by search query (across visible fields)
+    const matchDate =
+      !dateRange.value.length ||
+      (moment(jobDate).isSameOrAfter(dateRange.value[0]) &&
+        moment(jobDate).isSameOrBefore(dateRange.value[1]))
+
+    // 1. Filter by status
+    const matchStatus =
+      !selectedStatus.value || selectedStatus.value === 'all'
+        ? true
+        : job.overall_decision?.toLowerCase() === selectedStatus.value
+
+    // 2. Filter by search query
     const searchableFields = [
       'application_date',
       'application_id',
@@ -107,7 +118,6 @@ const filteredJobs = computed(() => {
     const matchSearch = searchableFields.some((field) => {
       const value = job[field]
 
-      // Format dates and currency to match what user sees
       if (field === 'application_date') {
         return moment(value).format('LL').toLowerCase().includes(query)
       }
@@ -121,7 +131,7 @@ const filteredJobs = computed(() => {
         .includes(query)
     })
 
-    return matchStatus && matchSearch
+    return matchDate && matchStatus && matchSearch
   })
 })
 </script>
@@ -130,7 +140,7 @@ const filteredJobs = computed(() => {
   <MainLayout>
     <div class="p-4 rounded shadow bg-white m-4">
       <!-- Title -->
-      <div class="mb-2 ">
+      <div class="mb-2">
         <h1 class="text-lg font-bold">Job List</h1>
       </div>
 
@@ -147,7 +157,7 @@ const filteredJobs = computed(() => {
             density="compact"
             hide-details
             variant="outlined"
-              class="w-32 min-h-0 h-8 text-sm"
+            class="w-32 min-h-0 h-8 text-sm"
           ></v-select>
         </div>
 
@@ -168,14 +178,16 @@ const filteredJobs = computed(() => {
           </template>
         </v-text-field>
       </div>
-         <el-date-picker
-      type="daterange"
-      range-separator="to"
-      start-placeholder="Start date"
-      end-placeholder="End date"
-      class="w-20 m-2"
-      size="small"
-    ></el-date-picker>
+      <el-date-picker
+        v-model="dateRange"
+        type="daterange"
+        start-placeholder="Start date"
+        end-placeholder="End date"
+        format="YYYY-MM-DD"
+        value-format="YYYY-MM-DD"
+        class="m-4"
+        size="small"
+      />
     </div>
 
     <div class="p-4">
@@ -186,7 +198,7 @@ const filteredJobs = computed(() => {
       </div>
 
       <!-- Table -->
-      <div v-else>
+      <div v-else class="overflow-y-auto">
         <div class="flex justify-end items-center mb-4">
           <button
             @click="exportCsv"

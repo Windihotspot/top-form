@@ -1,7 +1,7 @@
 <template>
   <MainLayout>
     <div class="px-6 py-4">
-      <h2 class="text-lg font-semibold mb-4">Business Logic</h2>
+      <h2 class="text-md font-semibold mb-4">Business Logic</h2>
 
       <v-tabs v-model="tab" color="blue" class="border-b border-blue-200" density="compact">
         <v-tab
@@ -10,7 +10,7 @@
           :value="item.value"
           class="text-sm capitalize"
           :class="{
-            'text-black font-semibold border-b-2 border-blue-600': tab === item.value,
+            'text-black font-semibold border-b-4 border-blue-600': tab === item.value,
             'text-gray-500': tab !== item.value
           }"
         >
@@ -260,18 +260,87 @@
           <div class="bg-white rounded p-4">
             <div class="flex justify-between mb-6 justify-end">
               <div class="space-x-2">
-                <v-btn size="small" color="primary" variant="flat">Apply Changes</v-btn>
-                <v-btn size="small" color="success" variant="flat">Deploy Changes</v-btn>
+                <v-btn
+                  size="small"
+                  color="primary"
+                  variant="flat"
+                  :loading="savingThresholdApply"
+                  :disabled="savingThresholdApply"
+                  @click="() => runThresholdAction('apply')"
+                >
+                  Apply Changes
+                </v-btn>
+
+                <v-btn
+                  size="small"
+                  color="success"
+                  variant="flat"
+                  :loading="savingThresholdDeploy"
+                  :disabled="!thresholdBatchId || savingThresholdDeploy"
+                  @click="() => runThresholdAction('deploy')"
+                >
+                  Deploy Changes
+                </v-btn>
               </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <!-- Left Side -->
 
-              <v-text-field label="Base Loan Value (₦)" variant="outlined" hide-details />
-              <v-text-field label="Minimum Loan Amount (₦)" variant="outlined" hide-details />
-              <v-text-field label="Maximum Loan Amount (₦)" variant="outlined" hide-details />
-              <v-text-field label="Minimum Age for Loans" variant="outlined" hide-details />
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"
+                  >Base Loan Value (₦)</label
+                >
+                <v-text-field
+                  v-model.number="thresholds.base_loan_value"
+                  variant="outlined"
+                  hide-details
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"
+                  >Minimum Loan Amount (₦)</label
+                >
+                <v-text-field
+                  v-model.number="thresholds.minimum_loan_amount"
+                  variant="outlined"
+                  hide-details
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"
+                  >Maximum Loan Amount (₦)</label
+                >
+                <v-text-field
+                  v-model.number="thresholds.maximum_loan_amount"
+                  variant="outlined"
+                  hide-details
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"
+                  >Minimum Age for Loans</label
+                >
+                <v-text-field
+                  v-model.number="thresholds.minimum_loan_age"
+                  variant="outlined"
+                  hide-details
+                />
+              </div>
+
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1"
+                  >Maximum Age for Loans</label
+                >
+                <v-text-field
+                  v-model.number="thresholds.maximum_loan_age"
+                  variant="outlined"
+                  hide-details
+                />
+              </div>
             </div>
           </div>
         </v-tabs-window-item>
@@ -289,12 +358,6 @@ import { ElMessage } from 'element-plus'
 const savingApply = ref(false)
 const savingDeploy = ref(false)
 const loading = ref(false)
-
-const snackbar = ref({
-  show: false,
-  message: '',
-  color: 'success'
-})
 
 function showSnackbar(message, type = 'success') {
   ElMessage({
@@ -488,13 +551,10 @@ const runThresholdAction = async (action = 'apply') => {
   if (action === 'deploy') savingThresholdDeploy.value = true
 
   try {
-    if (action === 'apply') {
-      const payload = {
-        thresholds: { ...thresholds }
-      }
+    const payload = { thresholds: { ...thresholds } }
 
+    if (action === 'apply') {
       const response = await api.post('/adjust-thresholds', payload)
-      console.log(`${action} thresholds response:`, response)
       thresholdBatchId.value = response?.data?.data?.batch_id
     }
 
@@ -503,19 +563,19 @@ const runThresholdAction = async (action = 'apply') => {
       return
     }
 
-    const deployResponse = await api.post('/integrate-batch', {
+    const response = await api.post('/integrate-threshold-batch', {
       batch_id: thresholdBatchId.value,
       action
     })
-    console.log(`${action} threshold deploy response:`, deployResponse)
 
-    showSnackbar(`Thresholds ${action}ed successfully`, 'success')
+    // Show different messages based on current tab
+    const section = tab.value === 'generalSettings' ? 'General Settings' : 'Thresholds'
+    showSnackbar(`${section} ${action}ed successfully`, 'success')
   } catch (error) {
     const errorMessage =
       error?.response?.data?.data?.error ||
       error?.response?.data?.message ||
       `An error occurred during thresholds ${action}`
-    console.error(`${action} thresholds process failed:`, errorMessage)
     showSnackbar(errorMessage, 'error')
   } finally {
     if (action === 'apply') savingThresholdApply.value = false

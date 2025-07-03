@@ -28,7 +28,9 @@ const {
   approvalChartOptions,
   approvalRiskLabels,
   approvalRiskColors,
-  percentageAccepted
+  percentageAccepted,
+  percentageFailed,
+  percentageRejected
 } = useDashboardStats()
 
 console.log('📊 Composable Dashboard Data:', {
@@ -59,7 +61,11 @@ console.log('📊 Composable Dashboard Data:', {
     labels: approvalRiskLabels,
     colors: approvalRiskColors
   },
-  percentageAccepted: percentageAccepted.value
+  percentage: {
+    percentageAccepted: percentageAccepted.value,
+    percentageRejected: percentageRejected.value,
+    percentageFailed: percentageFailed.value
+  }
 })
 </script>
 
@@ -75,7 +81,7 @@ console.log('📊 Composable Dashboard Data:', {
           label="Total Applications"
           :value="totalApplications"
           colorClass="bg-indigo-50"
-          :percentage="percentageAccepted"
+          :percentage="0"
         />
         <AnimatedStats
           label="Total Accepted"
@@ -85,13 +91,13 @@ console.log('📊 Composable Dashboard Data:', {
         />
         <AnimatedStats
           label="Total Declined"
-          :percentage="percentageAccepted"
+          :percentage="percentageRejected"
           :value="totalDeclined"
           colorClass="bg-purple-50"
         />
         <AnimatedStats
           label="Total Errors"
-          :percentage="percentageAccepted"
+          :percentage="0"
           :value="totalErrors"
           colorClass="bg-blue-100"
         />
@@ -109,7 +115,7 @@ console.log('📊 Composable Dashboard Data:', {
       <!-- Location -->
       <div class="p-4 bg-white rounded">
         <div class="flex justify-between items-center mb-4">
-          <h2 class="text-sm font-semibold ">Traffic by Location</h2>
+          <h2 class="text-sm font-semibold">Traffic by Location</h2>
           <!-- <v-select
             v-model="selectedLocation"
             :items="locationOptions"

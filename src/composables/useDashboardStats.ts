@@ -30,72 +30,106 @@ export function useDashboardStats() {
 
   const approvalRiskData = computed(() => stats.value.accepted_credit_jobs_by_risk_level ?? [])
 
-  // ✅ Simplified static bar chart for approval risk levels (no month info)
-  const approvalChartSeries = computed(() => [
-    {
-      name: 'Approved Jobs',
-      data: approvalRiskLabels.map((label) => {
-        const match = approvalRiskData.value.find((item) => item.risk_level.toLowerCase() === label)
-        return match ? match.count : 0
+  function getStackedApprovalData(data, riskLabels, months) {
+    const monthlyRiskMap = {}
+
+    months.forEach((month) => {
+      monthlyRiskMap[month] = {}
+      riskLabels.forEach((label) => {
+        monthlyRiskMap[month][label.toLowerCase()] = 0
       })
-    }
-  ])
+    })
+
+    data.forEach(({ risk_level, month, count }) => {
+      const level = risk_level.toLowerCase()
+      if (monthlyRiskMap[month]) {
+        monthlyRiskMap[month][level] += count
+      } else {
+        // For any month not pre-filled
+        monthlyRiskMap[month] = { [level]: count }
+      }
+    })
+
+    return riskLabels.map((label) => ({
+      name: label,
+      data: months.map((month) => monthlyRiskMap[month]?.[label.toLowerCase()] ?? 0)
+    }))
+  }
+
+  const approvalChartSeries = computed(() =>
+    getStackedApprovalData(approvalRiskData.value, approvalRiskLabels, monthNumbers.value)
+  )
 
   const approvalChartOptions = computed(() => ({
     chart: {
       type: 'bar',
+      stacked: true,
       toolbar: { show: false }
     },
     plotOptions: {
       bar: {
         horizontal: false,
-        columnWidth: '45%',
         borderRadius: 4,
-        distributed: true
+        columnWidth: '40%'
       }
     },
     xaxis: {
-      categories: approvalRiskLabels, // still required for correct bar positions/colors
+      categories: monthNumbers.value.map((m) => {
+        const date = new Date(2025, m - 1, 1)
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+      }),
       labels: {
-        show: false // 👈 hides the x-axis text
+        rotate: 0,
+        style: { fontSize: '12px' }
       }
     },
     yaxis: {
-    
       labels: {
-        show: false 
+        style: { fontSize: '12px' }
       }
     },
     colors: approvalRiskColors,
+    legend: { show: false },
     dataLabels: {
       enabled: false
     },
-    grid: {
-      strokeDashArray: 4,
-      xaxis: {
-        lines: {
-          show: false // disables X-axis grid lines
-        }
-      },
-      yaxis: {
-        lines: {
-          show: false // keep Y-axis grid lines if needed
-        }
-      }
-    },
-    legend: {
-      show: false
-    },
     tooltip: {
+      shared: true,
+      intersect: false,
       theme: 'light'
-    }
+    },
+    grid: {
+      yaxis: {
+        lines: { show: false }
+      },
+      xaxis: {
+        lines: { show: false }
+      },
+     
+    },
+    
   }))
 
   const totalApplications = computed(() => stats.value.total_jobs ?? 0)
   const totalAccepted = computed(() => stats.value.total_accepted_jobs ?? 0)
   const totalDeclined = computed(() => stats.value.total_rejected_jobs ?? 0)
   const totalErrors = computed(() => stats.value.total_failed_jobs ?? 0)
-  const percentageAccepted = computed(() => stats.value?.percentage_increase_accepted_job ?? 0)
+  const percentageAccepted = computed(() => {
+  const val = Number(stats.value?.percentage_increase_accepted_job ?? 0)
+  return Number(val.toFixed(2))
+})
+
+const percentageRejected = computed(() => {
+  const val = Number(stats.value?.percentage_increase_rejected_job ?? 0)
+  return Number(val.toFixed(2))
+})
+
+const percentageFailed = computed(() => {
+  const val = Number(stats.value?.percentage_increase_failed_job ?? 0)
+  return Number(val.toFixed(2))
+})
+
+  
 
   const accepted = computed(() => stats.value.accepted_jobs_by_month ?? [])
   const rejected = computed(() => stats.value.rejected_jobs_by_months ?? [])
@@ -122,7 +156,7 @@ export function useDashboardStats() {
 
   const chartOptions = computed(() => ({
     chart: { type: 'line', toolbar: { show: false }, zoom: { enabled: false } },
-    stroke: { curve: 'smooth', width: [1, 2] },
+    stroke: { curve: 'smooth', width: [1, 1],dashArray: [0, 3] },
     colors: ['#22c55e', '#ef4444'],
     fill: {
       type: 'gradient',
@@ -253,6 +287,8 @@ export function useDashboardStats() {
     approvalChartOptions,
     approvalRiskLabels,
     approvalRiskColors,
-    percentageAccepted
+    percentageAccepted,
+    percentageFailed,
+    percentageRejected,
   }
 }

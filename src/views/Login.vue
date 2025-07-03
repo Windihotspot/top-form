@@ -51,7 +51,7 @@ const slides = ref([
   {
     title: 'Credit Decision AI',
     text:
-      'Of all document fraud cases, 51% involve an ID card, 27% a driver’s license, and 19% a passport. With YouVerify OS, you can mitigate these risks effectively.'
+      'Of all document fraud cases, 51% involve an ID card, 27% a driver’s license, and 19% a passport. With FlowkyAI, you can mitigate these risks effectively.'
   },
   {
     title: 'Credit Decision AI',

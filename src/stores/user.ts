@@ -1,6 +1,6 @@
 // src/stores/user.ts
 import { defineStore } from 'pinia'
-import type { User, Role, DashboardStats, LoginResponseData } from './types' 
+import type { User, Role, DashboardStats, LoginResponseData } from './types'
 
 export const useUserStore = defineStore('user', {
   state: () => ({
@@ -8,7 +8,8 @@ export const useUserStore = defineStore('user', {
     user: null as User | null,
     dashboardStats: null as DashboardStats | null,
     role: null as Role | null,
-    permissions: [] as string[]
+    permissions: [] as string[],
+    refreshToken: '' as string
   }),
   actions: {
     setUserData(data: LoginResponseData) {
@@ -17,7 +18,9 @@ export const useUserStore = defineStore('user', {
       this.token = data.token
       this.user = data.user
       this.role = data.user.role
-      this.permissions = data.user.role?.permissions || []
+      ;(this.permissions = data.user.role?.permissions || []),
+        (this.refreshToken = data.refresh_token), // <- Add this
+        localStorage.setItem('refreshToken', data.refresh_token)
 
       this.dashboardStats = {
         total_accepted_jobs: data.total_accepted_jobs,
@@ -48,6 +51,8 @@ export const useUserStore = defineStore('user', {
       const dashboardStats = localStorage.getItem('dashboardStats')
       const role = localStorage.getItem('role')
       const permissions = localStorage.getItem('permissions')
+      const refreshToken = localStorage.getItem('refreshToken')
+      if (refreshToken) this.refreshToken = refreshToken
 
       if (token && user && dashboardStats && role && permissions) {
         this.token = token
@@ -57,7 +62,7 @@ export const useUserStore = defineStore('user', {
         this.permissions = JSON.parse(permissions)
         console.log('✅ User store initialized')
       } else {
-        console.warn('⚠️ No valid user data found in localStorage')
+        console.log('⚠️ No valid user data found in localStorage')
       }
     },
 

@@ -5,8 +5,7 @@ import { useRouter } from 'vue-router'
 
 export const useLogin = () => {
   const userStore = useUserStore()
-  const router = useRouter()
-
+const router = useRouter()
   const login = async (email: string, password: string) => {
     try {
       const response = await api.post('/login', { email, password })
@@ -23,14 +22,35 @@ export const useLogin = () => {
         // Navigate only on success
         router.push('/dashboard')
       } else {
-        console.warn('Login failed:', response.data)
+        console.log('Login failed:', response.data)
         throw new Error(response.data.message || 'Login failed')
       }
     } catch (error: any) {
-      console.error('Login error:', error.response?.data || error.message)
+      console.log('Login error:', error.response?.data || error.message)
       throw error.response?.data
     }
   }
 
   return { login }
+}
+
+export const useLogout = () => {
+  
+const router = useRouter()
+  const logout = async () => {
+    try {
+      const response = await api.post('/logout')
+
+      // Handle the successful logout
+      console.log('Logged out successfully:', response.data)
+
+      // Redirect to login page or any other page
+      router.push('/')
+    } catch (error: any) {
+      console.log('Logout error:', error.response?.data || error.message)
+      throw error.response?.data
+    }
+  }
+
+  return { logout }
 }

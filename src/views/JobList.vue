@@ -183,25 +183,34 @@ const formatJson = (data) => {
   return JSON.stringify(data, null, 2)
 }
 
+import { toRaw } from 'vue'
+
 const copyToClipboard = async () => {
-  const jsonText = formatJson(jobDetail?.data?.sofri_data ?? jobDetail)
   try {
+    // ✅ Safely extract plain object
+    const rawData = toRaw(jobDetail.value?.data?.sofri_data ?? jobDetail.value)
+
+    const jsonText = JSON.stringify(rawData, null, 2)
+
     await navigator.clipboard.writeText(jsonText)
+
     ElNotification({
       title: 'Copied!',
       message: 'JSON response copied to clipboard.',
       type: 'success',
-      duration: 3000
+      duration: 2000,
+      zIndex: 9999,
     })
   } catch (err) {
     console.error('Failed to copy', err)
     ElNotification({
       title: 'Error',
       message: 'Failed to copy to clipboard.',
-      type: 'error'
+      type: 'error',
     })
   }
 }
+
 </script>
 
 <template>
@@ -344,7 +353,7 @@ const copyToClipboard = async () => {
           </table>
         </div>
 
-        <v-dialog v-model="dialog" max-width="800">
+        <v-dialog v-model="dialog" max-width="800" min-height="550">
           <v-card>
             <v-card-title class="flex justify-between items-center text-lg font-semibold pa-4">
               <div class="flex items-center justify-end space-x-4">

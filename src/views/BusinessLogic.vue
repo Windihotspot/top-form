@@ -77,7 +77,7 @@
 
         <v-tabs-window-item value="assignScores">
           <div class="p-6 bg-white rounded shadow">
-            <h2 class="text-2xl font-semibold mb-6">Assign Scores</h2>
+            
 
             <div class="mt-4 mb-4 flex justify-end gap-4">
               <div class="space-x-2">
@@ -107,20 +107,18 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
               <div v-for="(category, key) in scoreData" :key="key">
-                <h3 class="font-semibold text-sm mb-2">{{ key }}</h3>
+                <h3 class="font-semibold text-xs mb-2">{{ key }}</h3>
                 <div class="space-y-2">
                   <div
                     v-for="item in category"
                     :key="item.label"
-                    class="flex items-center justify-between"
+                    class="flex items-center justify-between text-xs"
                   >
                     <span>{{ item.label }}</span>
                     <input
                       type="number"
-                      class="w-20 px-2 py-1 border rounded text-right"
+                      class="w-20 px-2 py-1 border rounded no-spinner text-xs"
                       v-model.number="item.score"
-                      min="0"
-                      step="0.5"
                     />
                   </div>
                 </div>
@@ -157,100 +155,190 @@
               </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-              <v-text-field
-                label="Minimum Loan Amount (₦)"
-                v-model.number="thresholds.minimum_loan_amount"
-                variant="outlined"
-                density="compact"
-                hide-details
-              />
+              <div class="flex flex-col space-y-1">
+                <label class="text-sm font-medium text-gray-700">Minimum Loan Amount (₦)</label>
+                <v-text-field
+                type="number"
+                  v-model.number="thresholds.minimum_loan_amount"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                />
+              </div>
 
-              <v-text-field
-                label="Maximum Loan Amount (₦)"
-                v-model.number="thresholds.maximum_loan_amount"
-                variant="outlined"
-                density="compact"
-                hide-details
-              />
+              <div class="flex flex-col space-y-1">
+                <label class="text-sm font-medium text-gray-700">Maximum Loan Amount (₦)</label>
+                <v-text-field
+                type="number"
+                  v-model.number="thresholds.maximum_loan_amount"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                />
+              </div>
 
-              <v-text-field
-                label="Minimum Loan Age"
-                v-model.number="thresholds.minimum_loan_age"
-                variant="outlined"
-                density="compact"
-                hide-details
-              />
+              <div class="flex flex-col space-y-1">
+                <label class="text-sm font-medium text-gray-700">Minimum Loan Age</label>
+                <v-text-field
+                type="number"
+                  v-model.number="thresholds.minimum_loan_age"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                />
+              </div>
 
-              <v-text-field
-                label="Maximum Loan Age"
-                v-model.number="thresholds.maximum_loan_age"
-                variant="outlined"
-                density="compact"
-                hide-details
-              />
+              <div class="flex flex-col space-y-1">
+                <label class="text-sm font-medium text-gray-700">Maximum Loan Age</label>
+                <v-text-field
+                type="number"
+                  v-model.number="thresholds.maximum_loan_age"
+                  variant="outlined"
+                  density="compact"
+                  hide-details
+                />
+              </div>
             </div>
           </div>
         </v-tabs-window-item>
 
         <v-tabs-window-item value="multipliers">
           <div class="bg-white rounded p-4">
-            <div class="flex justify-between mb-6 justify-end">
+            <div class="flex justify-between mb-8 justify-end">
               <div class="space-x-2">
                 <v-btn size="small" color="primary" variant="flat">Apply Changes</v-btn>
                 <v-btn size="small" color="success" variant="flat">Deploy Changes</v-btn>
               </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <!-- Tenor Multipliers -->
-              <div>
-                <h3 class="text-lg font-semibold mb-4">Tenor Multipliers</h3>
-                <v-text-field label="30 Days Tenor Multiplier" variant="outlined"></v-text-field>
-                <v-text-field label="60 Days Tenor Multiplier" variant="outlined"></v-text-field>
-                <v-text-field label="90 Days Tenor Multiplier" variant="outlined"></v-text-field>
-                <v-text-field label="120 Days Tenor Multiplier" variant="outlined"></v-text-field>
-                <v-text-field label="180 Days Tenor Multiplier" variant="outlined"></v-text-field>
-              </div>
-
               <!-- Internal Score Multipliers -->
               <div>
-                <h3 class="text-lg font-semibold mb-4">Internal Score Multipliers</h3>
-                <v-text-field label="Score > 760 Multiplier" variant="outlined"></v-text-field>
-                <v-text-field label="Score 501–600 Multiplier" variant="outlined"></v-text-field>
-                <v-text-field label="Score 451–500 Multiplier" variant="outlined"></v-text-field>
-                <v-text-field label="Score 351–450 Multiplier" variant="outlined"></v-text-field>
-                <v-text-field label="Score < 350 Multiplier" variant="outlined"></v-text-field>
+                <h3 class="text-sm font-semibold mb-4">Internal Score Multipliers</h3>
+                <div class="flex flex-col space-y-4">
+                  <div>
+                    <label class="text-sm font-medium text-gray-700"
+                      >Score &gt; 760 Multiplier</label
+                    >
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700"
+                      >Score 501–600 Multiplier</label
+                    >
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700"
+                      >Score 451–500 Multiplier</label
+                    >
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700"
+                      >Score 351–450 Multiplier</label
+                    >
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700"
+                      >Score &lt; 350 Multiplier</label
+                    >
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                </div>
               </div>
 
               <!-- Credit Score Multipliers -->
               <div>
-                <h3 class="text-lg font-semibold mb-4">Credit Score Multipliers</h3>
-                <v-text-field label="Score > 760 Multiplier" variant="outlined"></v-text-field>
-                <v-text-field label="Score 501–600 Multiplier" variant="outlined"></v-text-field>
-                <v-text-field label="Score 451–500 Multiplier" variant="outlined"></v-text-field>
-                <v-text-field label="Score 351–450 Multiplier" variant="outlined"></v-text-field>
-                <v-text-field label="Score < 350 Multiplier" variant="outlined"></v-text-field>
+                <h3 class="text-sm font-semibold mb-4">Credit Score Multipliers</h3>
+                <div class="flex flex-col space-y-4">
+                  <div>
+                    <label class="text-sm font-medium text-gray-700"
+                      >Score &gt; 760 Multiplier</label
+                    >
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700"
+                      >Score 501–600 Multiplier</label
+                    >
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700"
+                      >Score 451–500 Multiplier</label
+                    >
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700"
+                      >Score 351–450 Multiplier</label
+                    >
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700"
+                      >Score &lt; 350 Multiplier</label
+                    >
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                </div>
               </div>
 
               <!-- Income Multipliers -->
               <div>
-                <h3 class="text-lg font-semibold mb-4 mt-8 md:mt-0">Income Multipliers</h3>
-                <v-text-field label="200,000 and above" variant="outlined"></v-text-field>
-                <v-text-field label="100,000 – 199,999" variant="outlined"></v-text-field>
-                <v-text-field label="90,000 – 99,999" variant="outlined"></v-text-field>
-                <v-text-field label="80,000 – 89,999" variant="outlined"></v-text-field>
-                <v-text-field label="70,000 – 79,999" variant="outlined"></v-text-field>
+                <h3 class="text-sm font-semibold mb-4 md:mt-0">Income Multipliers</h3>
+                <div class="flex flex-col space-y-4">
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">200,000 and above</label>
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">100,000 – 199,999</label>
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">90,000 – 99,999</label>
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">80,000 – 89,999</label>
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">70,000 – 79,999</label>
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                </div>
               </div>
 
               <!-- Ontime Repayment Multipliers -->
               <div>
-                <h3 class="text-lg font-semibold mb-4 mt-8 md:mt-0">
+                <h3 class="text-sm font-semibold mb-4 mt-8 md:mt-0">
                   Ontime Repayment Multipliers
                 </h3>
-                <v-text-field label="100%" variant="outlined"></v-text-field>
-                <v-text-field label=">= 80%" variant="outlined"></v-text-field>
-                <v-text-field label=">= 70%" variant="outlined"></v-text-field>
-                <v-text-field label=">= 60%" variant="outlined"></v-text-field>
-                <v-text-field label=">= 50%" variant="outlined"></v-text-field>
+                <div class="flex flex-col space-y-4">
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">100%</label>
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">&gt;= 80%</label>
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">&gt;= 70%</label>
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">&gt;= 60%</label>
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700">&gt;= 50%</label>
+                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -292,6 +380,7 @@
                   >Base Loan Value (₦)</label
                 >
                 <v-text-field
+                type="number"
                   v-model.number="thresholds.base_loan_value"
                   variant="outlined"
                   hide-details
@@ -303,6 +392,7 @@
                   >Minimum Loan Amount (₦)</label
                 >
                 <v-text-field
+                type="number"
                   v-model.number="thresholds.minimum_loan_amount"
                   variant="outlined"
                   hide-details
@@ -314,6 +404,7 @@
                   >Maximum Loan Amount (₦)</label
                 >
                 <v-text-field
+                type="number"
                   v-model.number="thresholds.maximum_loan_amount"
                   variant="outlined"
                   hide-details
@@ -325,6 +416,7 @@
                   >Minimum Age for Loans</label
                 >
                 <v-text-field
+                  type="number"
                   v-model.number="thresholds.minimum_loan_age"
                   variant="outlined"
                   hide-details
@@ -336,6 +428,7 @@
                   >Maximum Age for Loans</label
                 >
                 <v-text-field
+                type="number"
                   v-model.number="thresholds.maximum_loan_age"
                   variant="outlined"
                   hide-details
@@ -563,7 +656,7 @@ const runThresholdAction = async (action = 'apply') => {
       return
     }
 
-    const response = await api.post('/integrate-threshold-batch', {
+    const response = await api.post('/integrate-batch', {
       batch_id: thresholdBatchId.value,
       action
     })

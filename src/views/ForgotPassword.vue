@@ -270,6 +270,7 @@ const router = useRouter()
 import { ElNotification } from 'element-plus'
 
 const route = useRoute()
+const email = useRoute()
 const token = route.query.token
 console.log('Reset token from URL:', token)
 
@@ -328,8 +329,9 @@ const onSubmit = async () => {
   console.log('Confirm Password:', confirmPassword)
 
   const payload = {
-    password: password.value,
-    password_confirmation: confirmPassword.value
+    new_password: password.value,
+    token: token,
+    email: email
   }
 
   console.log('Payload:', payload)
@@ -339,7 +341,7 @@ const onSubmit = async () => {
   }
 
   try {
-    const response = await api.post('/forgot-password',payload)
+    const response = await api.post('/forgot-password', payload)
     password.value = ''
     confirmPassword.value = ''
     ElNotification({

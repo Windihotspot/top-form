@@ -1,8 +1,13 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick, watch } from 'vue'
 import api from '@/api'
 import MainLayout from '@/layouts/full/MainLayout.vue'
+import hljs from 'highlight.js/lib/core'
+import json from 'highlight.js/lib/languages/json'
+import 'highlight.js/styles/github.css' // 👈 You can switch to other themes if desired
+import { ElNotification } from 'element-plus'
 
+hljs.registerLanguage('json', json)
 import moment from 'moment'
 const dateRange = ref([])
 
@@ -60,7 +65,7 @@ const exportCsv = async () => {
     // Create a temporary link and trigger download
     const link = document.createElement('a')
     link.href = url
-    link.setAttribute('download',  `exported-jobs-${moment().format('YYYY-MM-DD_HH-mm-ss')}.csv`)
+    link.setAttribute('download', `exported-jobs-${moment().format('YYYY-MM-DD_HH-mm-ss')}.csv`)
     document.body.appendChild(link)
     link.click()
 
@@ -134,6 +139,69 @@ const filteredJobs = computed(() => {
     return matchDate && matchStatus && matchSearch
   })
 })
+
+const dialog = ref(false)
+const selectedJobId = ref(null)
+const jobDetail = ref(null)
+const jobLoading = ref(false)
+
+const fetchJobDetail = async (applicationId) => {
+  selectedJobId.value = applicationId
+  jobLoading.value = true
+  dialog.value = true
+  try {
+    const response = await api.get('/get-job', {
+      params: {
+        application_id: applicationId // ✅ Pass it as query param
+      }
+    })
+    console.log('job detail response:', response)
+    jobDetail.value = response.data
+    console.log('job detail value:', jobDetail.value)
+  } catch (error) {
+    console.log('Failed to fetch job detail:', error)
+    jobDetail.value = { error: 'Failed to load job detail' }
+  } finally {
+    jobLoading.value = false
+    await nextTick() // Wait for DOM to update before applying highlight
+    highlightJson()
+  }
+}
+
+const highlightJson = () => {
+  const blocks = document.querySelectorAll('pre code')
+  blocks.forEach((block) => {
+    hljs.highlightElement(block)
+  })
+}
+
+watch(dialog, (val) => {
+  if (!val) jobDetail.value = null // Clear on close
+})
+
+const formatJson = (data) => {
+  return JSON.stringify(data, null, 2)
+}
+
+const copyToClipboard = async () => {
+  const jsonText = formatJson(jobDetail?.data?.sofri_data ?? jobDetail)
+  try {
+    await navigator.clipboard.writeText(jsonText)
+    ElNotification({
+      title: 'Copied!',
+      message: 'JSON response copied to clipboard.',
+      type: 'success',
+      duration: 3000
+    })
+  } catch (err) {
+    console.error('Failed to copy', err)
+    ElNotification({
+      title: 'Error',
+      message: 'Failed to copy to clipboard.',
+      type: 'error'
+    })
+  }
+}
 </script>
 
 <template>
@@ -265,6 +333,7 @@ const filteredJobs = computed(() => {
                 </td>
                 <td class="py-3 px-6 text-center">
                   <span
+                    @click="fetchJobDetail(job.application_id)"
                     class="bg-[#1f5aa3] text-white px-4 py-1 rounded hover:bg-blue-600 cursor-pointer"
                   >
                     View
@@ -274,6 +343,41 @@ const filteredJobs = computed(() => {
             </tbody>
           </table>
         </div>
+
+        <v-dialog v-model="dialog" max-width="800">
+          <v-card>
+            <v-card-title class="flex justify-between items-center text-lg font-semibold pa-4">
+              <div class="flex items-center justify-end space-x-4">
+                <!-- Copy Icon with Tooltip -->
+                <v-tooltip text="Copy to clipboard" location="top">
+                  <template #activator="{ props }">
+                    <i
+                      class="fas fa-copy cursor-pointer fa-lg"
+                      v-bind="props"
+                      @click="copyToClipboard"
+                    ></i>
+                  </template>
+                </v-tooltip>
+
+                <!-- Close Icon -->
+                <i class="fas fa-times cursor-pointer fa-lg" @click="dialog = false"></i>
+              </div>
+            </v-card-title>
+
+            <v-card-text>
+              <div v-if="jobLoading" class="flex justify-center items-center min-h-[200px] gap-4">
+                <v-progress-circular indeterminate color="#1f5aa3" size="40" width="3" />
+                <span class="mt-2 text-gray-600 text-sm">Loading job details</span>
+              </div>
+              <div v-else class="bg-gray-100 p-4 rounded overflow-auto text-sm">
+                <pre><code class="json">{{ formatJson(jobDetail?.data?.sofri_data ?? jobDetail) }}</code></pre>
+              </div>
+            </v-card-text>
+            <v-card-actions class="justify-end">
+              <v-btn color="primary" variant="plain" @click="dialog = false">Close</v-btn>
+            </v-card-actions>
+          </v-card>
+        </v-dialog>
       </div>
     </div>
   </MainLayout>

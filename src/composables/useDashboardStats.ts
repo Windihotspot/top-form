@@ -70,7 +70,7 @@ export function useDashboardStats() {
       bar: {
         horizontal: false,
         borderRadius: 4,
-        columnWidth: '40%'
+        columnWidth: '20%'
       }
     },
     xaxis: {

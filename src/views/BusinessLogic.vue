@@ -3,14 +3,15 @@
     <div class="px-6 py-4">
       <h2 class="text-md font-semibold mb-4">Business Logic</h2>
 
-      <v-tabs v-model="tab" color="blue" class="border-b border-blue-200" density="compact">
+      <v-tabs v-model="tab" density="compact">
         <v-tab
           v-for="item in tabs"
           :key="item.value"
           :value="item.value"
-          class="text-sm capitalize"
+          class="border-b-4 border-blue-700"
+          slider-size="8"
           :class="{
-            'text-black font-semibold border-b-4 border-blue-600': tab === item.value,
+            'text-black font-semibold': tab === item.value,
             'text-gray-500': tab !== item.value
           }"
         >
@@ -77,8 +78,6 @@
 
         <v-tabs-window-item value="assignScores">
           <div class="p-6 bg-white rounded shadow">
-            
-
             <div class="mt-4 mb-4 flex justify-end gap-4">
               <div class="space-x-2">
                 <v-btn
@@ -107,22 +106,23 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
               <div v-for="(category, key) in scoreData" :key="key">
-                <h3 class="font-semibold text-xs mb-2">{{ key }}</h3>
-                <div class="space-y-2">
-                  <div
-                    v-for="item in category"
-                    :key="item.label"
-                    class="flex items-center justify-between text-xs"
-                  >
-                    <span>{{ item.label }}</span>
-                    <input
-                      type="number"
-                      class="w-20 px-2 py-1 border rounded no-spinner text-xs"
-                      v-model.number="item.score"
-                    />
-                  </div>
-                </div>
-              </div>
+  <h3 class="font-semibold text-xs mb-2">{{ key }}</h3>
+  <div class="space-y-2">
+    <div
+      v-for="item in category.items"
+      :key="item.label"
+      class="flex items-center justify-between text-xs"
+    >
+      <span>{{ item.label }}</span>
+      <input
+        type="number"
+        class="w-20 px-2 py-1 border rounded no-spinner text-xs"
+        v-model.number="item.score"
+      />
+    </div>
+  </div>
+</div>
+
             </div>
           </div>
         </v-tabs-window-item>
@@ -158,7 +158,7 @@
               <div class="flex flex-col space-y-1">
                 <label class="text-sm font-medium text-gray-700">Minimum Loan Amount (₦)</label>
                 <v-text-field
-                type="number"
+                  type="number"
                   v-model.number="thresholds.minimum_loan_amount"
                   variant="outlined"
                   density="compact"
@@ -169,7 +169,7 @@
               <div class="flex flex-col space-y-1">
                 <label class="text-sm font-medium text-gray-700">Maximum Loan Amount (₦)</label>
                 <v-text-field
-                type="number"
+                  type="number"
                   v-model.number="thresholds.maximum_loan_amount"
                   variant="outlined"
                   density="compact"
@@ -180,7 +180,7 @@
               <div class="flex flex-col space-y-1">
                 <label class="text-sm font-medium text-gray-700">Minimum Loan Age</label>
                 <v-text-field
-                type="number"
+                  type="number"
                   v-model.number="thresholds.minimum_loan_age"
                   variant="outlined"
                   density="compact"
@@ -191,7 +191,7 @@
               <div class="flex flex-col space-y-1">
                 <label class="text-sm font-medium text-gray-700">Maximum Loan Age</label>
                 <v-text-field
-                type="number"
+                  type="number"
                   v-model.number="thresholds.maximum_loan_age"
                   variant="outlined"
                   density="compact"
@@ -206,11 +206,27 @@
           <div class="bg-white rounded p-4">
             <div class="flex justify-between mb-8 justify-end">
               <div class="space-x-2">
-                <v-btn size="small" color="primary" variant="flat">Apply Changes</v-btn>
-                <v-btn size="small" color="success" variant="flat">Deploy Changes</v-btn>
+                <v-btn
+                  size="small"
+                  color="primary"
+                  variant="flat"
+                  :loading="savingMultiplierApply"
+                  @click="runMultiplierAction('apply')"
+                  >Apply Changes</v-btn
+                >
+
+                <v-btn
+                  size="small"
+                  color="success"
+                  variant="flat"
+                  :loading="savingMultiplierDeploy"
+                  @click="runMultiplierAction('deploy')"
+                  >Deploy Changes</v-btn
+                >
               </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <!-- Internal Score Multipliers -->
               <!-- Internal Score Multipliers -->
               <div>
                 <h3 class="text-sm font-semibold mb-4">Internal Score Multipliers</h3>
@@ -219,31 +235,73 @@
                     <label class="text-sm font-medium text-gray-700"
                       >Score &gt; 760 Multiplier</label
                     >
-                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                    <v-text-field
+                      v-model.number="multipliers.sofri_score_multipliers[701]"
+                      type="number"
+                      variant="outlined"
+                      hide-details
+                      density="compact"
+                    />
+                  </div>
+                  <div>
+                    <label class="text-sm font-medium text-gray-700"
+                      >Score 601–700 Multiplier</label
+                    >
+                    <v-text-field
+                      v-model.number="multipliers.sofri_score_multipliers[601]"
+                      type="number"
+                      variant="outlined"
+                      hide-details
+                      density="compact"
+                    />
                   </div>
                   <div>
                     <label class="text-sm font-medium text-gray-700"
                       >Score 501–600 Multiplier</label
                     >
-                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                    <v-text-field
+                      v-model.number="multipliers.sofri_score_multipliers[501]"
+                      type="number"
+                      variant="outlined"
+                      hide-details
+                      density="compact"
+                    />
                   </div>
                   <div>
                     <label class="text-sm font-medium text-gray-700"
                       >Score 451–500 Multiplier</label
                     >
-                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                    <v-text-field
+                      v-model.number="multipliers.sofri_score_multipliers[451]"
+                      type="number"
+                      variant="outlined"
+                      hide-details
+                      density="compact"
+                    />
                   </div>
                   <div>
                     <label class="text-sm font-medium text-gray-700"
                       >Score 351–450 Multiplier</label
                     >
-                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                    <v-text-field
+                      v-model.number="multipliers.sofri_score_multipliers[351]"
+                      type="number"
+                      variant="outlined"
+                      hide-details
+                      density="compact"
+                    />
                   </div>
                   <div>
                     <label class="text-sm font-medium text-gray-700"
                       >Score &lt; 350 Multiplier</label
                     >
-                    <v-text-field type="number" variant="outlined" hide-details density="compact" />
+                    <v-text-field
+                      v-model.number="multipliers.sofri_score_multipliers[0]"
+                      type="number"
+                      variant="outlined"
+                      hide-details
+                      density="compact"
+                    />
                   </div>
                 </div>
               </div>
@@ -352,9 +410,9 @@
                   size="small"
                   color="primary"
                   variant="flat"
-                  :loading="savingThresholdApply"
-                  :disabled="savingThresholdApply"
-                  @click="() => runThresholdAction('apply')"
+                  @click="() => runGeneralSettingsAction('apply')"
+                  :loading="savingGeneralApply"
+                  :disabled="savingGeneralApply"
                 >
                   Apply Changes
                 </v-btn>
@@ -363,9 +421,9 @@
                   size="small"
                   color="success"
                   variant="flat"
-                  :loading="savingThresholdDeploy"
-                  :disabled="!thresholdBatchId || savingThresholdDeploy"
-                  @click="() => runThresholdAction('deploy')"
+                  @click="() => runGeneralSettingsAction('deploy')"
+                  :loading="savingGeneralDeploy"
+                  :disabled="!generalBatchId || savingGeneralDeploy"
                 >
                   Deploy Changes
                 </v-btn>
@@ -380,8 +438,8 @@
                   >Base Loan Value (₦)</label
                 >
                 <v-text-field
-                type="number"
-                  v-model.number="thresholds.base_loan_value"
+                  type="number"
+                  v-model.number="generalSettings.base_loan_value"
                   variant="outlined"
                   hide-details
                 />
@@ -392,8 +450,8 @@
                   >Minimum Loan Amount (₦)</label
                 >
                 <v-text-field
-                type="number"
-                  v-model.number="thresholds.minimum_loan_amount"
+                  type="number"
+                  v-model.number="generalSettings.minimum_loan_amount"
                   variant="outlined"
                   hide-details
                 />
@@ -404,8 +462,8 @@
                   >Maximum Loan Amount (₦)</label
                 >
                 <v-text-field
-                type="number"
-                  v-model.number="thresholds.maximum_loan_amount"
+                  type="number"
+                  v-model.number="generalSettings.maximum_loan_amount"
                   variant="outlined"
                   hide-details
                 />
@@ -417,7 +475,7 @@
                 >
                 <v-text-field
                   type="number"
-                  v-model.number="thresholds.minimum_loan_age"
+                  v-model.number="generalSettings.minimum_loan_age"
                   variant="outlined"
                   hide-details
                 />
@@ -428,8 +486,8 @@
                   >Maximum Age for Loans</label
                 >
                 <v-text-field
-                type="number"
-                  v-model.number="thresholds.maximum_loan_age"
+                  type="number"
+                  v-model.number="generalSettings.maximum_loan_age"
                   variant="outlined"
                   hide-details
                 />
@@ -568,42 +626,48 @@ const runScoreDataAction = async (action = 'apply') => {
   if (action === 'deploy') savingScoreDeploy.value = true
 
   try {
-    // Prepare score payload only if applying
     if (action === 'apply') {
-      const payload = {}
+      const payload = { scores: {} }
+
+      const keyMap = {
+        'Client Type': 'client_type',
+        'Income': 'stated_income'
+      }
 
       for (const key in scoreData) {
-        const formattedKey = key.toLowerCase().replace(/\s+/g, '_') // match API keys
-        const values = scoreData[key]
+        const backendKey = keyMap[key]
+        if (!backendKey || !scoreData[key]?.items) continue
 
-        if (!Array.isArray(values)) continue
+        const values = scoreData[key].items
 
-        if (values.length && values[0]?.label?.includes('–')) {
-          // This is a range score
-          payload[formattedKey] = values.map((item) => {
+        if (scoreData[key].type === 'range') {
+          payload.scores[backendKey] = values.map((item) => {
             const [min, max] = item.label.split('–').map((n) => parseFloat(n.trim()))
             return [min, max, item.score]
           })
-        } else {
-          // Simple key-value map
-          payload[formattedKey] = {}
+        } else if (scoreData[key].type === 'map') {
+          payload.scores[backendKey] = {}
           values.forEach((item) => {
-            payload[formattedKey][item.label] = item.score
+            payload.scores[backendKey][item.label] = item.score
           })
         }
       }
-      console.log('adjust scores payload:', payload)
-      const applyRes = await api.post('/adjust-scores', {
-        scores: payload
-      })
 
-      console.log(`${action} score data response:`, applyRes)
-      scoreBatchId.value = applyRes?.data?.data?.batch_id
+      // Guard against empty payload
+      if (!Object.keys(payload.scores).length) {
+        showSnackbar('No valid score data to apply', 'warning')
+        return
+      }
+
+      console.log('adjust-scores payload:', JSON.stringify(payload, null, 2))
+
+      const res = await api.post('/adjust-scores', payload)
+      scoreBatchId.value = res?.data?.data?.batch_id
     }
 
-    // Make sure a batch ID exists before deploying
+    // Deploy after applying
     if (!scoreBatchId.value) {
-      showSnackbar(`Please apply changes before you deploy`, 'warning')
+      showSnackbar('Please apply changes before you deploy', 'warning')
       return
     }
 
@@ -611,8 +675,8 @@ const runScoreDataAction = async (action = 'apply') => {
       batch_id: scoreBatchId.value,
       action
     })
-    console.log(`${action} score deploy response:`, deployRes)
 
+    console.log(`${action} deploy response:`, deployRes)
     fetchScoreData()
     showSnackbar(`Score data ${action}ed successfully`, 'success')
   } catch (error) {
@@ -628,6 +692,9 @@ const runScoreDataAction = async (action = 'apply') => {
   }
 }
 
+
+
+
 const savingThresholdApply = ref(false)
 const savingThresholdDeploy = ref(false)
 const thresholdBatchId = ref(null)
@@ -638,6 +705,53 @@ const thresholds = reactive({
   minimum_loan_age: null,
   maximum_loan_age: null
 })
+
+const savingGeneralApply = ref(false)
+const savingGeneralDeploy = ref(false)
+const generalBatchId = ref(null)
+
+const generalSettings = reactive({
+  base_loan_value: null,
+  minimum_loan_amount: null,
+  maximum_loan_amount: null,
+  minimum_loan_age: null,
+  maximum_loan_age: null
+})
+
+const runGeneralSettingsAction = async (action = 'apply') => {
+  if (action === 'apply') savingGeneralApply.value = true
+  if (action === 'deploy') savingGeneralDeploy.value = true
+
+  try {
+    if (action === 'apply') {
+      const response = await api.post('/adjust-thresholds', {
+        thresholds: { ...generalSettings }
+      })
+      generalBatchId.value = response?.data?.data?.batch_id
+    }
+
+    if (!generalBatchId.value) {
+      showSnackbar('Please apply changes before deploying', 'warning')
+      return
+    }
+
+    const response = await api.post('/integrate-batch', {
+      batch_id: generalBatchId.value,
+      action
+    })
+
+    showSnackbar(`General Settings ${action}ed successfully`, 'success')
+  } catch (error) {
+    const errorMessage =
+      error?.response?.data?.data?.error ||
+      error?.response?.data?.message ||
+      `An error occurred during general settings ${action}`
+    showSnackbar(errorMessage, 'error')
+  } finally {
+    if (action === 'apply') savingGeneralApply.value = false
+    if (action === 'deploy') savingGeneralDeploy.value = false
+  }
+}
 
 const runThresholdAction = async (action = 'apply') => {
   if (action === 'apply') savingThresholdApply.value = true
@@ -676,26 +790,118 @@ const runThresholdAction = async (action = 'apply') => {
   }
 }
 
+const multipliers = reactive({
+  sofri_score_multipliers: {
+    0: null,
+    351: null,
+    451: null,
+    501: null,
+    601: null,
+    701: null
+  },
+  credit_score_multipliers: {
+    0: null,
+    351: null,
+    451: null,
+    501: null,
+    601: null,
+    701: null
+  },
+  income_multipliers: {
+    70000: null,
+    80000: null,
+    90000: null,
+    100000: null,
+    200000: null
+  },
+  ontime_repayment_multipliers: {
+    50: null,
+    60: null,
+    70: null,
+    80: null,
+    100: null
+  }
+})
+
+const multiplierBatchId = ref(null)
+const savingMultiplierApply = ref(false)
+const savingMultiplierDeploy = ref(false)
+
+const runMultiplierAction = async (action = 'apply') => {
+  if (action === 'apply') savingMultiplierApply.value = true
+  if (action === 'deploy') savingMultiplierDeploy.value = true
+
+  try {
+    if (action === 'apply') {
+      const cleaned = {}
+
+      Object.entries(multipliers.sofri_score_multipliers).forEach(([score, value]) => {
+        cleaned[score] = value !== null && value !== '' ? value : '__UNSET__'
+      })
+
+      const payload = {
+        multipliers: {
+          sofri_score_multipliers: cleaned
+        }
+      }
+      console.log('multipliers request payload:', payload)
+      const response = await api.post('/adjust-multipliers', payload)
+      multiplierBatchId.value = response?.data?.data?.batch_id
+      console.log(`${action} multiplier response:`, response)
+    }
+
+    if (!multiplierBatchId.value) {
+      showSnackbar('Please apply changes before deploying', 'warning')
+      return
+    }
+
+    const deployRes = await api.post('/integrate-batch', {
+      batch_id: multiplierBatchId.value,
+      action
+    })
+    console.log(`${action} multiplier deploy response:`, deployRes)
+    showSnackbar(`Multipliers ${action}ed successfully`, 'success')
+  } catch (error) {
+    const errorMessage =
+      error?.response?.data?.data?.error ||
+      error?.response?.data?.message ||
+      `An error occurred during multiplier ${action}`
+
+    showSnackbar(errorMessage, 'error')
+  } finally {
+    if (action === 'apply') savingMultiplierApply.value = false
+    if (action === 'deploy') savingMultiplierDeploy.value = false
+  }
+}
+
 const formatScoreData = (rawData) => {
   const result = {}
 
   for (const key in rawData) {
     const value = rawData[key]
 
-    // Handle range arrays like income, age, etc.
+    // Detect if it's a range array: [[min, max, score], ...]
     if (Array.isArray(value) && Array.isArray(value[0])) {
-      result[formatKey(key)] = value.map(([min, max, score]) => ({
-        label: `${formatNumber(min)} – ${formatNumber(max)}`,
-        score
-      }))
+      result[formatKey(key)] = {
+        type: 'range',
+        items: value.map(([min, max, score]) => ({
+          label: `${formatNumber(min)} – ${formatNumber(max)}`,
+          min,
+          max,
+          score
+        }))
+      }
     }
 
-    // Handle key-value object mappings
+    // Detect if it's a key-value object: { label: score }
     else if (typeof value === 'object' && value !== null) {
-      result[formatKey(key)] = Object.entries(value).map(([label, score]) => ({
-        label,
-        score
-      }))
+      result[formatKey(key)] = {
+        type: 'map',
+        items: Object.entries(value).map(([label, score]) => ({
+          label,
+          score
+        }))
+      }
     }
   }
 
@@ -765,5 +971,9 @@ onMounted(() => {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+:deep(.v-tab__slider) {
+  height: 4px !important; /* Adjust thickness */
+  background-color: #1f5aa3 !important; /* Change color if needed */
 }
 </style>

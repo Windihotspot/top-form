@@ -58,7 +58,7 @@ api.interceptors.response.use(
       isRefreshing = true
 
       try {
-        const response = await axios.post('/refresh-token', {
+        const response = await api.post('/refresh-token', {
           token: userStore.refreshToken
         })
 

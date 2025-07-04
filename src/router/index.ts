@@ -19,13 +19,13 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: DashboardView,
-      meta: { requiresAuth: true } // all logged in users can access
+      meta: { requiresAuth: true } 
     },
     {
       path: '/joblist',
       name: 'joblist',
       component: JobList,
-      meta: { requiresAuth: true, permission: 'view_jobs' } // only users with this permission
+      meta: { requiresAuth: true, permission: 'view_jobs' } 
     },
     {
       path: '/business-logic',

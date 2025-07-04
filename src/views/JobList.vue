@@ -199,18 +199,17 @@ const copyToClipboard = async () => {
       message: 'JSON response copied to clipboard.',
       type: 'success',
       duration: 2000,
-      zIndex: 9999,
+      zIndex: 9999
     })
   } catch (err) {
     console.error('Failed to copy', err)
     ElNotification({
       title: 'Error',
       message: 'Failed to copy to clipboard.',
-      type: 'error',
+      type: 'error'
     })
   }
 }
-
 </script>
 
 <template>

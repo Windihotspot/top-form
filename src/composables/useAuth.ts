@@ -38,6 +38,7 @@ export const useLogout = () => {
   
 const router = useRouter()
   const logout = async () => {
+     const userStore = useUserStore()
     try {
       const response = await api.post('/logout')
 
@@ -49,6 +50,10 @@ const router = useRouter()
     } catch (error: any) {
       console.log('Logout error:', error.response?.data || error.message)
       throw error.response?.data
+    }finally{
+       localStorage.clear()
+      userStore.logout()
+      router.push('/')
     }
   }
 

@@ -1,20 +1,24 @@
-<script setup lang="ts">
+<script setup>
+import { ref, onMounted } from 'vue'
 import { RouterView } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 
 const userStore = useUserStore()
-userStore.initFromStorage()
 
-console.log('User store on app init:', {
-  user: userStore.user,
-  permissions: userStore.permissions,
-  token: userStore.token
+onMounted(() => {
+  userStore.initFromStorage()
+
+  console.log('User store on app init:', {
+    user: userStore.user,
+    permissions: userStore.permissions,
+    token: userStore.token
+  })
 })
-
 </script>
 
 <template>
   <main class="text-neutral-800">
     <RouterView />
+    <PasswordPromptResetModal v-model="showPasswordResetModal" />
   </main>
 </template>

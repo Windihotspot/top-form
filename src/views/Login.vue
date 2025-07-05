@@ -184,7 +184,7 @@ onBeforeUnmount(() => {
             <span class="text-sm text-gray-700">Remember me</span>
           </label>
 
-          <RouterLink to="/resetpassword">
+          <RouterLink to="/forgotpassword">
             <v-btn
               no-uppercase
               variant="text"

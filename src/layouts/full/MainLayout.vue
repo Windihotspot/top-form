@@ -2,6 +2,18 @@
 import { ref, onMounted } from 'vue'
 import SidebarView from './sidebar/SidebarView.vue'
 import HeaderView from './header/HeaderView.vue'
+import PasswordPromptResetModal from '@/components/PasswordPromptResetModal.vue'
+import dayjs from 'dayjs'
+
+// ✅ Set a mock user with last password reset 30 days ago
+const mockUser = {
+  name: 'Test User',
+  email: 'test@example.com',
+  last_password_reset_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+}
+localStorage.setItem('user', JSON.stringify(mockUser))
+
+const showPasswordResetModal = ref(false)
 
 const drawer = ref()
 const innerW = window.innerWidth
@@ -9,6 +21,14 @@ const innerW = window.innerWidth
 onMounted(() => {
   if (innerW < 950) {
     drawer.value = !drawer.value
+  }
+
+  const user = JSON.parse(localStorage.getItem('user') || '{}')
+  const lastReset = dayjs(user.last_password_reset_at)
+  const now = dayjs()
+
+  if (now.diff(lastReset, 'day') >= 30) {
+    showPasswordResetModal.value = true
   }
 })
 </script>
@@ -18,7 +38,6 @@ onMounted(() => {
     <!--- Header -->
     <!-- ---------------------------------------------- -->
     <v-app-bar app elevation="1" class="pa-2">
-     
       <v-btn class="hidden-md-and-up" icon @click="drawer = !drawer">
         <v-icon>fa-solid fa-bars</v-icon>
       </v-btn>
@@ -53,6 +72,7 @@ onMounted(() => {
     <v-main class="mt-4 page-wrapper">
       <v-container fluid class="page-wrapper">
         <slot />
+           <PasswordPromptResetModal v-model="showPasswordResetModal" />
       </v-container>
     </v-main>
   </v-app>
@@ -63,11 +83,9 @@ onMounted(() => {
   overflow: hidden !important;
 }
 
-
 .side-bar::-webkit-scrollbar {
   display: none; /* Chrome, Safari */
 }
-
 
 .page-wrapper {
   background-color: #f5f7f9;

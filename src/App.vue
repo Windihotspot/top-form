@@ -19,6 +19,6 @@ onMounted(() => {
 <template>
   <main class="text-neutral-800">
     <RouterView />
-    <PasswordPromptResetModal v-model="showPasswordResetModal" />
+ 
   </main>
 </template>

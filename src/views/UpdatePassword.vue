@@ -200,7 +200,7 @@
         <div class="mb-4">
           <v-text-field
             v-model="currentPassword"
-            :type="showPassword ? 'text' : 'password'"
+           
             label="Current password"
             placeholder="Enter current password"
             variant="outlined"
@@ -208,13 +208,7 @@
             class="mt-4"
             :error-messages="currentPasswordError"
           >
-            <template #append-inner>
-              <i
-                :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"
-                @click="togglePasswordVisibility"
-                class="cursor-pointer text-black"
-              ></i>
-            </template>
+            
           </v-text-field>
 
           <v-text-field

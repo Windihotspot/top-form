@@ -33,6 +33,6 @@ watch(visible, val => {
 })
 
 const goToReset = () => {
-  router.push('/resetpassword') // or open a password reset form modal
+  router.push('/updatepassword') // or open a password reset form modal
 }
 </script>

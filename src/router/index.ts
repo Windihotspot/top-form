@@ -49,11 +49,18 @@ const router = createRouter({
       name: 'forgotpassword',
       component: ResetPassword
     }
+    ,
+    {
+      path: '/updatepassword',
+      name: 'updatepassword',
+      component: UpdatePassword
+    }
   ]
 })
 
 
 import { useUserStore } from '@/stores/user'
+import UpdatePassword from '@/views/UpdatePassword.vue'
 
 router.beforeEach((to, from, next) => {
   const userStore = useUserStore()

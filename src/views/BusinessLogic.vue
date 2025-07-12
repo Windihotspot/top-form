@@ -5,6 +5,7 @@
 
       <v-tabs v-model="tab" density="compact">
         <v-tab
+        :disabled="loading"
           v-for="item in tabs"
           :key="item.value"
           :value="item.value"
@@ -54,7 +55,11 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+            <div v-if="loading" class="flex items-center justify-center py-10">
+              <v-progress-circular indeterminate color="primary" size="40" />
+            </div>
+
+            <div v-if="!loading" class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
               <div v-for="(item, index) in sliders" :key="index" class="flex flex-col space-y-2">
                 <label class="text-sm font-medium text-gray-700">{{ item.label }}</label>
                 <v-slider
@@ -106,23 +111,22 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
               <div v-for="(category, key) in scoreData" :key="key">
-  <h3 class="font-semibold text-xs mb-2">{{ key }}</h3>
-  <div class="space-y-2">
-    <div
-      v-for="item in category.items"
-      :key="item.label"
-      class="flex items-center justify-between text-xs"
-    >
-      <span>{{ item.label }}</span>
-      <input
-        type="number"
-        class="w-20 px-2 py-1 border rounded no-spinner text-xs"
-        v-model.number="item.score"
-      />
-    </div>
-  </div>
-</div>
-
+                <h3 class="font-semibold text-xs mb-2">{{ key }}</h3>
+                <div class="space-y-2">
+                  <div
+                    v-for="item in category.items"
+                    :key="item.label"
+                    class="flex items-center justify-between text-xs"
+                  >
+                    <span>{{ item.label }}</span>
+                    <input
+                      type="number"
+                      class="w-20 px-2 py-1 border rounded no-spinner text-xs"
+                      v-model.number="item.score"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </v-tabs-window-item>
@@ -631,7 +635,7 @@ const runScoreDataAction = async (action = 'apply') => {
 
       const keyMap = {
         'Client Type': 'client_type',
-        'Income': 'stated_income'
+        Income: 'stated_income'
       }
 
       for (const key in scoreData) {
@@ -691,9 +695,6 @@ const runScoreDataAction = async (action = 'apply') => {
     if (action === 'deploy') savingScoreDeploy.value = false
   }
 }
-
-
-
 
 const savingThresholdApply = ref(false)
 const savingThresholdDeploy = ref(false)

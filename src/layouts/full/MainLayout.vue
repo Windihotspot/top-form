@@ -25,9 +25,10 @@ onMounted(() => {
     drawer.value = !drawer.value
   }
 
-  const lastPasswordReset = userStore.user?.password_changed_at
-  console.log('last password reset:', lastPasswordReset)
+  const dismissedBanner = localStorage.getItem('password_banner_dismissed')
+  if (dismissedBanner === 'true') return
 
+  const lastPasswordReset = userStore.user?.password_changed_at
   if (lastPasswordReset) {
     const lastReset = dayjs(lastPasswordReset)
     const now = dayjs()
@@ -42,6 +43,13 @@ onMounted(() => {
     }
   }
 })
+
+const dismissPasswordReminderBanner = () => {
+  if (typeof localStorage !== 'undefined') {
+    localStorage.setItem('password_banner_dismissed', 'true')
+  }
+  showPasswordReminderBanner.value = false
+}
 </script>
 
 <template>
@@ -93,8 +101,8 @@ onMounted(() => {
             <!-- Close Icon -->
             <i
               class="fas fa-times absolute top-3 right-4 text-white cursor-pointer text-xl hover:text-gray-300"
-              @click="showPasswordReminderBanner = false"
-            ></i>
+              @click="dismissPasswordReminderBanner"
+            />
 
             <!-- Icon on the left -->
             <template #prepend>

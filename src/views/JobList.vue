@@ -26,17 +26,59 @@ const selectedStatus = ref(null)
 const searchQuery = ref('')
 const statuses = ['all', 'accept', 'reject', 'pending']
 
+// Pagination
+const totalItems = ref(0)
+const currentPage = ref(1)
+
+const itemsPerPageOptions = [15, 25, 50, 100]
+const itemsPerPage = ref(15) // Default
+
+// Total pages
+const totalPages = computed(() => Math.ceil(totalItems.value / itemsPerPage.value))
+
+// Dynamic pagination buttons
+const pagesToShow = computed(() => {
+  const total = totalPages.value
+  const current = currentPage.value
+  const delta = 2
+  const range = []
+  const rangeWithDots = []
+  let l
+
+  for (let i = 1; i <= total; i++) {
+    if (i === 1 || i === total || (i >= current - delta && i <= current + delta)) {
+      range.push(i)
+    }
+  }
+
+  for (let i of range) {
+    if (l) {
+      if (i - l === 2) {
+        rangeWithDots.push(l + 1)
+      } else if (i - l !== 1) {
+        rangeWithDots.push('...')
+      }
+    }
+    rangeWithDots.push(i)
+    l = i
+  }
+
+  return rangeWithDots
+})
+
 const fetchJobs = async () => {
   isLoading.value = true
   try {
     const response = await api.get('/get-jobs', {
       params: {
-        per_page: 10
+        page: currentPage.value,
+        per_page: itemsPerPage.value
       }
     })
-
+    console.log('jobs response:', response)
     if (response.data.status === 'success') {
-      jobs.value = response.data.data.jobs
+      jobs.value = response.data.data.jobs.data
+      totalItems.value = response.data.data.jobs.total
       console.log('job list:', jobs.value)
     }
   } catch (error) {
@@ -179,6 +221,10 @@ watch(dialog, (val) => {
   if (!val) jobDetail.value = null // Clear on close
 })
 
+watch([currentPage, itemsPerPage], () => {
+  fetchJobs()
+})
+
 const formatJson = (data) => {
   return JSON.stringify(data, null, 2)
 }
@@ -268,7 +314,7 @@ const copyToClipboard = async () => {
 
     <div class="p-4">
       <!-- Loading State -->
-      <div v-if="isLoading" class="flex flex-col items-center justify-center min-h-[200px]">
+      <div v-if="isLoading" class="flex flex-col items-center justify-center h-[600px]">
         <v-progress-circular indeterminate color="#1f5aa3" size="80" width="8" />
         <span class="mt-2 text-gray-600 text-sm">Loading jobs...</span>
       </div>
@@ -286,106 +332,139 @@ const copyToClipboard = async () => {
           </button>
         </div>
 
-        <div class="overflow-x-auto bg-white shadow rounded-lg">
-          <table class="min-w-full text-sm text-center text-gray-700">
-            <thead class="bg-gray-100 text-gray-900 font-semibold text-sm">
-              <tr>
-                <th class="px-4 py-3">S/N</th>
-                <th class="px-4 py-3">Application Date/Time</th>
-                <th class="px-4 py-3">Application ID</th>
-                <th class="px-4 py-3">Requested Amount</th>
-                <th class="px-4 py-3">Internal Score</th>
-                <th class="px-4 py-3">Credit Score</th>
-                <th class="px-4 py-3">Age</th>
-                <th class="px-4 py-3">Income</th>
-                <th class="px-4 py-3">Employment Type</th>
-                <th class="px-4 py-3">Industry</th>
-                <th class="px-4 py-3">Risk Level</th>
-                <th class="px-4 py-3">Education</th>
-                <th class="px-4 py-3">Residence</th>
-                <th class="px-4 py-3">KYC Level</th>
-                <th class="px-4 py-3">Marital Status</th>
-                <th class="px-4 py-3">State</th>
-                <th class="px-4 py-3">Overall Decision</th>
-                <th class="px-4 py-3">Action</th>
-              </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-200">
-              <tr v-for="(job, index) in filteredJobs" :key="index" class="hover:bg-gray-50">
-                <td class="px-4 py-3">{{ index + 1 }}</td>
-                <td class="py-3">{{ moment(job.application_date).format('LL') }}</td>
-                <td class="px-4 py-3">{{ job.application_id }}</td>
-                <td class="px-4 py-3">{{ formatCurrency(job.requested_amount) }}</td>
-                <td class="px-4 py-3">{{ job.internal_score }}</td>
-                <td class="px-4 py-3">{{ job.credit_score }}</td>
-                <td class="px-4 py-3">{{ job.age }}</td>
-                <td class="px-4 py-3">{{ formatCurrency(job.income) }}</td>
-                <td class="py-3">{{ job.employment_type }}</td>
-                <td class="px-4 py-3">{{ job.industry }}</td>
-                <td class="px-4 py-3">{{ job.risk_level }}</td>
-                <td class="px-4 py-3">{{ job.education_level }}</td>
-                <td class="px-4 py-3">{{ job.residence }}</td>
-                <td class="py-3">{{ job.kyc_level }}</td>
-                <td class="px-4 py-3">{{ job.marital_status }}</td>
-                <td class="px-4 py-3">{{ job.state }}</td>
-                <td class="px-4 py-3">
-                  <span
-                    :class="
-                      job.overall_decision === 'ACCEPT'
-                        ? 'text-green-600 py-1 px-2 text-xs font-semibold rounded-full bg-green-100'
-                        : 'text-red-600 py-1 px-2 text-xs font-semibold rounded-full bg-red-100'
-                    "
-                  >
-                    {{ job.overall_decision }}
-                  </span>
-                </td>
-                <td class="py-3 px-6 text-center">
-                  <span
-                    @click="fetchJobDetail(job.application_id)"
-                    class="bg-[#1f5aa3] text-white px-4 py-1 rounded hover:bg-blue-600 cursor-pointer"
-                  >
-                    View
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="bg-white shadow rounded-lg overflow-hidden flex flex-col h-[600px]">
+          <div class="overflow-x-auto flex-1">
+            <div class="overflow-y-auto max-h-full">
+              <table class="min-w-full text-sm text-center text-gray-700">
+                <thead class="bg-gray-100 text-gray-900 font-semibold text-sm sticky top-0 z-10">
+                  <tr>
+                    <th class="px-4 py-3 bg-gray-100">S/N</th>
+                    <th class="px-4 py-3 bg-gray-100">Application Date/Time</th>
+                    <th class="px-4 py-3 bg-gray-100">Application ID</th>
+                    <th class="px-4 py-3 bg-gray-100">Requested Amount</th>
+                    <th class="px-4 py-3 bg-gray-100">Internal Score</th>
+                    <th class="px-4 py-3 bg-gray-100">Credit Score</th>
+                    <th class="px-4 py-3 bg-gray-100">Age</th>
+                    <th class="px-4 py-3 bg-gray-100">Income</th>
+                    <th class="px-4 py-3 bg-gray-100">Employment Type</th>
+                    <th class="px-4 py-3 bg-gray-100">Industry</th>
+                    <th class="px-4 py-3 bg-gray-100">Risk Level</th>
+                    <th class="px-4 py-3 bg-gray-100">Education</th>
+                    <th class="px-4 py-3 bg-gray-100">Residence</th>
+                    <th class="px-4 py-3 bg-gray-100">KYC Level</th>
+                    <th class="px-4 py-3 bg-gray-100">Marital Status</th>
+                    <th class="px-4 py-3 bg-gray-100">State</th>
+                    <th class="px-4 py-3 bg-gray-100">Overall Decision</th>
+                    <th class="px-4 py-3 bg-gray-100">Action</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  <tr v-for="(job, index) in filteredJobs" :key="index" class="hover:bg-gray-50">
+                    <td class="px-4 py-3">{{ index + 1 }}</td>
+                    <td class="py-3">{{ moment(job.application_date).format('LL') }}</td>
+                    <td class="px-4 py-3">{{ job.application_id }}</td>
+                    <td class="px-4 py-3">{{ formatCurrency(job.requested_amount) }}</td>
+                    <td class="px-4 py-3">{{ job.internal_score }}</td>
+                    <td class="px-4 py-3">{{ job.credit_score }}</td>
+                    <td class="px-4 py-3">{{ job.age }}</td>
+                    <td class="px-4 py-3">{{ formatCurrency(job.income) }}</td>
+                    <td class="py-3">{{ job.employment_type }}</td>
+                    <td class="px-4 py-3">{{ job.industry }}</td>
+                    <td class="px-4 py-3">{{ job.risk_level }}</td>
+                    <td class="px-4 py-3">{{ job.education_level }}</td>
+                    <td class="px-4 py-3">{{ job.residence }}</td>
+                    <td class="py-3">{{ job.kyc_level }}</td>
+                    <td class="px-4 py-3">{{ job.marital_status }}</td>
+                    <td class="px-4 py-3">{{ job.state }}</td>
+                    <td class="px-4 py-3">
+                      <span
+                        :class="
+                          job.overall_decision === 'ACCEPT'
+                            ? 'text-green-600 py-1 px-2 text-xs font-semibold rounded-full bg-green-100'
+                            : 'text-red-600 py-1 px-2 text-xs font-semibold rounded-full bg-red-100'
+                        "
+                      >
+                        {{ job.overall_decision }}
+                      </span>
+                    </td>
+                    <td class="py-3 px-6 text-center">
+                      <span
+                        @click="fetchJobDetail(job.application_id)"
+                        class="bg-[#1f5aa3] text-white px-4 py-1 rounded hover:bg-blue-600 cursor-pointer"
+                      >
+                        View
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ✅ Fixed Footer Pagination -->
+          <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mt-6">
+            <div class="flex items-center space-x-2">
+              <label class="text-sm text-gray-700">Items per page:</label>
+              <v-select
+                v-model="itemsPerPage"
+                :items="itemsPerPageOptions"
+                hide-details
+                density="compact"
+                variant="outlined"
+                class="w-18 text-sm"
+                placeholder="Per page"
+              />
+            </div>
+
+            <div class="inline-flex items-center gap-4 flex-wrap text-sm">
+              <button
+                @click="currentPage = 1"
+                :disabled="currentPage === 1"
+                class="px-2 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+              >
+                <i class="fas fa-angles-left"></i>
+              </button>
+
+              <button
+                @click="currentPage = Math.max(currentPage - 1, 1)"
+                :disabled="currentPage === 1"
+                class="px-2 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+              >
+                <i class="fas fa-angle-left"></i>
+              </button>
+
+              <button
+                v-for="page in pagesToShow"
+                :key="page"
+                @click="typeof page === 'number' && (currentPage = page)"
+                :disabled="page === '...'"
+                class="px-2 py-1 border rounded hover:bg-gray-100"
+                :class="{
+                  'bg-blue-600 text-white': page === currentPage,
+                  'opacity-60 cursor-default': page === '...'
+                }"
+              >
+                {{ page }}
+              </button>
+
+              <button
+                @click="currentPage = Math.min(currentPage + 1, totalPages)"
+                :disabled="currentPage === totalPages"
+                class="px-2 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+              >
+                <i class="fas fa-angle-right"></i>
+              </button>
+
+              <button
+                @click="currentPage = totalPages"
+                :disabled="currentPage === totalPages"
+                class="px-2 py-1 border rounded hover:bg-gray-100 disabled:opacity-50"
+              >
+                <i class="fas fa-angles-right"></i>
+              </button>
+            </div>
+          </div>
         </div>
-
-        <v-dialog v-model="dialog" max-width="800" min-height="550">
-          <v-card>
-            <v-card-title class="flex justify-between items-center text-lg font-semibold pa-4">
-              <div class="flex items-center justify-end space-x-4">
-                <!-- Copy Icon with Tooltip -->
-                <v-tooltip text="Copy to clipboard" location="top">
-                  <template #activator="{ props }">
-                    <i
-                      class="fas fa-copy cursor-pointer fa-lg"
-                      v-bind="props"
-                      @click="copyToClipboard"
-                    ></i>
-                  </template>
-                </v-tooltip>
-
-                <!-- Close Icon -->
-                <i class="fas fa-times cursor-pointer fa-lg" @click="dialog = false"></i>
-              </div>
-            </v-card-title>
-
-            <v-card-text>
-              <div v-if="jobLoading" class="flex justify-center items-center min-h-[200px] gap-4">
-                <v-progress-circular indeterminate color="#1f5aa3" size="40" width="3" />
-                <span class="mt-2 text-gray-600 text-sm">Loading job details</span>
-              </div>
-              <div v-else class="bg-gray-100 p-4 rounded overflow-auto text-sm">
-                <pre><code class="json">{{ formatJson(jobDetail?.data?.sofri_data ?? jobDetail) }}</code></pre>
-              </div>
-            </v-card-text>
-            <v-card-actions class="justify-end">
-              <v-btn color="primary" variant="plain" @click="dialog = false">Close</v-btn>
-            </v-card-actions>
-          </v-card>
-        </v-dialog>
       </div>
     </div>
   </MainLayout>

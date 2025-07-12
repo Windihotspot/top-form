@@ -1,34 +1,45 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import SidebarView from './sidebar/SidebarView.vue'
-import HeaderView from './header/HeaderView.vue'
-import PasswordPromptResetModal from '@/components/PasswordPromptResetModal.vue'
+import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 import dayjs from 'dayjs'
+import PasswordPromptResetModal from '@/components/PasswordPromptResetModal.vue'
+import HeaderView from './header/HeaderView.vue'
+import SidebarView from './sidebar/SidebarView.vue'
 
-// ✅ Set a mock user with last password reset 30 days ago
-const mockUser = {
-  name: 'Test User',
-  email: 'test@example.com',
-  last_password_reset_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-}
-localStorage.setItem('user', JSON.stringify(mockUser))
+const router = useRouter()
+const userStore = useUserStore()
 
 const showPasswordResetModal = ref(false)
+const showPasswordReminderBanner = ref(false)
+const remainingDaysToReset = ref(null)
 
 const drawer = ref()
 const innerW = window.innerWidth
+
+// Simulate password changed 25 days ago (for testing)
+userStore.user.password_changed_at = dayjs().subtract(25, 'day').toISOString()
 
 onMounted(() => {
   if (innerW < 950) {
     drawer.value = !drawer.value
   }
 
-  const user = JSON.parse(localStorage.getItem('user') || '{}')
-  const lastReset = dayjs(user.last_password_reset_at)
-  const now = dayjs()
+  const lastPasswordReset = userStore.user?.password_changed_at
+  console.log('last password reset:', lastPasswordReset)
 
-  if (now.diff(lastReset, 'day') >= 30) {
-    showPasswordResetModal.value = true
+  if (lastPasswordReset) {
+    const lastReset = dayjs(lastPasswordReset)
+    const now = dayjs()
+    const daysSinceReset = now.diff(lastReset, 'day')
+    const remaining = 30 - daysSinceReset
+
+    if (daysSinceReset >= 30) {
+      showPasswordResetModal.value = true
+    } else if (daysSinceReset >= 25) {
+      remainingDaysToReset.value = remaining
+      showPasswordReminderBanner.value = true
+    }
   }
 })
 </script>
@@ -69,16 +80,64 @@ onMounted(() => {
     <!-- ---------------------------------------------- -->
     <!--- Page Wrapper -->
     <!-- ---------------------------------------------- -->
+
     <v-main class="mt-4 page-wrapper">
       <v-container fluid class="page-wrapper">
+        <transition name="slide-down">
+          <v-banner
+            v-if="showPasswordReminderBanner"
+            class="password-banner mb-4 px-6 py-4"
+            elevation="4"
+            rounded
+          >
+            <!-- Close Icon -->
+            <i
+              class="fas fa-times absolute top-3 right-4 text-white cursor-pointer text-xl hover:text-gray-300"
+              @click="showPasswordReminderBanner = false"
+            ></i>
+
+            <!-- Icon on the left -->
+            <template #prepend>
+              <i class="fas fa-shield-alt text-white text-2xl mr-4"></i>
+            </template>
+
+            <template #text>
+              <div class="text-white">
+                <p class="text-lg font-semibold mb-1">Security Reminder</p>
+                <p>
+                  You have <strong>{{ remainingDaysToReset }}</strong> day<span
+                    v-if="remainingDaysToReset > 1"
+                    >s</span
+                  >
+                  left to reset your password for security reasons.
+                </p>
+              </div>
+            </template>
+
+            <template #actions>
+              <v-btn
+                color="#1f5aa3"
+                class="text-white mt-6"
+                variant="flat"
+                @click="router.push('/resetpassword')"
+              >
+                Reset Password
+              </v-btn>
+            </template>
+          </v-banner>
+        </transition>
+
         <slot />
-           <PasswordPromptResetModal v-model="showPasswordResetModal" />
+        <PasswordPromptResetModal v-model="showPasswordResetModal" />
       </v-container>
     </v-main>
   </v-app>
 </template>
 
 <style scoped>
+.v-btn {
+  text-transform: none;
+}
 .side-bar {
   overflow: hidden !important;
 }
@@ -107,5 +166,40 @@ onMounted(() => {
   to {
     transform: rotate(360deg);
   }
+}
+
+.slide-down-enter-active {
+  animation: slideDown 0.4s ease-out;
+}
+.slide-down-leave-active {
+  animation: slideUp 0.3s ease-in forwards;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+}
+/* Beautiful gradient style */
+.password-banner {
+  background: linear-gradient(90deg, #ff9800, #f44336);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 </style>

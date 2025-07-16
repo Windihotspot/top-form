@@ -9,10 +9,12 @@ export const useUserStore = defineStore('user', {
     dashboardStats: null as DashboardStats | null,
     role: null as Role | null,
     permissions: [] as string[],
-    refreshToken: '' as string
+    refreshToken: '' as string,
+     isReady: false 
   }),
   actions: {
     setUserData(data: LoginResponseData) {
+       this.isReady = true 
       console.log('✅ setUserData called')
       console.log('🚀 Raw user data from API:', data)
       this.token = data.token
@@ -55,6 +57,7 @@ export const useUserStore = defineStore('user', {
       if (refreshToken) this.refreshToken = refreshToken
 
       if (token && user && dashboardStats && role && permissions) {
+        this.isReady = true
         this.token = token
         this.user = JSON.parse(user)
         this.dashboardStats = JSON.parse(dashboardStats)
@@ -62,6 +65,7 @@ export const useUserStore = defineStore('user', {
         this.permissions = JSON.parse(permissions)
         console.log('✅ User store initialized')
       } else {
+        this.isReady = true
         console.log('⚠️ No valid user data found in localStorage')
       }
     },

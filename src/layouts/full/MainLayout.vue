@@ -18,7 +18,7 @@ const drawer = ref()
 const innerW = window.innerWidth
 
 // Simulate password changed 25 days ago (for testing)
-userStore.user.password_changed_at = dayjs().subtract(25, 'day').toISOString()
+// userStore.user.password_changed_at = dayjs().subtract(25, 'day').toISOString()
 
 onMounted(() => {
   if (innerW < 950) {
@@ -34,6 +34,8 @@ onMounted(() => {
     const now = dayjs()
     const daysSinceReset = now.diff(lastReset, 'day')
     const remaining = 30 - daysSinceReset
+
+    console.log(`Password was last reset ${daysSinceReset} days ago. Remaining days to reset: ${remaining}`)
 
     if (daysSinceReset >= 30) {
       showPasswordResetModal.value = true

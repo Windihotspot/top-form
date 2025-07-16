@@ -5,7 +5,7 @@
 
       <v-tabs v-model="tab" density="compact">
         <v-tab
-        :disabled="loading"
+          :disabled="loading"
           v-for="item in tabs"
           :key="item.value"
           :value="item.value"
@@ -162,19 +162,19 @@
               <div class="flex flex-col space-y-1">
                 <label class="text-sm font-medium text-gray-700">Minimum Loan Amount (₦)</label>
                 <v-text-field
-                  type="number"
-                  v-model.number="thresholds.minimum_loan_amount"
+                  v-model="formattedMinLoan"
                   variant="outlined"
                   density="compact"
                   hide-details
+                 
                 />
               </div>
 
               <div class="flex flex-col space-y-1">
                 <label class="text-sm font-medium text-gray-700">Maximum Loan Amount (₦)</label>
                 <v-text-field
-                  type="number"
-                  v-model.number="thresholds.maximum_loan_amount"
+                  
+                  v-model.number="formattedMaxLoan"
                   variant="outlined"
                   density="compact"
                   hide-details
@@ -185,7 +185,7 @@
                 <label class="text-sm font-medium text-gray-700">Minimum Loan Age</label>
                 <v-text-field
                   type="number"
-                  v-model.number="thresholds.minimum_loan_age"
+                  v-model.number="formattedMinLoanAge"
                   variant="outlined"
                   density="compact"
                   hide-details
@@ -196,7 +196,7 @@
                 <label class="text-sm font-medium text-gray-700">Maximum Loan Age</label>
                 <v-text-field
                   type="number"
-                  v-model.number="thresholds.maximum_loan_age"
+                  v-model.number="formattedMaxLoanAge"
                   variant="outlined"
                   density="compact"
                   hide-details
@@ -434,69 +434,70 @@
               </div>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- Left Side -->
+         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+  <!-- Currency Fields -->
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">
+      Base Loan Value (₦)
+    </label>
+    <v-text-field
+      type="text"
+      v-model="formattedGeneralBaseLoan"
+      variant="outlined"
+      hide-details
+    />
+  </div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1"
-                  >Base Loan Value (₦)</label
-                >
-                <v-text-field
-                  type="number"
-                  v-model.number="generalSettings.base_loan_value"
-                  variant="outlined"
-                  hide-details
-                />
-              </div>
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">
+      Minimum Loan Amount (₦)
+    </label>
+    <v-text-field
+      type="text"
+      v-model="formattedGeneralMinLoan"
+      variant="outlined"
+      hide-details
+    />
+  </div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1"
-                  >Minimum Loan Amount (₦)</label
-                >
-                <v-text-field
-                  type="number"
-                  v-model.number="generalSettings.minimum_loan_amount"
-                  variant="outlined"
-                  hide-details
-                />
-              </div>
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">
+      Maximum Loan Amount (₦)
+    </label>
+    <v-text-field
+      type="text"
+      v-model="formattedGeneralMaxLoan"
+      variant="outlined"
+      hide-details
+    />
+  </div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1"
-                  >Maximum Loan Amount (₦)</label
-                >
-                <v-text-field
-                  type="number"
-                  v-model.number="generalSettings.maximum_loan_amount"
-                  variant="outlined"
-                  hide-details
-                />
-              </div>
+  <!-- Plain Number Fields -->
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">
+      Minimum Age for Loans
+    </label>
+    <v-text-field
+      type="number"
+      v-model="formattedGeneralMinLoanAge"
+      variant="outlined"
+      hide-details
+    />
+  </div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1"
-                  >Minimum Age for Loans</label
-                >
-                <v-text-field
-                  type="number"
-                  v-model.number="generalSettings.minimum_loan_age"
-                  variant="outlined"
-                  hide-details
-                />
-              </div>
+  <div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">
+      Maximum Age for Loans
+    </label>
+    <v-text-field
+      type="number"
+      v-model="formattedGeneralMaxLoanAge"
+      variant="outlined"
+      hide-details
+    />
+  </div>
+</div>
 
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1"
-                  >Maximum Age for Loans</label
-                >
-                <v-text-field
-                  type="number"
-                  v-model.number="generalSettings.maximum_loan_age"
-                  variant="outlined"
-                  hide-details
-                />
-              </div>
-            </div>
           </div>
         </v-tabs-window-item>
       </v-tabs-window>
@@ -506,9 +507,10 @@
 
 <script setup>
 import MainLayout from '@/layouts/full/MainLayout.vue'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import api from '@/api'
 import { ElMessage } from 'element-plus'
+import { useFormattedField } from '@/composables/useFormattedFields'
 
 const savingApply = ref(false)
 const savingDeploy = ref(false)
@@ -707,6 +709,14 @@ const thresholds = reactive({
   maximum_loan_age: null
 })
 
+
+
+const formattedMinLoan = useFormattedField(thresholds, 'minimum_loan_amount', { currency: true })
+const formattedMaxLoan = useFormattedField(thresholds, 'maximum_loan_amount', { currency: true })
+const formattedMinLoanAge = useFormattedField(thresholds, 'minimum_loan_age')
+const formattedMaxLoanAge = useFormattedField(thresholds, 'maximum_loan_age')
+
+
 const savingGeneralApply = ref(false)
 const savingGeneralDeploy = ref(false)
 const generalBatchId = ref(null)
@@ -718,6 +728,16 @@ const generalSettings = reactive({
   minimum_loan_age: null,
   maximum_loan_age: null
 })
+
+// For currency fields (display as ₦)
+
+const formattedGeneralBaseLoan = useFormattedField(generalSettings, 'base_loan_value', { currency: true })
+const formattedGeneralMinLoan = useFormattedField(generalSettings, 'minimum_loan_amount', { currency: true })
+const formattedGeneralMaxLoan = useFormattedField(generalSettings, 'maximum_loan_amount', { currency: true })
+const formattedGeneralMinLoanAge = useFormattedField(generalSettings, 'minimum_loan_age')
+const formattedGeneralMaxLoanAge = useFormattedField(generalSettings, 'maximum_loan_age')
+
+
 
 const runGeneralSettingsAction = async (action = 'apply') => {
   if (action === 'apply') savingGeneralApply.value = true

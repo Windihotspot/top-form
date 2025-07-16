@@ -1,13 +1,14 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import sidebarItems from './sidebarItem'
 import { useRoute, useRouter } from 'vue-router'
-
+import { gsap } from 'gsap'
 import { useUserStore } from '@/stores/user' // 👈 You should be using userStore here
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const sidebarRef = ref(null)
 
 console.log('User permissions:', {
   permissions: userStore.permissions
@@ -25,10 +26,20 @@ const filteredSidebar = computed(() => {
 const isActive = (path) => {
   return route.path === path
 }
+
+onMounted(()=> {
+  gsap.from(sidebarRef.value, {
+    x: -100,
+    y: -50,
+    opacity: 0,
+    duration: 0.8,
+    ease: 'power2.out',
+  })
+})
 </script>
 
 <template>
-  <div class="side-bar mt-4 d-flex flex-column h-full justify-between overflow-hidden">
+  <div ref="sidebarRef" class="side-bar mt-4 d-flex flex-column h-full justify-between overflow-hidden">
     <!-- Logo part -->
     <!-- <div class="logo pa-4">
       <img src="/src/assets/images/white.png" class="" />

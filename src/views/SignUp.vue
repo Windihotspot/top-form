@@ -6,11 +6,10 @@ import { useRouter } from 'vue-router'
 const schoolForm = ref({
   name: '',
   address: '',
+  city: '',
+  state: '',
   contact: '',
   type: '',
-  sessionStart: '',
-  sessionEnd: '',
-  gradingSystem: ''
 })
 
 const adminForm = ref({
@@ -93,8 +92,8 @@ const finishSetup = () => {
         <div v-if="currentStep === 0">
           <v-text-field variant="outlined" color="#15803d" label="School Name" v-model="schoolForm.name" />
           <v-text-field variant="outlined" color="#15803d" label="Address" v-model="schoolForm.address" />
-          <v-text-field variant="outlined" color="#15803d" label="City" v-model="schoolForm.address" />
-          <v-text-field variant="outlined" color="#15803d" label="State" v-model="schoolForm.address" />
+          <v-text-field variant="outlined" color="#15803d" label="City" v-model="schoolForm.city" />
+          <v-text-field variant="outlined" color="#15803d" label="State" v-model="schoolForm.state" />
           <v-text-field variant="outlined" color="#15803d" label="Phone or Email" v-model="schoolForm.contact" />
           <v-text-field variant="outlined" color="#15803d" label="School Type" v-model="schoolForm.type" />
           

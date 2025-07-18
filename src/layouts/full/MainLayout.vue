@@ -63,7 +63,7 @@ const dismissPasswordReminderBanner = () => {
         <v-icon>fa-solid fa-bars</v-icon>
       </v-btn>
       <div class="logo pa-6">
-        <p class="font-semibold text-lg">FlowkyAi</p>
+        <!-- <p class="font-semibold text-lg">FlowkyAi</p> -->
         <!-- <img src="/src/assets/images/white.png" class="" /> -->
       </div>
       <v-spacer></v-spacer>

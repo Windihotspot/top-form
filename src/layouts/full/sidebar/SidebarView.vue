@@ -1,76 +1,9 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
-import sidebarItems from './sidebarItem'
-import { useRoute, useRouter } from 'vue-router'
-import { gsap } from 'gsap'
-import { useUserStore } from '@/stores/user' // 👈 You should be using userStore here
 
-const route = useRoute()
-const router = useRouter()
-const userStore = useUserStore()
-const sidebarRef = ref(null)
-
-console.log('User permissions:', {
-  permissions: userStore.permissions
-})
-
-// Determine which routes the user can see
-const filteredSidebar = computed(() => {
-  return sidebarItems.filter((item) => {
-    if (!item.permission) return true // If no permission needed, allow
-    return userStore.hasPermission(item.permission) // Check permission via userStore
-  })
-})
-
-// Function to check if the current route is active
-const isActive = (path) => {
-  return route.path === path
-}
-
-onMounted(()=> {
-  gsap.from(sidebarRef.value, {
-    x: -100,
-    y: -50,
-    opacity: 0,
-    duration: 0.8,
-    ease: 'power2.out',
-  })
-})
 </script>
 
 <template>
-  <div ref="sidebarRef" class="side-bar mt-4 d-flex flex-column h-full justify-between overflow-hidden">
-    <!-- Logo part -->
-    <!-- <div class="logo pa-4">
-      <img src="/src/assets/images/white.png" class="" />
-    </div> -->
-
-    <div class="flex items-center space-x-3 p-4 m-4 border-b">
-      <i class="fa-solid fa-columns text-gray-700 text-xl"></i>
-    </div>
-    <!-- Navigation -->
-    <div class="flex-grow">
-      <v-list class="pa-4">
-        <template v-for="(item, i) in filteredSidebar" :key="i">
-          <v-list-item
-            @click="router.push(item.path)"
-            class="mb-4 custom-btn no-uppercase relative"
-            size="small"
-            rounded="lg"
-            block
-            :class="{ 'custom-active': isActive(item.path) }"
-          >
-            <div class="flex items-center w-full">
-              <v-icon left>{{ item.icon }}</v-icon>
-              <span class="menu-item ml-4" v-text="item.title"></span>
-            </div>
-          </v-list-item>
-
-          <!-- <div v-if="isActive(item.path)" class="active-bar"></div> -->
-        </template>
-      </v-list>
-    </div>
-  </div>
+  
 </template>
 
 <style scoped>

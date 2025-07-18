@@ -1,6 +1,11 @@
 <script setup>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
+import { useAuth } from '@/composables/useAuth'
 import { useRouter } from 'vue-router'
+import { ElNotification, ElMessage } from 'element-plus'
+
+const { signup, loading } = useAuth()
+const router = useRouter()
 
 // Form data
 const schoolForm = ref({
@@ -9,7 +14,7 @@ const schoolForm = ref({
   city: '',
   state: '',
   contact: '',
-  type: '',
+  type: ''
 })
 
 const adminForm = ref({
@@ -27,22 +32,91 @@ const steps = [
   { title: 'Finish Setup', description: 'Complete your registration', icon: 'fa-check' }
 ]
 
+// Steps and forms
 const currentStep = ref(0)
-const router = useRouter()
+const schoolFormRef = ref(null)
+const adminFormRef = ref(null)
+const isSchoolValid = ref(false)
+const isAdminValid = ref(false)
 
 // Navigation Methods
-const nextStep = () => {
-  if (currentStep.value < steps.length - 1) currentStep.value++
+// Validation rules
+const required = (v) => !!v || 'This field is required'
+const emailRule = (v) => /.+@.+\..+/.test(v) || 'Enter a valid email'
+const passwordRules = [
+  (v) => !!v || 'Password is required',
+  (v) => v.length >= 6 || 'Minimum 6 characters',
+  (v) => /[A-Z]/.test(v) || 'At least one uppercase letter',
+  (v) => /[0-9]/.test(v) || 'At least one number'
+]
+
+// Password strength
+const passwordStrengthPercent = computed(() => {
+  const p = adminForm.value.password
+  let score = 0
+  if (p.length >= 6) score += 30
+  if (/[A-Z]/.test(p)) score += 30
+  if (/[0-9]/.test(p)) score += 20
+  if (/[^a-zA-Z0-9]/.test(p)) score += 20
+  return score
+})
+const passwordStrengthColor = computed(() => {
+  const val = passwordStrengthPercent.value
+  if (val >= 80) return 'green'
+  if (val >= 50) return 'orange'
+  return 'red'
+})
+
+// Navigation logic
+const prevStep = () => currentStep.value--
+const nextStep = async () => {
+  let formValidation = null
+
+  if (currentStep.value === 0) {
+    formValidation = await schoolFormRef.value?.validate()
+  } else if (currentStep.value === 1) {
+    formValidation = await adminFormRef.value?.validate()
+  }
+
+  if (formValidation?.valid) {
+    currentStep.value++
+  } else {
+    ElNotification({
+      
+      message: 'Please fill in all required fields before proceeding.',
+      type: 'warning',
+      position: 'top-right',
+      duration: 3000
+    })
+  }
 }
 
-const prevStep = () => {
-  if (currentStep.value > 0) currentStep.value--
-}
 
-const finishSetup = () => {
-  console.log('School Form:', schoolForm.value)
-  console.log('Admin Form:', adminForm.value)
-  router.push('/dashboard')
+const handleFinishSignup = async () => {
+  try {
+    console.log('📄 School Form Payload:', schoolForm.value)
+    console.log('👤 Admin Form Payload:', adminForm.value)
+    await signup({
+      school: schoolForm.value,
+      admin: adminForm.value
+    })
+
+    ElNotification({
+      title: 'Success',
+      message: 'Sign up successful! Please check your email to confirm.',
+      type: 'success',
+      duration: 4000
+    })
+
+    router.push('/verifyemail')
+  } catch (err) {
+    ElNotification({
+      title: 'Error',
+      message: err.response?.data?.message || 'Signup failed',
+      type: 'error',
+      duration: 4000
+    })
+  }
 }
 </script>
 
@@ -89,27 +163,104 @@ const finishSetup = () => {
         <p class="text-gray-500">{{ steps[currentStep].description }}</p>
 
         <!-- Step 1: School Details -->
-        <div v-if="currentStep === 0">
-          <v-text-field variant="outlined" color="#15803d" label="School Name" v-model="schoolForm.name" />
-          <v-text-field variant="outlined" color="#15803d" label="Address" v-model="schoolForm.address" />
-          <v-text-field variant="outlined" color="#15803d" label="City" v-model="schoolForm.city" />
-          <v-text-field variant="outlined" color="#15803d" label="State" v-model="schoolForm.state" />
-          <v-text-field variant="outlined" color="#15803d" label="Phone or Email" v-model="schoolForm.contact" />
-          <v-text-field variant="outlined" color="#15803d" label="School Type" v-model="schoolForm.type" />
-          
-          
-        </div>
+        <v-form ref="schoolFormRef" v-model="isSchoolValid" v-if="currentStep === 0">
+          <v-text-field
+            variant="outlined"
+            color="#15803d"
+            label="School Name"
+            v-model="schoolForm.name"
+            :rules="[required]"
+          />
+          <v-text-field
+            variant="outlined"
+            color="#15803d"
+            label="Address"
+            v-model="schoolForm.address"
+            :rules="[required]"
+          />
+          <v-text-field
+            variant="outlined"
+            color="#15803d"
+            label="City"
+            v-model="schoolForm.city"
+            :rules="[required]"
+          />
+          <v-text-field
+            variant="outlined"
+            color="#15803d"
+            label="State"
+            v-model="schoolForm.state"
+            :rules="[required]"
+          />
+          <v-text-field
+            variant="outlined"
+            color="#15803d"
+            label="Phone or Email"
+            v-model="schoolForm.contact"
+            :rules="[required]"
+          />
+          <v-text-field
+            variant="outlined"
+            color="#15803d"
+            label="School Type"
+            v-model="schoolForm.type"
+            :rules="[required]"
+          />
+        </v-form>
 
         <!-- Step 2: Admin Details -->
-        <div v-else-if="currentStep === 1">
-          <v-text-field variant="outlined" color="#15803d" placeholder="Enter Full name"  v-model="adminForm.fullName" />
-          <v-text-field variant="outlined" color="#15803d" placeholder="Enter email address"  v-model="adminForm.email" />
-          <v-text-field variant="outlined" color="#15803d" placeholder="Enter Phone number"  v-model="adminForm.phone" />
-           <v-text-field variant="outlined" color="#15803d" label="Role" v-model="adminForm.role"/>
-          <v-text-field variant="outlined" color="#15803d" placeholder="Enter Full name" label="Password" type="password" v-model="adminForm.password" />
-          <v-text-field variant="outlined" color="#15803d" label="Confirm Password" type="password" v-model="adminForm.confirmPassword" />
-         
-        </div>
+        <v-form ref="adminFormRef" v-model="isAdminValid" v-else-if="currentStep === 1">
+          <v-text-field
+            variant="outlined"
+            color="#15803d"
+            label="Full Name"
+            v-model="adminForm.fullName"
+            :rules="[required]"
+          />
+          <v-text-field
+            variant="outlined"
+            color="#15803d"
+            label="Email Address"
+            v-model="adminForm.email"
+            :rules="[required, emailRule]"
+          />
+          <v-text-field
+            variant="outlined"
+            color="#15803d"
+            label="Phone Number"
+            v-model="adminForm.phone"
+            :rules="[required]"
+          />
+          <v-text-field
+            variant="outlined"
+            color="#15803d"
+            label="Role"
+            v-model="adminForm.role"
+            :rules="[required]"
+          />
+          <v-text-field
+            variant="outlined"
+            color="#15803d"
+            label="Password"
+            v-model="adminForm.password"
+            type="password"
+            :rules="passwordRules"
+          />
+          <v-progress-linear
+            :value="passwordStrengthPercent"
+            :color="passwordStrengthColor"
+            height="6"
+            class="mb-2"
+          ></v-progress-linear>
+          <v-text-field
+            variant="outlined"
+            color="#15803d"
+            label="Confirm Password"
+            type="password"
+            v-model="adminForm.confirmPassword"
+            :rules="[(v) => v === adminForm.password || 'Passwords do not match']"
+          />
+        </v-form>
 
         <!-- Step 3: Finish -->
         <div v-else class="text-center space-y-4">
@@ -126,17 +277,15 @@ const finishSetup = () => {
           ></iframe>
           <h2 class="text-2xl font-semibold">Welcome to School Manager!</h2>
           <p class="text-gray-500">Get up and running in 3 minutes.</p>
-          <v-btn color="success" class="w-40" @click="finishSetup">Finish up</v-btn>
+          <v-btn color="success" class="w-40" :loading="loading" @click="handleFinishSignup"
+            >Finish up</v-btn
+          >
         </div>
 
         <!-- Navigation Buttons -->
         <div class="flex justify-between mt-4">
           <v-btn variant="outlined" :disabled="currentStep === 0" @click="prevStep"> Back </v-btn>
-          <v-btn
-            v-if="currentStep < steps.length - 1"
-            color="primary"
-            @click="nextStep"
-          >
+          <v-btn v-if="currentStep < steps.length - 1" color="primary" @click="nextStep">
             Next
           </v-btn>
         </div>
@@ -154,3 +303,9 @@ const finishSetup = () => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.v-text-field {
+  margin-top: 10px;
+}
+</style>

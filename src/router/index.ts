@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import SignUp from '@/views/SignUp.vue'
-import Login from '@/views/Login.vue'
+import LoginView from '@/views/LoginView.vue'
+import VerifyEmail from '@/views/VerifyEmail.vue'
+import AuthCallback from '@/views/AuthCallback.vue'
+import DashboardView from '@/views/dashboard/DashboardView.vue'
 
 
 const router = createRouter({
@@ -9,12 +12,27 @@ const router = createRouter({
     {
       path: '/login',
       name: 'login',
-      component: Login
+      component: LoginView
     },
     {
       path: '/',
       name: 'signup',
       component: SignUp
+    },
+    {
+      path: '/verifyemail',
+      name: 'verifyemail',
+      component: VerifyEmail
+    },
+    {
+      path: '/auth/callback',
+      name: 'authcallback',
+      component: AuthCallback
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: DashboardView
     },
     
   ]

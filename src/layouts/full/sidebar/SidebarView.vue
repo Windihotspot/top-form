@@ -1,9 +1,67 @@
 <script setup>
+import { ref, computed, onMounted } from 'vue'
+import sidebarItems from './sidebarItem'
+import { useRoute, useRouter } from 'vue-router'
+import { gsap } from 'gsap'
 
+const route = useRoute()
+const router = useRouter()
+const sidebarRef = ref(null)
+
+// Determine which routes the user can see
+const filteredSidebar = computed(() => {
+  return sidebarItems
+})
+
+// Function to check if the current route is active
+const isActive = (path) => {
+  return route.path === path
+}
+
+onMounted(() => {
+  gsap.from(sidebarRef.value, {
+    x: -100,
+    y: -50,
+    opacity: 0,
+    duration: 0.8,
+    ease: 'power2.out'
+  })
+})
 </script>
 
 <template>
-  
+  <div
+    ref="sidebarRef"
+    class="side-bar mt-4 d-flex flex-column h-full justify-between overflow-hidden"
+  >
+    <!-- Logo part -->
+    <!-- <div class="logo pa-4">
+      <img src="/src/assets/images/white.png" class="" />
+    </div> -->
+
+    <!-- Navigation -->
+    <div class="flex-grow">
+      <v-list class="pa-4">
+        <template v-for="(item, i) in filteredSidebar" :key="i">
+          <v-list-item
+            @click="router.push(item.path)"
+            class="mb-4 custom-btn no-uppercase relative"
+            size="small"
+            rounded="lg"
+            block
+            :class="{ 'custom-active': isActive(item.path) }"
+          >
+            <div class="flex items-center w-full">
+              <v-icon left>{{ item.icon }}</v-icon>
+              <span class="menu-item ml-4" v-text="item.title"></span>
+            </div>
+          </v-list-item>
+
+          <!-- <div v-if="isActive(item.path)" class="active-bar"></div> -->
+        </template>
+      </v-list>
+    </div>
+  </div>
 </template>
 
 <style scoped>
@@ -66,19 +124,19 @@
 }
 
 .custom-active {
-  color: #1f5aa3 !important; /* Active state color */
-  background-color: rgba(0, 0, 255, 0.1); /* Light blue background */
- border-radius: 12px;
+  color: #15803d !important; /* Active state color */
+  background-color: rgba(21, 128, 61, 0.1); /* Light green background matching the text */
+  border-radius: 12px;
   position: relative;
   overflow: visible;
 }
 
 .custom-active .menu-item {
-  color: #1f5aa3 !important;
+  color: #15803d !important;
 }
 
 .custom-active .v-icon {
-  color: #1f5aa3 !important;
+  color: #15803d !important;
 }
 .active-bar {
   position: absolute;
@@ -87,7 +145,7 @@
   transform: translateY(-50%);
   width: 4px;
   height: 40px; /* Adjust to match your button height */
-  background-color: #1f5aa3;
+  background-color: #15803d;
   border-radius: 8px;
 }
 .custom-active::after {
@@ -97,7 +155,7 @@
   top: 12px;
   bottom: 12px;
   width: 4px;
-  background-color: #1f5aa3; /* Blue vertical bar */
+  background-color: #15803d; /* Blue vertical bar */
   border-radius: 4px;
 }
 ::v-deep(.custom-active::after) {
@@ -107,8 +165,7 @@
   bottom: 8px;
   right: -4px;
   width: 4px;
-  background-color: #1f5aa3;
+  background-color: #15803d;
   border-radius: 4px;
 }
-
 </style>

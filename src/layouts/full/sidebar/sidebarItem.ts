@@ -2,26 +2,37 @@ const sidebarItems = [
   {
     title: 'Dashboard',
     path: '/dashboard',
-        icon: 'fa-solid fa-chart-area', 
-    permission: null
+    icon: 'fas fa-chart-line',  // Dashboard icon
   },
   {
-    title: 'Jobs',
+    title: 'Database',
     path: '/joblist',
-    icon: 'fas fa-briefcase',
-    permission: 'view_jobs'
+    icon: 'fas fa-database',        // Database icon
   },
   {
-    title: 'Business Logic',
+    title: 'Attendance',
     path: '/business-logic',
-    icon: 'fas fa-cogs',
-    permission: 'view_logic'
+    icon: 'fas fa-user-check',      // Attendance icon
   },
   {
-    title: 'Logs',
+    title: 'Exams',
     path: '/logs',
-    icon: 'fas fa-file-alt',
-    permission: 'view_logs'
+    icon: 'fas fa-file-signature',  // Exams icon
+  },
+  {
+    title: 'Transport',
+    path: '/logs',
+    icon: 'fas fa-bus-alt',         // Transport icon
+  },
+  {
+    title: 'Revenue',
+    path: '/logs',
+    icon: 'fas fa-coins',           // Revenue icon
+  },
+  {
+    title: 'Expenses',
+    path: '/logs',
+    icon: 'fas fa-money-bill-wave', // Expenses icon
   }
 ]
 

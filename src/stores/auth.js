@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
+import api from '../services/api'
 import { supabase } from '@/supabase'
-import axios from 'axios'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -13,15 +13,10 @@ export const useAuthStore = defineStore('auth', {
     async signup(onboardingData) {
       this.loading = true
       try {
-        // Call your onboarding backend endpoint (creates Supabase user + profile)
-        const { data } = await axios.post('http://localhost:3000/api/onboarding', onboardingData)
-
-        // Optionally fetch user after sign-up if you want
+        const { data } = await api.post('/onboarding', onboardingData)
         await this.fetchUser()
-        console.log("onboarding response:", data)
         return data
       } catch (err) {
-        console.log(err)
         throw err
       } finally {
         this.loading = false
@@ -32,14 +27,12 @@ export const useAuthStore = defineStore('auth', {
       this.loading = true
       try {
         const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-
+        console.log('login response:', data)
         if (error) throw error
-
         this.user = data.user
         this.token = data.session.access_token
         return data
       } catch (err) {
-        console.log(err)
         throw err
       } finally {
         this.loading = false

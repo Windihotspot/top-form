@@ -6,13 +6,13 @@ import { useUserStore } from '@/stores/user'
 const userStore = useUserStore()
 
 onMounted(() => {
-  userStore.initFromStorage()
+  // userStore.initFromStorage()
 
-  console.log('User store on app init:', {
-    user: userStore.user,
-    permissions: userStore.permissions,
-    token: userStore.token
-  })
+  // console.log('User store on app init:', {
+  //   user: userStore.user,
+  //   permissions: userStore.permissions,
+  //   token: userStore.token
+  // })
 })
 </script>
 

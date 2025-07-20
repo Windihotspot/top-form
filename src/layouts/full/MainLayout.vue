@@ -1,18 +1,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useUserStore } from '@/stores/user'
 import dayjs from 'dayjs'
-import PasswordPromptResetModal from '@/components/PasswordPromptResetModal.vue'
 import HeaderView from './header/HeaderView.vue'
 import SidebarView from './sidebar/SidebarView.vue'
 
 const router = useRouter()
-const userStore = useUserStore()
-
-const showPasswordResetModal = ref(false)
-const showPasswordReminderBanner = ref(false)
-const remainingDaysToReset = ref(null)
 
 const drawer = ref()
 const innerW = window.innerWidth
@@ -24,34 +17,7 @@ onMounted(() => {
   if (innerW < 950) {
     drawer.value = !drawer.value
   }
-
-  const dismissedBanner = localStorage.getItem('password_banner_dismissed')
-  if (dismissedBanner === 'true') return
-
-  const lastPasswordReset = userStore.user?.password_changed_at
-  if (lastPasswordReset) {
-    const lastReset = dayjs(lastPasswordReset)
-    const now = dayjs()
-    const daysSinceReset = now.diff(lastReset, 'day')
-    const remaining = 30 - daysSinceReset
-
-    console.log(`Password was last reset ${daysSinceReset} days ago. Remaining days to reset: ${remaining}`)
-
-    if (daysSinceReset >= 30) {
-      showPasswordResetModal.value = true
-    } else if (daysSinceReset >= 25) {
-      remainingDaysToReset.value = remaining
-      showPasswordReminderBanner.value = true
-    }
-  }
 })
-
-const dismissPasswordReminderBanner = () => {
-  if (typeof localStorage !== 'undefined') {
-    localStorage.setItem('password_banner_dismissed', 'true')
-  }
-  showPasswordReminderBanner.value = false
-}
 </script>
 
 <template>
@@ -93,52 +59,7 @@ const dismissPasswordReminderBanner = () => {
 
     <v-main class="mt-4 page-wrapper">
       <v-container fluid class="page-wrapper">
-        <transition name="slide-down">
-          <v-banner
-            v-if="showPasswordReminderBanner"
-            class="password-banner mb-4 px-6 py-4"
-            elevation="4"
-            rounded
-          >
-            <!-- Close Icon -->
-            <i
-              class="fas fa-times absolute top-3 right-4 text-white cursor-pointer text-xl hover:text-gray-300"
-              @click="dismissPasswordReminderBanner"
-            />
-
-            <!-- Icon on the left -->
-            <template #prepend>
-              <i class="fas fa-shield-alt text-white text-2xl mr-4"></i>
-            </template>
-
-            <template #text>
-              <div class="text-white">
-                <p class="text-lg font-semibold mb-1">Security Reminder</p>
-                <p>
-                  You have <strong>{{ remainingDaysToReset }}</strong> day<span
-                    v-if="remainingDaysToReset > 1"
-                    >s</span
-                  >
-                  left to reset your password for security reasons.
-                </p>
-              </div>
-            </template>
-
-            <template #actions>
-              <v-btn
-                color="#1f5aa3"
-                class="text-white mt-6"
-                variant="flat"
-                @click="router.push('/resetpassword')"
-              >
-                Reset Password
-              </v-btn>
-            </template>
-          </v-banner>
-        </transition>
-
         <slot />
-        <PasswordPromptResetModal v-model="showPasswordResetModal" />
       </v-container>
     </v-main>
   </v-app>

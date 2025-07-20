@@ -1,7 +1,7 @@
 import axios from 'axios'
-import { supabase } from '@/supabase'
+import { useAuthStore } from '@/stores/auth'
 
-// Create axios instance with default config
+// Create axios instance
 const api = axios.create({
   baseURL: 'http://localhost:3000/api',
   headers: {
@@ -9,11 +9,12 @@ const api = axios.create({
   }
 })
 
-// Request interceptor for adding token
-api.interceptors.request.use(async (config) => {
-  const { data, error } = await supabase.auth.getSession()
-  if (data.session) {
-    config.headers.Authorization = `Bearer ${data.session.access_token}`
+// Attach JWT from store to every request
+api.interceptors.request.use((config) => {
+  const authStore = useAuthStore()
+  console.log("auth token:", authStore.token)
+  if (authStore.token) {
+    config.headers.Authorization = `Bearer ${authStore.token}`
   }
   return config
 }, (error) => {

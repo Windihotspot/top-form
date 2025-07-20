@@ -26,19 +26,18 @@ export const useAuthStore = defineStore('auth', {
     async login({ email, password }) {
       this.loading = true
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-        console.log('login response:', data)
-        if (error) throw error
-        this.user = data.user
-        this.token = data.session.access_token
-        return data
+        const response = await api.post('/auth/login', { email, password })
+        console.log('Backend login response:', response.data)
+        this.user = response.data.data.user
+        this.token = response.data.data.token
+        return response.data
       } catch (err) {
+        console.error('Login error:', err)
         throw err
       } finally {
         this.loading = false
       }
     },
-
     async logout() {
       await supabase.auth.signOut()
       this.user = null

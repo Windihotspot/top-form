@@ -1,5 +1,16 @@
 <script setup>
+import { onMounted } from 'vue'
 import MainLayout from '@/layouts/full/MainLayout.vue'
+import api from '@/services/api'
+
+const fetchStudends = async ()  => {
+  const response = await api.get('/students')
+  console.log("students response:", response)
+}
+
+onMounted(()=> {
+  fetchStudends()
+})
 </script>
 
 <template>

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import { useAuthStore } from '@/stores/auth'
+
 
 // Create axios instance
 const api = axios.create({
@@ -11,10 +11,10 @@ const api = axios.create({
 
 // Attach JWT from store to every request
 api.interceptors.request.use((config) => {
-  const authStore = useAuthStore()
-  console.log("auth token:", authStore.token)
-  if (authStore.token) {
-    config.headers.Authorization = `Bearer ${authStore.token}`
+ const token = localStorage.getItem('token')
+  console.log('Auth token:', token)
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
   }
   return config
 }, (error) => {

@@ -1,12 +1,11 @@
 <script setup>
-import { ref, } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { ElNotification } from 'element-plus'
 
 const router = useRouter()
 const auth = useAuthStore()
-
 
 const showPassword = ref(false)
 const loginFormRef = ref(null)
@@ -15,7 +14,6 @@ const email = ref('')
 const password = ref('')
 const remember = ref(false)
 const processing = ref(false)
-
 
 const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
@@ -57,17 +55,13 @@ const submitForm = async () => {
     processing.value = false
   }
 }
-
-
 </script>
 
 <template>
   <div class="flex flex-col md:flex-row h-auto h-screen bg-white">
     <!-- Image Section -->
     <!-- Left Section with Carousel -->
-    <div
-      class="w-full md:w-1/2 h-full p-8 relative flex flex-col justify-between"
-    >
+    <div class="w-full md:w-1/2 h-full p-8 relative flex flex-col justify-between">
       <div class="flex items-center px-2">
         <span class="text-md font-semibold">TopForm</span>
       </div>
@@ -82,34 +76,20 @@ const submitForm = async () => {
               src="https://www.youtube.com/embed/5ShU93LVuq4?autoplay=1&mute=1"
               title="Welcome Video"
               frameborder="0"
-              allow="autoplay; encrypted-media"
+              allow="encrypted-media"
               allowfullscreen
               class="rounded-lg shadow mx-auto"
             ></iframe>
           </div>
 
           <!-- Dots -->
-          <div class="flex justify-center gap-2 mt-4">
-            <span
-              v-for="(slide, index) in slides"
-              :key="index"
-              class="h-2 w-6 rounded-full transition-all duration-300"
-              :class="{
-                'bg-white': currentSlide === index,
-                'bg-white/50': currentSlide !== index
-              }"
-            ></span>
-          </div>
         </div>
       </div>
-
-      
     </div>
 
     <!-- Login Form Section -->
     <div class="w-full md:w-1/2 pt-8 flex items-center justify-center bg-white h-full">
       <div class="max-w-md w-full px-4 sm:px-6 lg:px-8 py-8 md:py-0">
-       
         <h1 class="text-3xl font-bold text-gray-800 text-center">Welcome back!</h1>
         <p class="text-gray-600 mt-2 text-center">
           Provide your login credentials to access your account
@@ -155,17 +135,15 @@ const submitForm = async () => {
               <span class="text-sm text-gray-700">Remember me</span>
             </label>
 
-            <RouterLink to="/forgotpassword">
-              <v-btn
-                no-uppercase
-                variant="text"
-                size="small"
-                color="#15803d"
-                class="normal-case text-none"
-              >
-                Forgot password?
-              </v-btn>
-            </RouterLink>
+            <v-btn
+              no-uppercase
+              variant="text"
+              size="small"
+              color="#15803d"
+              class="normal-case text-none"
+            >
+              Forgot password?
+            </v-btn>
           </div>
 
           <!-- Submit Button -->

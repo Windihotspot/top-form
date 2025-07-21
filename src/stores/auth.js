@@ -4,8 +4,8 @@ import { supabase } from '@/supabase'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: null,
-    token: null,
+    user: JSON.parse(localStorage.getItem('user')) || null,
+    token: localStorage.getItem('token') || null,
     loading: false
   }),
 
@@ -30,6 +30,10 @@ export const useAuthStore = defineStore('auth', {
         console.log('Backend login response:', response.data)
         this.user = response.data.data.user
         this.token = response.data.data.token
+        // ✅ Save to localStorage
+        localStorage.setItem('user', JSON.stringify(this.user))
+        localStorage.setItem('token', this.token)
+
         return response.data
       } catch (err) {
         console.error('Login error:', err)
@@ -42,11 +46,16 @@ export const useAuthStore = defineStore('auth', {
       await supabase.auth.signOut()
       this.user = null
       this.token = null
+
+      // ✅ Clear from localStorage
+      localStorage.removeItem('user')
+      localStorage.removeItem('token')
     },
 
     async fetchUser() {
       const { data, error } = await supabase.auth.getUser()
       if (!error) this.user = data.user
+      localStorage.setItem('user', JSON.stringify(this.user))
     }
   }
 })

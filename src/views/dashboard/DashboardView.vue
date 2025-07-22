@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import MainLayout from '@/layouts/full/MainLayout.vue'
 import api from '@/services/api'
 import AnimatedStats from '@/components/AnimatedStats.vue'
+import StudentsGenderChart from '@/components/StudentsGenderChart.vue'
 
 const data = ref({
   students: [],
@@ -45,6 +46,7 @@ onMounted(fetchAll)
 
 <template>
   <MainLayout>
+    <!-- Statistics for students teachers employees revenue -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-start">
       <AnimatedStats
         iconClass="fas fa-users"
@@ -75,5 +77,10 @@ onMounted(fetchAll)
         :index="3"
       />
     </div>
+    <div class="">
+      <StudentsGenderChart :students="data.students" />
+    </div>
+    
+
   </MainLayout>
 </template>

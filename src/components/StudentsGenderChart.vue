@@ -1,11 +1,7 @@
 <template>
   <div class="bg-white p-4 shadow rounded-lg">
-    <apexchart
-      width="100%"
-      type="donut"
-      :options="chartOptions"
-      :series="series"
-    ></apexchart>
+    <apexchart v-if="hasData" width="100%" type="donut" :options="chartOptions" :series="series"></apexchart>
+    <div v-else class="text-center text-gray-500 py-8">No student data available</div>
   </div>
 </template>
 
@@ -36,31 +32,25 @@ const series = computed(() => [
   genderCounts.value.Other
 ])
 
-const chartOptions = {
-  labels: ['Male', 'Female', 'Other'],
-  colors: ['#3b82f6', '#ec4899', '#facc15'],
-  legend: {
-    position: 'bottom'
-  },
+const hasData = computed(() => series.value.some((count) => count > 0))
+
+const chartOptions = computed(() => ({
+  labels: [
+    `Male ${genderCounts.value.Male}`,
+    `Female ${genderCounts.value.Female}`,
+    `Other ${genderCounts.value.Other}`
+  ],
+  colors: ['#40B5AD', '#F472B6', '#A3A3A3'],
+  legend: { position: 'right' },
+  stroke: { show: false },
+  chart: { toolbar: { show: false } },
+  plotOptions: { pie: { donut: { size: '65%' } } },
   dataLabels: {
     enabled: true,
-    formatter: function (val, opts) {
-      return `${val.toFixed(1)}%`
-    }
+   
   },
-  tooltip: {
-    y: {
-      formatter: function (val) {
-        return `${val} students`
-      }
-    }
-  },
-  plotOptions: {
-    pie: {
-      donut: {
-        size: '60%'
-      }
-    }
-  }
-}
+
+}))
+
+
 </script>

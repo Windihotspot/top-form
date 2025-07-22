@@ -89,7 +89,7 @@ onMounted(fetchAll)
       />
     </div>
     <!-- students by gender & teachers list -->
-    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 ">
       <!-- students by Gender -->
       <div class="p-4 bg-white rounded">
         <div class="flex justify-between items-center mb-4">

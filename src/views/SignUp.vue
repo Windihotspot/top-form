@@ -125,7 +125,7 @@ const nextStep = async () => {
 
       <div class="flex justify-between items-center mt-4">
         <RouterLink to="/" class="text-gray-500 hover:underline"> Back to Home </RouterLink>
-        <v-btn variant="text" color="primary" @click="router.push('/login')">
+        <v-btn variant="text" color="success" @click="router.push('/login')">
           Sign In <i class="fa-solid fa-arrow-right ml-2"></i>
         </v-btn>
       </div>
@@ -246,7 +246,7 @@ const nextStep = async () => {
             src="https://www.youtube.com/embed/5ShU93LVuq4?autoplay=1&mute=1"
             title="Welcome Video"
             frameborder="0"
-            allow="autoplay; encrypted-media"
+            
             allowfullscreen
             class="rounded-lg shadow mx-auto"
           ></iframe>

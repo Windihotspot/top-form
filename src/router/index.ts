@@ -4,7 +4,8 @@ import LoginView from '@/views/LoginView.vue'
 import VerifyEmail from '@/views/VerifyEmail.vue'
 import AuthCallback from '@/views/AuthCallback.vue'
 import DashboardView from '@/views/dashboard/DashboardView.vue'
-import ApplicationsView from '@/views/ApplicationsView.vue'
+import AdminProfile from '@/views/AdminProfile.vue'
+
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -33,7 +34,13 @@ const router = createRouter({
       path: '/dashboard',
       name: 'dashboard',
       component: DashboardView
-    }
+    },
+    {
+      path: '/adminprofile',
+      name: 'adminprofile',
+      component: AdminProfile
+    },
+    
   ]
 })
 

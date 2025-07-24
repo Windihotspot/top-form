@@ -1,6 +1,6 @@
 <template>
-  <div class="bg-white p-4 shadow rounded-lg">
-    <apexchart v-if="hasData" width="100%" type="donut" :options="chartOptions" :series="series"></apexchart>
+  <div class="bg-white p-4 ">
+    <apexchart v-if="hasData" width="100%" type="donut" height="250" :options="chartOptions" :series="series"></apexchart>
     <div v-else class="text-center text-gray-500 py-8">No student data available</div>
   </div>
 </template>

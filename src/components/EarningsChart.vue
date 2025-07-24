@@ -61,17 +61,8 @@ const series = computed(() => [
   },
 ])
 const chartOptions = {
-  chart: {
-    toolbar: { show: false },
-    zoom: { enabled: false },
-    animations: {
-      enabled: true,
-      easing: 'easeinout',
-      speed: 500,
-      animateGradually: { enabled: true, delay: 150 },
-      dynamicAnimation: { enabled: true, speed: 350 },
-    },
-  },
+      chart: { type: 'line', toolbar: { show: false }, zoom: { enabled: false } },
+         dataLabels: { enabled: false },
   stroke: {
     curve: 'smooth',
     width: 1,
@@ -85,15 +76,11 @@ const chartOptions = {
       stops: [0, 90, 100],
     },
   },
-  colors: ['#7e22ce', '#f97316'], // Purple and Orange
+  colors: ['green', 'red'], // Purple and Orange
   xaxis: {
    categories: ['01', '05', '10', '15', '20', '25', '30'],
 
-    labels: {
-      style: {
-        fontSize: '10px',
-      },
-    },
+   
     axisBorder: {
       show: false,
     },

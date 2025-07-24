@@ -29,9 +29,11 @@ export const useAuthStore = defineStore('auth', {
         const response = await api.post('/auth/login', { email, password })
         console.log('Backend login response:', response.data)
         this.user = response.data.data.user
+        this.admin = response.data.data.admin // <-- Add this line
         this.token = response.data.data.token
-        // ✅ Save to localStorage
+
         localStorage.setItem('user', JSON.stringify(this.user))
+        localStorage.setItem('admin', JSON.stringify(this.admin)) // <-- Save it
         localStorage.setItem('token', this.token)
 
         return response.data
@@ -46,6 +48,8 @@ export const useAuthStore = defineStore('auth', {
       await supabase.auth.signOut()
       this.user = null
       this.token = null
+      localStorage.removeItem('admin')
+      this.admin = null
 
       // ✅ Clear from localStorage
       localStorage.removeItem('user')

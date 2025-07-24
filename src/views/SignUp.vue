@@ -92,32 +92,7 @@ const nextStep = async () => {
 }
 
 
-const handleFinishSignup = async () => {
-  try {
-    console.log('📄 School Form Payload:', schoolForm.value)
-    console.log('👤 Admin Form Payload:', adminForm.value)
-    await signup({
-      school: schoolForm.value,
-      admin: adminForm.value
-    })
 
-    ElNotification({
-      title: 'Success',
-      message: 'Sign up successful! Please check your email to confirm.',
-      type: 'success',
-      duration: 4000
-    })
-
-    router.push('/verifyemail')
-  } catch (err) {
-    ElNotification({
-      title: 'Error',
-      message: err.response?.data?.message || 'Signup failed',
-      type: 'error',
-      duration: 4000
-    })
-  }
-}
 </script>
 
 <template>

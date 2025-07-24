@@ -7,10 +7,9 @@ const userStore = useUserStore()
 
 onMounted(() => {
   // userStore.initFromStorage()
-
   // console.log('User store on app init:', {
   //   user: userStore.user,
-  //   permissions: userStore.permissions,
+  //
   //   token: userStore.token
   // })
 })
@@ -19,6 +18,5 @@ onMounted(() => {
 <template>
   <main class="text-neutral-800">
     <RouterView />
- 
   </main>
 </template>

@@ -153,18 +153,21 @@ const saveChanges = async () => {
     saving.value = false
   }
 }
+ const fetchadminProfile = async () => {
+    loading.value = true
+    try {
+      const response = await api.get('/admins/me')
+      admin.value = response.data.data
+      console.log('admin profile:', admin.value)
+    } catch (error) {
+      console.error('Error fetching profile:', error)
+    } finally {
+      loading.value = false
+    }
+  }
 
 onMounted(async () => {
-  loading.value = true
-  try {
-    const response = await api.get('/admins/me')
-    admin.value = response.data.data
-    console.log("admin profile:", admin.value)
-  } catch (error) {
-    console.error('Error fetching profile:', error)
-  } finally {
-    loading.value = false
-  }
+ fetchadminProfile()
 })
 </script>
 

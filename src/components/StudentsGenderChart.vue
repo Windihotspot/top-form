@@ -44,11 +44,9 @@ const chartOptions = computed(() => ({
   legend: { position: 'right' },
   stroke: { show: false },
   chart: { toolbar: { show: false } },
+   dataLabels: { enabled: false },
   plotOptions: { pie: { donut: { size: '65%' } } },
-  dataLabels: {
-    enabled: true,
-   
-  },
+  
 
 }))
 

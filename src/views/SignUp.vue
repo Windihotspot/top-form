@@ -61,6 +61,7 @@ const passwordStrengthPercent = computed(() => {
   return score
 })
 const passwordStrengthColor = computed(() => {
+  
   const val = passwordStrengthPercent.value
   if (val >= 80) return 'green'
   if (val >= 50) return 'orange'
@@ -82,7 +83,6 @@ const nextStep = async () => {
     currentStep.value++
   } else {
     ElNotification({
-      
       message: 'Please fill in all required fields before proceeding.',
       type: 'warning',
       position: 'top-right',
@@ -91,15 +91,62 @@ const nextStep = async () => {
   }
 }
 
+const handleFinishSignup = async () => {
+  try {
+    // Set loading state
+    loading.value = true
 
+    // Construct payload from form data
+    const payload = {
+      school: {
+        name: schoolForm.value.name,
+        address: schoolForm.value.address,
+        city: schoolForm.value.city,
+        state: schoolForm.value.state,
+        contact: schoolForm.value.contact,
+        type: schoolForm.value.type
+      },
+      admin: {
+        fullName: adminForm.value.fullName,
+        email: adminForm.value.email,
+        phone: adminForm.value.phone,
+        password: adminForm.value.password,
+        role: adminForm.value.role
+      }
+    }
 
+    // Send signup request
+    const response = await signup(payload)
+    console.log('signup response:', response)
+    // Handle success
+    ElNotification({
+      title: 'Well done!',
+      message: 'Verify your email to activate your account!',
+      type: 'success',
+      position: 'top-right'
+    })
+
+    // Redirect to dashboard or login
+    router.push('/verifyemail')
+  } catch (error) {
+    // Handle failure
+    ElNotification({
+      title: 'Error',
+      message: error?.message || 'An error occurred while signing up.',
+      type: 'error',
+      position: 'top-right'
+    })
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <template>
   <div class="flex h-screen">
     <!-- Sidebar -->
-    <div class="w-1/3 bg-white p-6 shadow-lg flex flex-col justify-between">
-      <div>
+    <div class="w-1/3 mx-auto bg-white p-6 shadow-lg flex flex-col justify-between">
+      <div class="my-auto mx-auto">
         <ul class="space-y-6">
           <li
             v-for="(step, index) in steps"
@@ -121,18 +168,17 @@ const nextStep = async () => {
             </div>
           </li>
         </ul>
-      </div>
 
-      <div class="flex justify-between items-center mt-4">
-        <RouterLink to="/" class="text-gray-500 hover:underline"> Back to Home </RouterLink>
-        <v-btn variant="text" color="success" @click="router.push('/login')">
-          Sign In <i class="fa-solid fa-arrow-right ml-2"></i>
-        </v-btn>
+        <div class="flex justify-between items-center mt-6 mx-auto">
+          <v-btn color="success" @click="router.push('/login')">
+            Sign In <i class="fa-solid fa-arrow-right ml-2"></i>
+          </v-btn>
+        </div>
       </div>
     </div>
 
     <!-- Main Content -->
-    <div class="flex-1 bg-gray-50 p-10 overflow-auto">
+    <div class="flex-1 mx-auto p-10 overflow-auto my-auto">
       <div class="max-w-xl mx-auto space-y-4">
         <h2 class="text-2xl font-semibold">{{ steps[currentStep].title }}</h2>
         <p class="text-gray-500">{{ steps[currentStep].description }}</p>
@@ -246,7 +292,6 @@ const nextStep = async () => {
             src="https://www.youtube.com/embed/5ShU93LVuq4?autoplay=1&mute=1"
             title="Welcome Video"
             frameborder="0"
-            
             allowfullscreen
             class="rounded-lg shadow mx-auto"
           ></iframe>
@@ -282,5 +327,8 @@ const nextStep = async () => {
 <style scoped>
 .v-text-field {
   margin-top: 10px;
+}
+.v-btn {
+  text-transform: none;
 }
 </style>

@@ -4,7 +4,8 @@ import { supabase } from '@/supabase'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    user: JSON.parse(localStorage.getItem('user')) || null,
+     user: JSON.parse(localStorage.getItem('user')) || null,
+    admin: JSON.parse(localStorage.getItem('admin')) || null,
     token: localStorage.getItem('token') || null,
     loading: false
   }),
@@ -31,7 +32,7 @@ export const useAuthStore = defineStore('auth', {
         this.user = response.data.data.user
         this.admin = response.data.data.admin // <-- Add this line
         this.token = response.data.data.token
-
+        this.school_id = response.data.data.admin.school_id
         localStorage.setItem('user', JSON.stringify(this.user))
         localStorage.setItem('admin', JSON.stringify(this.admin)) // <-- Save it
         localStorage.setItem('token', this.token)

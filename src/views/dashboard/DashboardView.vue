@@ -6,21 +6,9 @@ import AnimatedStats from '@/components/AnimatedStats.vue'
 import StudentsGenderChart from '@/components/StudentsGenderChart.vue'
 import AttendanceChart from '@/components/AttendanceChart.vue'
 import EarningsChart from '@/components/EarningsChart.vue'
-import { supabase } from '@/supabase'
-
+// import { supabase } from '@/supabase'
+import { useAuth } from '@/composables/useAuth'
 const loading = ref(true)
-
-const viewTeacher = (teacher) => {
-  console.log('View:', teacher)
-}
-
-const editTeacher = (teacher) => {
-  console.log('Edit:', teacher)
-}
-
-const deleteTeacher = (teacher) => {
-  console.log('Delete:', teacher)
-}
 
 const headers = [
   { title: 'Name', value: 'full_name' },
@@ -52,12 +40,16 @@ const data = ref({
 const fetchData = async (endpoint, key) => {
   try {
     const response = await api.get(`/${endpoint}`)
-    data.value[key] = response.data.data
-    console.log(`${key}:`, response.data.data)
+    if (key) data.value[key] = response.data.data
+     console.log(`${key || endpoint}`, response)
+    return response.data.data
+   
   } catch (err) {
-    console.error(`Error fetching ${key}:`, err)
+    console.error(`Error fetching ${key || endpoint}:`, err)
+    return [] // Ensure it always returns an array
   }
 }
+
 const fetchAttendanceSummary = async () => {
   const now = new Date()
   const month = now.getMonth() + 1 // JS months are 0-based
@@ -95,23 +87,50 @@ const fetchEarningsSummary = async () => {
   }
 }
 
-const fetchStudentsWithClasses = async () => {
-  const { data: students, error } = await supabase
-    .from('students')
-    .select(`*, class:classes(name)`)
-    .order('marks_percent', { ascending: false })
-  console.log('students with classes:', students)
-  if (error) {
-    console.log('Supabase error:', error)
-    return
-  }
+// const fetchStudentsWithClasses = async () => {
+//   const { data: students, error } = await supabase
+//     .from('students')
+//     .select(`*, class:classes(name)`)
+//     .order('marks_percent', { ascending: false })
+//   console.log('students with classes:', students)
+//   if (error) {
+//     console.log('Supabase error:', error)
+//     return
+//   }
 
-  data.value.students = students.map((s) => ({
+//   data.value.students = students.map((s) => ({
+//     ...s,
+//     class_name: s.class?.name || 'N/A',
+//     marks_percent: s.marks_percent || Math.floor(Math.random() * 100),
+//     rank: s.rank
+//   }))
+// }
+const classMap = {
+  '54c2929a-de11-4829-87ab-5ccd2fdf8998': 'JSS1',
+  '2ab9da37-18d7-4b21-b089-c907c9fee25b': 'JSS2',
+  '7b614ee8-5f72-427b-bd78-eeef84d2347a': 'JSS3',
+  'e2679e5e-5fe9-44c1-bf2b-4b6aa0f82425': 'SSS1',
+  '608b08db-906d-4f11-86dc-09c6a0d13ff5': 'SSS2',
+  'b316c14c-8877-42b5-b0c6-c4370cc6e3a3': 'SSS3'
+}
+const mapClassIdToName = (classId) => {
+  return classMap[classId] || 'Unknown'
+}
+
+const loadStudents = async () => {
+  const students = await fetchData('students') // don't pass a key here
+
+  const mappedStudents = students.map((s) => ({
     ...s,
-    class_name: s.class?.name || 'N/A',
+    class_name: mapClassIdToName(s.class_id),
     marks_percent: s.marks_percent || Math.floor(Math.random() * 100),
-    rank: s.rank
+    rank: s.rank || '-'
   }))
+
+  // Sort by marks_percent in descending order
+  mappedStudents.sort((a, b) => b.marks_percent - a.marks_percent)
+
+  data.value.students = mappedStudents
 }
 
 const fetchAll = async () => {
@@ -119,13 +138,13 @@ const fetchAll = async () => {
   try {
     await Promise.all([
       fetchData('teachers', 'teachers'),
+      loadStudents(),
       fetchData('employees', 'employees'),
       fetchData('revenue', 'revenue'),
       fetchData('expenses', 'expenses'),
       fetchAttendanceSummary(),
       fetchEarningsSummary(),
-      fetchNotifications(),
-      fetchStudentsWithClasses()
+      fetchNotifications()
     ])
   } catch (err) {
     console.error('❌ Error fetching data:', err)
@@ -138,19 +157,24 @@ const totalStudents = computed(() => data.value.students.length)
 const totalTeachers = computed(() => data.value.teachers.length)
 const totalEmployees = computed(() => data.value.employees.length)
 const totalRevenue = computed(() => {
-  return data.value.revenue.reduce((sum, rev) => sum + (rev.amount || 0), 0)
+  const total = data.value.revenue.reduce((sum, rev) => sum + (rev.amount || 0), 0)
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN'
+  }).format(total)
 })
+
 onMounted(fetchAll)
 </script>
 
 <template>
   <MainLayout>
-    <v-container
+    <div
       v-if="loading"
-      class="fill-height d-flex justify-center align-center mx-auto items-center flex"
+      class="fill-height d-flex justify-center align-center mx-auto items-center flex my-auto mx-auto"
     >
       <v-progress-circular indeterminate color="success" size="48" />
-    </v-container>
+    </div>
 
     <div v-else>
       <!-- Statistics for students teachers employees revenue -->

@@ -3,9 +3,10 @@ import { storeToRefs } from 'pinia'
 
 export const useAuth = () => {
   const auth = useAuthStore()
-  const { user, token, loading } = storeToRefs(auth)
+  const {school_id, user, token,loading} = storeToRefs(auth)
 
   return {
+    school_id,
     user,
     token,
     loading,

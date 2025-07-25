@@ -6,7 +6,7 @@ const sidebarItems = [
   },
   {
     title: 'Database',
-    path: '/joblist',
+    path: '/database',
     icon: 'fas fa-database',        // Database icon
   },
   {

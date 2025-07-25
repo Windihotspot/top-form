@@ -35,7 +35,7 @@ const studentsHeaders = [
   { title: 'Name', key: 'full_name' },
   { title: 'Class', key: 'class' },
   { title: 'Marks %', key: 'marks_percent' },
-  { title: 'Marks', key: 'rank' }
+  { title: 'Rank', key: 'rank' }
 ]
 
 const data = ref({
@@ -46,7 +46,7 @@ const data = ref({
   expenses: [],
   attendance: [],
   earnings: [],
-  notifications: [],
+  notifications: []
 })
 
 const fetchData = async (endpoint, key) => {
@@ -99,7 +99,7 @@ const fetchStudentsWithClasses = async () => {
   const { data: students, error } = await supabase
     .from('students')
     .select(`*, class:classes(name)`)
-    .order('full_name', { ascending: true })
+    .order('marks_percent', { ascending: false })
   console.log('students with classes:', students)
   if (error) {
     console.log('Supabase error:', error)
@@ -110,11 +110,9 @@ const fetchStudentsWithClasses = async () => {
     ...s,
     class_name: s.class?.name || 'N/A',
     marks_percent: s.marks_percent || Math.floor(Math.random() * 100),
-    rank: s.rank || Math.floor(Math.random() * 100)
+    rank: s.rank
   }))
 }
-
-
 
 const fetchAll = async () => {
   loading.value = true
@@ -201,15 +199,15 @@ onMounted(fetchAll)
         <!-- Students List -->
         <div class="bg-white p-4 rounded md:col-span-2">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-sm font-semibold">Students List</h2>
+            <h2 class="text-sm font-semibold">Top performing students</h2>
           </div>
           <div v-if="data.students.length > 0" class="overflow-hidden">
             <v-data-table
               :headers="studentsHeaders"
               :items="data.students"
-              :items-per-page="5"
               class="elevation-1"
               fixed-header
+              hide-default-footer
               height="300px"
             >
               <!-- Avatar + Name -->
@@ -238,28 +236,6 @@ onMounted(fetchAll)
                 >
                   {{ item.marks_percent }}%
                 </v-chip>
-              </template>
-
-              <!-- Action Menu -->
-              <template #item.actions="{ item }">
-                <v-menu transition="scale-transition" location="top end">
-                  <template #activator="{ props }">
-                    <v-btn icon variant="text" v-bind="props">
-                      <i class="fas fa-ellipsis-v text-gray-600"></i>
-                    </v-btn>
-                  </template>
-                  <v-list>
-                    <v-list-item @click="viewStudent(item)">
-                      <v-list-item-title>View</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item @click="editStudent(item)">
-                      <v-list-item-title>Edit</v-list-item-title>
-                    </v-list-item>
-                    <v-list-item @click="deleteStudent(item)">
-                      <v-list-item-title class="text-red-500">Delete</v-list-item-title>
-                    </v-list-item>
-                  </v-list>
-                </v-menu>
               </template>
             </v-data-table>
           </div>

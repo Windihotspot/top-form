@@ -6,6 +6,7 @@ import AuthCallback from '@/views/AuthCallback.vue'
 import DashboardView from '@/views/dashboard/DashboardView.vue'
 import AdminProfile from '@/views/AdminProfile.vue'
 import DatabaseView from '@/views/DatabaseView.vue'
+import AttendanceView from '@/views/AttendanceView.vue'
 
 
 const router = createRouter({
@@ -45,6 +46,11 @@ const router = createRouter({
       path: '/database',
       name: 'database',
       component: DatabaseView
+    },
+    {
+      path: '/attendance',
+      name: 'attendance',
+      component: AttendanceView
     },
     
   ]

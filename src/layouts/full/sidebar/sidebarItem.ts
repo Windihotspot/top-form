@@ -11,27 +11,27 @@ const sidebarItems = [
   },
   {
     title: 'Attendance',
-    path: '/business-logic',
+    path: '/attendance',
     icon: 'fas fa-user-check',      // Attendance icon
   },
   {
     title: 'Exams',
-    path: '/logs',
+    path: '/exams',
     icon: 'fas fa-file-signature',  // Exams icon
   },
   {
     title: 'Transport',
-    path: '/logs',
+    path: '/transport',
     icon: 'fas fa-bus-alt',         // Transport icon
   },
   {
     title: 'Revenue',
-    path: '/logs',
+    path: '/revenue',
     icon: 'fas fa-coins',           // Revenue icon
   },
   {
     title: 'Expenses',
-    path: '/logs',
+    path: '/expenses',
     icon: 'fas fa-money-bill-wave', // Expenses icon
   }
 ]

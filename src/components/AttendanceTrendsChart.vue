@@ -5,7 +5,7 @@
       <div class="text-xs text-gray-500">July, 2025</div>
     </div>
 
-    <Apexchart height="280" type="area" :options="chartOptions" :series="series" />
+  
      <pre>{{ props.trends }}</pre>
   </div>
 </template>

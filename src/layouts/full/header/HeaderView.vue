@@ -1,29 +1,26 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { computed } from 'vue'
 import { useAuthStore } from '@/stores/auth' // adjust path if needed
 import { useRouter } from 'vue-router'
-
-
 const auth = useAuthStore()
 const router = useRouter()
-
-
-
-
-
 
 // Use the store's admin directly
 const displayName = computed(() => auth.admin?.fullname || 'Admin')
 const displayRole = computed(() => auth.admin?.role || 'Admin')
-const userAvatarUrl = computed(() =>
-  auth.admin?.avatar_url || 'https://cdn.pixabay.com/photo/2016/07/28/21/59/dog-1549847_640.jpg'
-)
+const userAvatarUrl = computed(() => {
+  const url = auth.admin?.avatar_url
+  return url
+    ? `${url}?t=${auth.avatarRefreshKey}`
+    : 'https://cdn.pixabay.com/photo/2020/06/29/20/31/man-5354308_640.png'
+})
+
+
 // Logout handler
 const handleLogout = async () => {
   await auth.logout()
   router.push('/login') // redirect to login after logout
 }
-
 </script>
 
 <template>
@@ -47,7 +44,11 @@ const handleLogout = async () => {
         </template>
 
         <v-list>
-          <v-list-item :to="{ name: 'adminprofile' }" link class="text-gray-700 hover:text-black-500">
+          <v-list-item
+            :to="{ name: 'adminprofile' }"
+            link
+            class="text-gray-700 hover:text-black-500"
+          >
             <div class="flex items-center gap-2">
               <i class="fas fa-user text-gray-500 hover:text-gray-500"></i>
               <v-list-item-title>Profile</v-list-item-title>

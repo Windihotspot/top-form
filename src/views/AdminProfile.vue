@@ -11,10 +11,33 @@
       <div v-else>
         <!-- Profile Header -->
         <div class="flex flex-col md:flex-row gap-6 items-center md:items-start">
-          <div class="flex flex-col items-center m-4">
-            <v-avatar size="120">
-              <v-img :src="admin.avatar_url || defaultAvatar" />
-            </v-avatar>
+          <div class="flex flex-col items-center space-y-4">
+            <div class="flex items-center space-x-3">
+              <!-- Upload -->
+              <el-upload
+                class="avatar-uploader"
+                :show-file-list="false"
+                :before-upload="uploadAvatar"
+              >
+                <v-avatar size="120">
+                  <v-img :src="admin.avatar_url || defaultAvatar" :key="admin.avatar_url" />
+                </v-avatar>
+                <el-button icon="el-icon-upload" :loading="loading">Upload</el-button>
+              </el-upload>
+
+              <div v-if="isUploading" class="text-xs mt-1 text-gray-500">Uploading...</div>
+
+              <!-- Delete -->
+              <el-button
+                icon="el-icon-delete"
+                type="danger"
+                :loading="loading"
+                @click="deleteAvatar"
+                :disabled="!admin.avatar_url"
+              >
+                Delete
+              </el-button>
+            </div>
           </div>
 
           <!-- Contact Form -->
@@ -105,10 +128,20 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
+import { supabase } from '@/supabase.js'
 import MainLayout from '@/layouts/full/MainLayout.vue'
 import api from '@/services/api'
 const loading = ref(false)
 const saving = ref(false)
+import { useAuthStore } from '@/stores/auth' // adjust path if needed
+import { ElNotification, ElMessage } from 'element-plus'
+
+const auth = useAuthStore()
+
+const storeAdmin = auth.admin
+console.log('admin from store:', storeAdmin)
+const storeUser = auth.user
+console.log('user from store:', storeUser)
 
 const admin = ref({})
 
@@ -153,21 +186,125 @@ const saveChanges = async () => {
     saving.value = false
   }
 }
- const fetchadminProfile = async () => {
-    loading.value = true
-    try {
-      const response = await api.get('/admins/me')
-      admin.value = response.data.data
-      console.log('admin profile:', admin.value)
-    } catch (error) {
-      console.error('Error fetching profile:', error)
-    } finally {
-      loading.value = false
+const fetchadminProfile = async () => {
+  loading.value = true
+  try {
+    const response = await api.get('/admins/me')
+    admin.value = {
+      ...response.data.data,
+      avatar_url: response.data.data.avatar_url
+        ? `${response.data.data.avatar_url}?t=${Date.now()}`
+        : null
     }
+
+    console.log('admin profile:', admin.value)
+  } catch (error) {
+    console.error('Error fetching profile:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// Upload and Update Avatar
+const isUploading = ref(false)
+
+const uploadAvatar = async (file) => {
+  if (!file || !admin.value?.id) {
+    ElNotification({
+      title: 'Upload Failed',
+      message: 'Missing file or admin ID.',
+      type: 'error'
+    })
+    return
   }
 
+  isUploading.value = true
+
+  try {
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${admin.value.id}.${fileExt}`
+    const filePath = `avatars/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('admin-avatars')
+      .upload(filePath, file.raw || file, {
+        cacheControl: '3600',
+        upsert: true,
+        contentType: file.type
+      })
+
+    if (uploadError) throw uploadError
+
+    const { data: publicUrlData } = supabase.storage.from('admin-avatars').getPublicUrl(filePath)
+
+    const publicUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`
+    admin.value.avatar_url = publicUrl
+    auth.admin.avatar_url = publicUrl
+
+    const { error: dbError } = await supabase
+      .from('admins')
+      .update({ avatar_url: publicUrl })
+      .eq('id', admin.value.id)
+
+    if (dbError) throw dbError
+
+    admin.value.avatar_url = `${publicUrl}?t=${Date.now()}`
+    auth.admin.avatar_url = admin.value.avatar_url // update Pinia store if needed
+
+    ElNotification({
+      title: 'Profile Updated',
+      message: 'Avatar uploaded successfully.',
+      type: 'success',
+      duration: 4000
+    })
+    auth.updateAvatar(publicUrl)
+
+    fetchadminProfile()
+  } catch (err) {
+    console.error('❌ Upload failed:', err)
+    ElNotification({
+      title: 'Upload Failed',
+      message: err.message || 'Avatar upload failed',
+      type: 'error'
+    })
+  } finally {
+    isUploading.value = false
+  }
+}
+
+// Delete Avatar
+const deleteAvatar = async () => {
+  try {
+    loading.value = true
+
+    // Extract file path from URL
+    const filePath = admin.value.avatar_url?.split('/').slice(-2).join('/')
+
+    if (filePath) {
+      await supabase.storage.from('admin-avatars').remove([filePath])
+    }
+
+    await supabase.rpc('manage_admin_avatar', {
+      p_admin_id: admin.value.id,
+      p_avatar_url: null,
+      p_action: 'delete'
+    })
+
+     // Update both local and global store
+     auth.avatarRefreshKey = Date.now()
+    admin.value.avatar_url = null
+    auth.admin.avatar_url = null
+    ElMessage.success('Avatar removed.')
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('Error deleting avatar')
+  } finally {
+    loading.value = false
+  }
+}
+
 onMounted(async () => {
- fetchadminProfile()
+  fetchadminProfile()
 })
 </script>
 

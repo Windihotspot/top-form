@@ -7,7 +7,8 @@ export const useAuthStore = defineStore('auth', {
      user: JSON.parse(localStorage.getItem('user')) || null,
     admin: JSON.parse(localStorage.getItem('admin')) || null,
     token: localStorage.getItem('token') || null,
-    loading: false
+    loading: false,
+    avatarRefreshKey: Date.now(),
   }),
 
   actions: {
@@ -18,7 +19,7 @@ export const useAuthStore = defineStore('auth', {
         await this.fetchUser()
         return data
       } catch (err) {
-        throw err
+        console.log("error:", err) 
       } finally {
         this.loading = false
       }
@@ -61,6 +62,13 @@ export const useAuthStore = defineStore('auth', {
       const { data, error } = await supabase.auth.getUser()
       if (!error) this.user = data.user
       localStorage.setItem('user', JSON.stringify(this.user))
+    },
+
+     updateAvatar(url) {
+      if (this.admin) {
+        this.admin.avatar_url = url
+        this.avatarRefreshKey = Date.now() // force refresh only when updated
+      }
     }
   }
 })

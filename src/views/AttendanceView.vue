@@ -1,12 +1,11 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import MainLayout from '@/layouts/full/MainLayout.vue'
 import { supabase } from '@/supabase.js'
 import { useAuthStore } from '@/stores/auth'
 const authStore = useAuthStore()
 const schoolId = authStore.admin?.school_id
 import Apexchart from 'vue3-apexcharts'
-
 
 const dayLabels = ref([])
 
@@ -19,10 +18,12 @@ const generateDayLabels = () => {
   for (let i = 0; i < 30; i++) {
     const d = new Date(startDate)
     d.setDate(startDate.getDate() + i)
-    labels.push(d.toLocaleDateString('en-GB', {
-      day: '2-digit',
-      month: 'short'
-    })) // e.g., "05 Jul"
+    labels.push(
+      d.toLocaleDateString('en-GB', {
+        day: '2-digit',
+        month: 'short'
+      })
+    ) // e.g., "05 Jul"
   }
 
   dayLabels.value = labels
@@ -38,8 +39,10 @@ const trends = ref({
 })
 
 const dailySummary = ref([])
-const individualLogs = ref([])
-const breakdown = ref([])
+const recentLogs = ref([])
+const tabs = ['all', 'student', 'teacher', 'employee']
+const activeTab = ref('all')
+const loading = ref(false)
 
 // Define a date range for trends
 const today = new Date()
@@ -48,6 +51,29 @@ startDate.setDate(today.getDate() - 30) // 30 days ago
 
 const toISO = (d) => d.toISOString().slice(0, 10)
 
+const loadRecentAttendance = async (type = 'all', limit = 10) => {
+  loading.value = true
+  const { data, error } = await supabase.rpc('get_recent_attendance_logs', {
+    p_school_id: schoolId,
+    p_user_type: type,
+    p_limit: limit
+  })
+
+  if (error) {
+    console.error('Recent Attendance Error:', error)
+    loading.value = false
+    return
+  }
+
+  recentLogs.value = data
+  loading.value = false
+  console.log('recent attendance logs:', recentLogs.value)
+}
+
+// Automatically load attendance for selected tab
+watch(activeTab, (val) => {
+  loadRecentAttendance(val)
+})
 
 const loadAttendanceTrends = async () => {
   const { data, error } = await supabase.rpc('get_attendance_trends', {
@@ -112,7 +138,6 @@ const loadAttendanceTrends = async () => {
   dayLabels.value = labels // <-- Set this if you're binding to chart labels
 }
 
-
 const loadAttendanceData = async () => {
   // Daily summary
   const { data: summaryData, error: summaryError } = await supabase.rpc('get_daily_summary', {
@@ -121,28 +146,8 @@ const loadAttendanceData = async () => {
   })
   console.log('Daily attendance Summary:', summaryData, summaryError)
 
-  // Individual logs
-  const { data: logsData, error: logsError } = await supabase.rpc(
-    'get_attendance_by_day_detailed',
-    {
-      input_school_id: schoolId,
-      input_month: new Date().getMonth() + 1, // JS months are 0-indexed
-      input_year: new Date().getFullYear()
-    }
-  )
-  console.log('Individual Logs:', logsData, logsError)
-
-  // Breakdown by type
-  const { data: breakdownData, error: breakdownError } = await supabase.rpc(
-    'get_attendance_breakdown_by_type',
-    { school_id: schoolId, summary_date: new Date(today.getFullYear(), today.getMonth(), 1) }
-  )
-  console.log('Breakdown:', breakdownData, breakdownError)
-
   // Assign values to refs
   if (!summaryError) dailySummary.value = summaryData
-  if (!logsError) individualLogs.value = logsData
-  if (!breakdownError) breakdown.value = breakdownData
 }
 
 const generateSeries = (type) => [
@@ -195,10 +200,11 @@ const baseChartOptions = (title) => ({
   }
 })
 
-onMounted(() => {
-  // Fetch trends
-  loadAttendanceTrends()
-  loadAttendanceData()
+const isLoading = ref(true)
+
+onMounted(async () => {
+  await Promise.all([loadAttendanceTrends(), loadAttendanceData(), loadRecentAttendance()])
+  isLoading.value = false
 })
 
 const formattedDate = today.toLocaleDateString('en-GB', {
@@ -252,88 +258,144 @@ const summaryDisplay = computed(() =>
 <template>
   <MainLayout>
     <div class="m-4 font-bold text-xl">Attendance</div>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <!-- Students -->
-      <div class="bg-white p-4 rounded shadow-md m-4">
-        <Apexchart
-          height="250"
-          type="line"
-          :options="baseChartOptions('Student')"
-          :series="generateSeries('student')"
-        />
-      </div>
-
-      <!-- Teachers -->
-      <div class="bg-white p-4 rounded shadow-md m-4">
-        <Apexchart
-          height="250"
-          type="line"
-          :options="baseChartOptions('Teacher Attendance')"
-          :series="generateSeries('teacher')"
-        />
-      </div>
-
-      <!-- Employees -->
-      <div class="bg-white p-4 rounded shadow-md m-4">
-        <Apexchart
-          height="250"
-          type="line"
-          :options="baseChartOptions('Employee Attendance')"
-          :series="generateSeries('employee')"
-        />
-      </div>
-
-      <div class="bg-white p-4 rounded-xl shadow-md">
-        <h3 class="text-sm text-gray-500 mb-1">Today's Attendance</h3>
-        <p class="text-xs text-gray-400 mb-4">{{ formattedDate }}</p>
-
-        <div class="space-y-4">
-          <div
-  v-for="item in summaryDisplay"
-  :key="item.user_type"
-  class="flex items-center gap-4"
->
-  <v-progress-circular
-    :rotate="360"
-    :size="60"
-    :width="6"
-    :model-value="item.percentage"
-    :color="item.color"
-    class="flex-shrink-0"
-  >
-    <!-- Centered percentage inside -->
-    <span
-      :style="{
-        color: item.rawColor,
-        fontSize: '14px',
-        fontWeight: '500'
-      }"
+    <div
+      v-if="isLoading"
+      class="fill-height d-flex justify-center align-center mx-auto items-center flex my-auto mx-auto"
     >
-      {{ Math.round(item.percentage) }}%
-    </span>
-  </v-progress-circular>
+      <v-progress-circular indeterminate color="success" size="48" />
+    </div>
 
-  <div>
-    <p class="text-sm text-gray-600 capitalize flex items-center gap-1">
-      <i :class="item.icon" :style="{ color: item.rawColor }"></i>
-      {{ item.label }}
-    </p>
-    <p :class="['font-semibold text-sm', item.textColor]">
-      {{ item.present }}/{{ item.total }}
-    </p>
-  </div>
-</div>
-
+    <div v-else>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Students -->
+        <div class="bg-white p-4 rounded shadow-md m-4">
+          <Apexchart
+            height="250"
+            type="line"
+            :options="baseChartOptions('Student')"
+            :series="generateSeries('student')"
+          />
         </div>
-      </div>
 
-      <!-- Total -->
-      <!-- <Apexchart
+        <!-- Teachers -->
+        <div class="bg-white p-4 rounded shadow-md m-4">
+          <Apexchart
+            height="250"
+            type="line"
+            :options="baseChartOptions('Teacher Attendance')"
+            :series="generateSeries('teacher')"
+          />
+        </div>
+
+        <!-- Employees -->
+        <div class="bg-white p-4 rounded shadow-md m-4">
+          <Apexchart
+            height="250"
+            type="line"
+            :options="baseChartOptions('Employee Attendance')"
+            :series="generateSeries('employee')"
+          />
+        </div>
+
+        <div class="bg-white p-4 rounded-xl shadow-md">
+          <h3 class="text-sm text-gray-500 mb-1">Today's Attendance</h3>
+          <p class="text-xs text-gray-400 mb-4">{{ formattedDate }}</p>
+
+          <div class="space-y-4">
+            <div
+              v-for="item in summaryDisplay"
+              :key="item.user_type"
+              class="flex items-center gap-4"
+            >
+              <v-progress-circular
+                :rotate="360"
+                :size="60"
+                :width="6"
+                :model-value="item.percentage"
+                :color="item.color"
+                class="flex-shrink-0"
+              >
+                <!-- Centered percentage inside -->
+                <span
+                  :style="{
+                    color: item.rawColor,
+                    fontSize: '14px',
+                    fontWeight: '500'
+                  }"
+                >
+                  {{ Math.round(item.percentage) }}%
+                </span>
+              </v-progress-circular>
+
+              <div>
+                <p class="text-sm text-gray-600 capitalize flex items-center gap-1">
+                  <i :class="item.icon" :style="{ color: item.rawColor }"></i>
+                  {{ item.label }}
+                </p>
+                <p :class="['font-semibold text-sm', item.textColor]">
+                  {{ item.present }}/{{ item.total }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Total -->
+        <!-- <Apexchart
         height="250"
         type="line"
         :options="baseChartOptions('Overall Attendance')"
         :series="generateSeries('total')"
       /> -->
+      </div>
+
+      <div class="bg-white rounded-lg shadow p-4">
+        <h3 class="text-lg font-semibold mb-4">Recent Attendance</h3>
+
+        <!-- Tabs -->
+        <div class="flex space-x-4 mb-4 border-b pb-2">
+          <button
+            v-for="tab in tabs"
+            :key="tab"
+            @click="activeTab = tab"
+            :class="[
+              'capitalize px-3 py-1 rounded-md text-sm',
+              activeTab === tab
+                ? 'bg-green-100 text-green-600 font-semibold'
+                : 'bg-gray-100 text-gray-600'
+            ]"
+          >
+            {{ tab }}
+          </button>
+        </div>
+
+        <!-- Attendance List -->
+        <!-- Spinner and Attendance -->
+        <div v-loading="loading" class="min-h-[120px] relative">
+          <div v-if="recentLogs.length > 0">
+            <div v-for="log in recentLogs" :key="log.id" class="flex items-center mb-4">
+              <img
+                :src="log.avatar_url || '/default-avatar.png'"
+                alt="avatar"
+                class="w-10 h-10 rounded-full mr-3 object-cover"
+              />
+              <div>
+                <p class="font-medium">{{ log.user_name }}</p>
+                <p class="text-xs text-gray-500">{{ log.user_role }}</p>
+                <p class="text-xs text-gray-400">
+                  {{
+                    new Date(log.check_in_time).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })
+                  }}
+                </p>
+              </div>
+            </div>
+          </div>
+          <p v-else-if="!loading" class="text-sm text-gray-400">No recent logs found.</p>
+        </div>
+      </div>
     </div>
   </MainLayout>
 </template>

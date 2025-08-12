@@ -44,7 +44,7 @@ const groupedData = computed(() => {
   return data
 })
 
-const filteredDays = ['01', '05', '10', '15', '20', '25', '30']
+const filteredDays = ['02', '04', '06', '08', '10', '12', '14']
 
 const series = computed(() => [
   {
@@ -78,7 +78,7 @@ const chartOptions = {
   },
   colors: ['green', 'red'], // Purple and Orange
   xaxis: {
-   categories: ['01', '05', '10', '15', '20', '25', '30'],
+   categories: ['02', '04', '06', '08', '10', '12', '14'],
 
    
     axisBorder: {

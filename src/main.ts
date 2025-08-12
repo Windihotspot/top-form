@@ -9,9 +9,9 @@ import 'aos/dist/aos.css'
 import AOS from 'aos'
 
 // Import Element Plus and its styles
-import ElementPlus from 'element-plus';
-import 'element-plus/dist/index.css';
-
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
+import '@mdi/font/css/materialdesignicons.css'
 import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
@@ -19,7 +19,7 @@ import * as directives from 'vuetify/directives'
 import { aliases, mdi } from 'vuetify/iconsets/mdi'
 import VueApexCharts from 'vue3-apexcharts'
 import '@fortawesome/fontawesome-free/css/all.css'
-
+import { fa } from 'vuetify/iconsets/fa'
 import { useUserStore } from '@/stores/user'
 
 let vuetify = createVuetify({
@@ -28,21 +28,18 @@ let vuetify = createVuetify({
   icons: {
     defaultSet: 'mdi',
     aliases,
-    sets: {
-      mdi
-    }
+
+    sets: { mdi, fa }
   }
 })
 
 const app = createApp(App)
 
-
-
 app.use(createPinia())
 app.use(router)
 app.use(vuetify)
 app.use(VueApexCharts)
-app.use(ElementPlus);
+app.use(ElementPlus)
 
 // 🔥 Load user data from localStorage into Pinia store
 const userStore = useUserStore()
@@ -68,7 +65,3 @@ if (redirectPath) {
 app.mount('#app')
 
 AOS.init()
-
-
-
-

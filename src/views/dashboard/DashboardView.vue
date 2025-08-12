@@ -6,18 +6,12 @@ import AnimatedStats from '@/components/AnimatedStats.vue'
 import StudentsGenderChart from '@/components/StudentsGenderChart.vue'
 import AttendanceChart from '@/components/AttendanceChart.vue'
 import EarningsChart from '@/components/EarningsChart.vue'
-// import { supabase } from '@/supabase'
-import { useAuth } from '@/composables/useAuth'
-const loading = ref(true)
+import { supabase } from '@/supabase'
+import { useAuthStore } from '@/stores/auth'
+const authStore = useAuthStore()
+const notifications = ref([])
 
-const headers = [
-  { title: 'Name', value: 'full_name' },
-  { title: 'Email', value: 'email' },
-  { title: 'Phone', value: 'phone' },
-  { title: 'Gender', value: 'gender' },
-  { title: 'Subject', value: 'subject_specialization' },
-  { title: 'Actions', value: 'actions', sortable: false }
-]
+const loading = ref(true)
 
 const studentsHeaders = [
   { title: 'Name', key: 'full_name' },
@@ -41,9 +35,8 @@ const fetchData = async (endpoint, key) => {
   try {
     const response = await api.get(`/${endpoint}`)
     if (key) data.value[key] = response.data.data
-     console.log(`${key || endpoint}`, response)
+    console.log(`${key || endpoint}`, response)
     return response.data.data
-   
   } catch (err) {
     console.error(`Error fetching ${key || endpoint}:`, err)
     return [] // Ensure it always returns an array
@@ -64,6 +57,68 @@ const fetchAttendanceSummary = async () => {
   }
 }
 
+const fetchStoredNotifications = async () => {
+  const adminId = authStore.admin?.id
+  const adminRole = authStore.admin?.role
+  const schoolId = authStore.admin?.school_id
+
+  if (!adminId || !adminRole || !schoolId) {
+    console.log('Missing required admin data to fetch notifications')
+    notifications.value = []
+    return
+  }
+
+  const { data, error } = await supabase.rpc('manage_notifications', {
+    p_action: 'fetch',
+    p_admin_id: adminId,
+    p_school_id: schoolId,
+    p_role: adminRole,
+    p_limit: 4,
+    p_offset: 0
+  })
+
+  if (error) {
+    console.log('Error fetching notifications:', error)
+    notifications.value = []
+    return
+  }
+
+  notifications.value = data || []
+  console.log('stored notifications:', notifications.value)
+}
+
+const formatDate = (date) => {
+  return new Date(date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
+}
+
+const importanceColor = (level) => {
+  switch (level) {
+    case 'High':
+      return 'red'
+    case 'Medium':
+      return 'orange'
+    case 'Low':
+      return 'green'
+    default:
+      return 'blue'
+  }
+}
+
+const markAsRead = (id) => {
+  console.log('Mark as read:', id)
+}
+
+const archive = (id) => {
+  console.log('Archive:', id)
+}
+
+const deleteItem = (id) => {
+  console.log('Delete:', id)
+}
 const fetchNotifications = async () => {
   try {
     const response = await api.get('/notifications')
@@ -144,7 +199,8 @@ const fetchAll = async () => {
       fetchData('expenses', 'expenses'),
       fetchAttendanceSummary(),
       fetchEarningsSummary(),
-      fetchNotifications()
+      fetchNotifications(),
+      fetchStoredNotifications()
     ])
   } catch (err) {
     console.error('❌ Error fetching data:', err)
@@ -315,8 +371,75 @@ onMounted(fetchAll)
         <div>
           <EarningsChart :earnings="data.earnings" />
         </div>
+
         <div>
-          <AttendanceChart :attendance="data.attendance" />
+          <v-card class="w-full p-4 mb-4 shadow-md rounded">
+             <h2 class="m-4 text-sm font-semibold">Notice Board</h2>
+            <div
+              v-for="item in notifications"
+              :key="item.id"
+              class="flex items-center p-4 justify-between"
+            >
+              <!-- Left: Avatar + Title + Chip -->
+              <div class="flex items-center space-x-4">
+                <!-- Avatar -->
+                <v-avatar size="40">
+                  <v-img
+                    src="https://images.unsplash.com/photo-1622659097972-68f1d8c1829f?q=80&w=1171&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                    alt="Notification Image"
+                  />
+                </v-avatar>
+
+                <!-- Title + Date -->
+                <div class="w-60">
+                  <!-- fixed width -->
+                  <div class=" text-gray-800">
+                    {{ item.title }}
+                  </div>
+                  <div class="text-xs text-gray-500">
+                    {{ formatDate(item.created_at) }}
+                  </div>
+                </div>
+
+                <!-- Importance Chip -->
+                <v-chip
+                  :color="importanceColor(item.importance)"
+                  size="small"
+                  label
+                  class="ml-2 flex-shrink-0 w-20 mx-auto my-auto justify-center"
+                >
+                  {{ item.importance }}
+                </v-chip>
+              </div>
+
+              <!-- Right: Ellipsis menu -->
+              <v-menu>
+                <template #activator="{ props }">
+                  <v-btn
+                    variant="text"
+                    v-bind="props"
+                    icon
+                    size="small"
+                    plain
+                    class="text-gray-500 hover:text-gray-700"
+                  >
+                    <v-icon>mdi-dots-vertical</v-icon>
+                  </v-btn>
+                </template>
+                <v-list>
+                  <v-list-item @click="markAsRead(item.id)">
+                    <v-list-item-title>Mark as Read</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item @click="archive(item.id)">
+                    <v-list-item-title>Archive</v-list-item-title>
+                  </v-list-item>
+                  <v-list-item @click="deleteItem(item.id)">
+                    <v-list-item-title>Delete</v-list-item-title>
+                  </v-list-item>
+                </v-list>
+              </v-menu>
+            </div>
+          </v-card>
         </div>
       </div>
     </div>

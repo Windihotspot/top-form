@@ -13,8 +13,7 @@
 </template>
 
 <script setup>
-import 'vue-cal/dist/vuecal.css'
-import VueCal from 'vue-cal'
+
 
 const events = [
   {

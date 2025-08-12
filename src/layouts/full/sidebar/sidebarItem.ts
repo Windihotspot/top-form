@@ -2,37 +2,37 @@ const sidebarItems = [
   {
     title: 'Dashboard',
     path: '/dashboard',
-    icon: 'fas fa-chart-line',  // Dashboard icon
+    icon: 'mdi-view-dashboard', // Dashboard icon
   },
   {
     title: 'Database',
     path: '/database',
-    icon: 'fas fa-database',        // Database icon
+    icon: 'mdi-database', // Database icon
   },
   {
     title: 'Attendance',
     path: '/attendance',
-    icon: 'fas fa-user-check',      // Attendance icon
+    icon: 'mdi-account-check', // Attendance icon
   },
   {
     title: 'Exams',
     path: '/exams',
-    icon: 'fas fa-file-signature',  // Exams icon
+    icon: 'mdi-file-document-edit', // Exams icon
   },
   {
     title: 'Transport',
     path: '/transport',
-    icon: 'fas fa-bus-alt',         // Transport icon
+    icon: 'mdi-bus', // Transport icon
   },
   {
     title: 'Revenue',
     path: '/revenue',
-    icon: 'fas fa-coins',           // Revenue icon
+    icon: 'mdi-currency-usd', // Revenue icon
   },
   {
     title: 'Expenses',
     path: '/expenses',
-    icon: 'fas fa-money-bill-wave', // Expenses icon
+    icon: 'mdi-cash-multiple', // Expenses icon
   }
 ]
 

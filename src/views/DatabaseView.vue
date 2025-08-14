@@ -2,7 +2,234 @@
 import { ref, onMounted, watch, computed } from 'vue'
 import MainLayout from '@/layouts/full/MainLayout.vue'
 import api from '@/services/api'
+import { ElMessage } from 'element-plus'
 const loading = ref(true)
+import { supabase } from '@/supabase'
+const showModal = ref(false)
+const activeTab = ref('students')
+import { useAuthStore } from '@/stores/auth'
+const authStore = useAuthStore()
+const schoolId = authStore.admin?.school_id
+// Validation refs
+const studentFormRef = ref(null)
+const teacherFormRef = ref(null)
+const employeeFormRef = ref(null)
+const studentFormValid = ref(false)
+const teacherFormValid = ref(false)
+const employeeFormValid = ref(false)
+
+// Student fields (matches `students` table)
+const studentData = ref({
+  full_name: '',
+  email: '',
+  phone: '',
+  gender: '',
+  date_of_birth: '',
+  address: '',
+  guardian_name: '',
+  guardian_contact: '',
+  class_id: '',
+  avatar_url: null // file
+})
+
+// studentData.date_of_birth is a string 'YYYY-MM-DD'
+
+const avatarPreview = ref(null)
+
+const previewAvatar = (files) => {
+  if (!files) {
+    avatarPreview.value = null
+    return
+  }
+
+  // If files is an array (Vuetify v-file-input returns an array for multiple)
+  const file = Array.isArray(files) ? files[0] : files
+
+  // Make sure it is a File object
+  if (file instanceof File) {
+    avatarPreview.value = URL.createObjectURL(file)
+  } else {
+    avatarPreview.value = null
+  }
+}
+
+// helper to format Date objects to YYYY-MM-DD
+function formatDate(val) {
+  if (!val) return ''
+  const d = new Date(val)
+  const yyyy = d.getFullYear()
+  const mm = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+// Teacher fields (matches `teachers` table)
+const teacherData = ref({
+  full_name: '',
+  email: '',
+  phone: '',
+  subject_specialization: '',
+  gender: '',
+  address: '',
+  date_of_birth: '',
+  avatar_url: null // file
+})
+
+const teacherAvatarPreview = ref(null)
+const previewTeacherAvatar = (file) => {
+  if (!file) return
+  teacherAvatarPreview.value = URL.createObjectURL(file)
+}
+
+const employeeData = ref({
+  firstname: '',
+  lastname: '',
+  email: '',
+  phone: '',
+  gender: '',
+  address: '',
+  department: '',
+  position: '',
+  salary: ''
+})
+
+const employeeAvatarPreview = ref(null)
+
+const previewEmployeeAvatar = (file) => {
+  if (!file) {
+    employeeAvatarPreview.value = null
+    return
+  }
+  employeeAvatarPreview.value = URL.createObjectURL(file)
+}
+
+const onDateSelected = (val) => {
+  employeeData.value.date_of_birth = val // already 'YYYY-MM-DD'
+  dobText.value = val
+}
+
+// Student DOB
+const studentDobMenu = ref(false)
+const studentDobText = ref('')
+watch(
+  () => studentData.value.date_of_birth,
+  (val) => {
+    if (val) studentDobText.value = val // already 'YYYY-MM-DD'
+  }
+)
+const onStudentDateSelected = (val) => {
+  studentData.value.date_of_birth = val
+  studentDobText.value = val
+}
+
+// Teacher DOB
+const teacherDobMenu = ref(false)
+const teacherDobText = ref('')
+watch(
+  () => teacherData.value.date_of_birth,
+  (val) => {
+    if (val) teacherDobText.value = val
+  }
+)
+const onTeacherDateSelected = (val) => {
+  teacherData.value.date_of_birth = val
+  teacherDobText.value = val
+}
+
+// Employee DOB
+const employeeDobMenu = ref(false)
+const employeeDobText = ref('')
+watch(
+  () => employeeData.value.date_of_birth,
+  (val) => {
+    if (val) employeeDobText.value = val
+  }
+)
+const onEmployeeDateSelected = (val) => {
+  employeeData.value.date_of_birth = val
+  employeeDobText.value = val
+}
+
+// Mock options (replace with API calls)
+const genderOptions = ['Male', 'Female', 'Other']
+
+// Functions
+const openModal = () => (showModal.value = true)
+const closeModal = () => (showModal.value = false)
+
+const submitStudent = async () => {
+  const { valid } = await studentFormRef.value.validate()
+  if (!valid) return
+
+  try {
+    // 1️⃣ Format date_of_birth to YYYY-MM-DD
+    if (studentData.value.date_of_birth) {
+      const dob = new Date(studentData.value.date_of_birth)
+      studentData.value.date_of_birth = dob.toISOString().split('T')[0]
+    }
+
+    // 2️⃣ Log payload before sending
+    const payload = {
+      school_id: schoolId,
+      full_name: studentData.value.full_name,
+      email: studentData.value.email,
+      phone: studentData.value.phone,
+      gender: studentData.value.gender,
+      date_of_birth: studentData.value.date_of_birth,
+      address: studentData.value.address,
+      guardian_name: studentData.value.guardian_name,
+      guardian_contact: studentData.value.guardian_contact,
+      class_id: studentData.value.class_id,
+      avatar_url: null // Skipping upload for now
+    }
+
+    console.log('📦 Payload to insert:', payload)
+
+    // 3️⃣ Show uploading message
+    ElMessage({
+      message: 'Saving student...',
+      type: 'info',
+      duration: 1500
+    })
+
+    // 4️⃣ Insert into database
+    const { data, error } = await supabase.from('students').insert([payload]).select()
+
+    if (error) throw error
+
+    ElMessage({
+      message: 'Student saved successfully!',
+      type: 'success',
+      duration: 2000
+    })
+
+    console.log('Student saved:', data)
+    closeModal()
+  } catch (err) {
+    console.error('❌ Error saving student:', err.message)
+    ElMessage.error('Failed to save student. Please try again.')
+  }
+}
+
+const submitTeacher = () => {
+  teacherFormRef.value.validate().then((success) => {
+    if (success.valid) {
+      console.log('Teacher data:', employeeData.value)
+      // send to Supabase
+      closeModal()
+    }
+  })
+}
+
+const submitEmployee = () => {
+  employeeFormRef.value.validate().then((success) => {
+    if (success.valid) {
+      console.log('Teacher data:', teacherData.value)
+      // send to Supabase
+      closeModal()
+    }
+  })
+}
 const data = ref({
   students: [],
   teachers: [],
@@ -51,6 +278,13 @@ const classMap = {
   '608b08db-906d-4f11-86dc-09c6a0d13ff5': 'SSS2',
   'b316c14c-8877-42b5-b0c6-c4370cc6e3a3': 'SSS3'
 }
+
+// Convert classMap into an array suitable for v-select
+const classOptions = Object.entries(classMap).map(([key, value]) => ({
+  title: value,
+  value: key
+}))
+
 const mapClassIdToName = (classId) => {
   return classMap[classId] || 'Unknown'
 }
@@ -113,8 +347,28 @@ watch(tab, (newTab) => {
 <template>
   <MainLayout>
     <div class="px-6 py-4">
-      <h2 class="text-md font-semibold mb-4">Database</h2>
+      <!-- Header with Title and New credit search Button -->
+      <div class="bg-white flex rounded shadow justify-between items-center border-b p-4 mb-4">
+        <div class="mb-2">
+          <h1 class="text-xl font-bold mt-4">Database</h1>
+          <p class="text-gray-500 text-sm mt-1">View and Manage your database records</p>
+        </div>
 
+        <v-btn
+          @click="openModal"
+          size="medium"
+          class="normal-case custom-btn hover:bg-green-700 text-white text-sm font-semibold px-6 py-3 rounded-md shadow-md"
+        >
+          <span
+            class="bg-white text-blue-600 rounded-full p-1 flex items-center justify-center w-4 h-4 mr-2"
+          >
+            <i class="fa-solid fa-plus text-sm text-[#15803d]"></i>
+          </span>
+          Add new record
+        </v-btn>
+      </div>
+
+      <!-- Tabs -->
       <v-tabs v-model="tab" density="compact">
         <v-tab
           :disabled="loading"
@@ -132,12 +386,15 @@ watch(tab, (newTab) => {
         </v-tab>
       </v-tabs>
 
+      <!-- Loading -->
       <div
         v-if="loading"
         class="fill-height d-flex justify-center align-center mx-auto items-center flex my-auto mx-auto"
       >
         <v-progress-circular indeterminate color="success" size="48" />
       </div>
+
+      <!-- database data -->
       <div v-else>
         <v-tabs-window v-model="tab" class="mt-4">
           <v-tabs-window-item value="students">
@@ -550,10 +807,452 @@ watch(tab, (newTab) => {
         </v-tabs-window>
       </div>
     </div>
+
+    <!-- Add new record to database Modal -->
+    <v-dialog v-model="showModal" persistent max-width="800px">
+      <div class="w-full mx-auto p-6 bg-white shadow-lg rounded-lg relative h-screen">
+        <!-- Close button -->
+        <button @click="closeModal" class="absolute top-4 right-4 text-gray-600 hover:text-red-500">
+          <i class="fas fa-times fa-lg"></i>
+        </button>
+
+        <!-- Tabs -->
+        <div class="flex space-x-4 mb-6">
+          <button
+            @click="activeTab = 'students'"
+            :class="
+              activeTab === 'students' ? 'bg-[#15803d] text-white' : 'bg-gray-200 text-gray-700'
+            "
+            class="px-4 py-2 rounded transition"
+          >
+            Students
+          </button>
+          <button
+            @click="activeTab = 'teachers'"
+            :class="
+              activeTab === 'teachers' ? 'bg-[#15803d] text-white' : 'bg-gray-200 text-gray-700'
+            "
+            class="px-4 py-2 rounded transition"
+          >
+            Teachers
+          </button>
+
+          <button
+            @click="activeTab = 'employees'"
+            :class="
+              activeTab === 'employees' ? 'bg-[#15803d] text-white' : 'bg-gray-200 text-gray-700'
+            "
+            class="px-4 py-2 rounded transition"
+          >
+            Employees
+          </button>
+        </div>
+
+        <!-- Students Form -->
+        <transition name="fade" mode="out-in">
+          <div v-if="activeTab === 'students'" key="students">
+            <h2 class="text-lg font-semibold mb-4">Add Student</h2>
+            <v-form ref="studentFormRef" v-model="studentFormValid" @submit.prevent="submitStudent">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Full Name -->
+                <v-text-field
+                  v-model="studentData.full_name"
+                  label="Full Name"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Full name is required']"
+                />
+
+                <!-- Email -->
+                <v-text-field
+                  v-model="studentData.email"
+                  label="Email"
+                  type="email"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[
+                    (v) => !!v || 'Email is required',
+                    (v) => /.+@.+\..+/.test(v) || 'Email must be valid'
+                  ]"
+                />
+
+                <!-- Phone -->
+                <v-text-field
+                  v-model="studentData.phone"
+                  label="Phone"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Phone is required']"
+                />
+
+                <!-- Gender -->
+                <v-select
+                  v-model="studentData.gender"
+                  :items="genderOptions"
+                  label="Gender"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Gender is required']"
+                />
+
+                <!-- Date of Birth (Vuetify date picker in a menu) -->
+                <v-menu v-model="studentDobMenu" :close-on-content-click="false" max-width="290px">
+                  <template #activator="{ props }">
+                    <v-text-field
+                      v-bind="props"
+                      v-model="studentDobText"
+                      label="Date of Birth"
+                      readonly
+                      :color="'#15803d'"
+                      variant="outlined"
+                    />
+                  </template>
+
+                  <v-date-picker
+                    v-model="studentData.date_of_birth"
+                    @input="onStudentDateSelected"
+                    scrollable
+                  >
+                    <template #actions>
+                      <v-btn text color="#15803d" @click="studentDobMenu = false">Cancel</v-btn>
+                      <v-btn text color="#15803d" @click="studentDobMenu = false">OK</v-btn>
+                    </template>
+                  </v-date-picker>
+                </v-menu>
+
+                <!-- Class -->
+                <v-select
+                  v-model="studentData.class_id"
+                  :items="classOptions"
+                  label="Class"
+                  item-title="title"
+                  item-value="value"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Class is required']"
+                />
+
+                <!-- Address -->
+                <v-text-field
+                  v-model="studentData.address"
+                  label="Address"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Address is required']"
+                />
+
+                <!-- Guardian Name -->
+                <v-text-field
+                  v-model="studentData.guardian_name"
+                  label="Guardian Name"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Guardian name is required']"
+                />
+
+                <!-- Guardian Contact -->
+                <v-text-field
+                  v-model="studentData.guardian_contact"
+                  label="Guardian Contact"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Guardian contact is required']"
+                />
+
+                <!-- Avatar with preview -->
+                <div>
+                  <v-file-input
+                    :color="'#15803d'"
+                    v-model="studentData.avatar_url"
+                    label="Upload Avatar"
+                    prepend-icon="mdi-account"
+                    accept="image/*"
+                    variant="outlined"
+                    density="comfortable"
+                    :rules="[(v) => !!v || 'Avatar is required']"
+                    @change="previewAvatar"
+                  />
+
+                  <div v-if="avatarPreview" class="mt-2">
+                    <v-img
+                      :src="avatarPreview"
+                      max-width="100"
+                      max-height="100"
+                      class="rounded"
+                      contain
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <!-- Save button pinned at bottom -->
+              <div class="sticky bottom-0 bg-white mt-4 py-3 border-t flex justify-end">
+                <v-btn type="submit" color="#15803d" variant="flat"> Save Student </v-btn>
+              </div>
+            </v-form>
+          </div>
+
+          <!-- Teachers Form -->
+          <div v-else-if="activeTab === 'teachers'" key="teachers">
+            <h2 class="text-lg font-semibold mb-4">Add Teacher</h2>
+            <v-form
+              ref="teacherFormRef"
+              v-model="teacherFormValid"
+              @submit.prevent="submitTeacher"
+              class="relative"
+            >
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-20">
+                <v-text-field
+                  v-model="teacherData.full_name"
+                  label="Full Name"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Full name is required']"
+                />
+                <v-text-field
+                  v-model="teacherData.email"
+                  label="Email"
+                  type="email"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Email is required']"
+                />
+                <v-text-field
+                  v-model="teacherData.phone"
+                  label="Phone"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Phone is required']"
+                />
+                <v-text-field
+                  v-model="teacherData.subject_specialization"
+                  label="Subject Specialization"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Subject is required']"
+                />
+                <v-select
+                  v-model="teacherData.gender"
+                  :items="genderOptions"
+                  label="Gender"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Gender is required']"
+                />
+
+                <!-- Date of Birth -->
+                <v-menu :close-on-content-click="false" v-model="teacherDobMenu">
+                  <template #activator="{ props }">
+                    <v-text-field
+                      :color="'#15803d'"
+                      variant="outlined"
+                      v-bind="props"
+                      v-model="teacherDobText"
+                      label="Date of Birth"
+                      readonly
+                    />
+                  </template>
+                  <v-date-picker v-model="teacherData.date_of_birth" @input="onTeacherDateSelected">
+                    <template #actions>
+                      <v-btn text @click="teacherDobMenu = false">Cancel</v-btn>
+                      <v-btn text @click="teacherDobMenu = false">OK</v-btn>
+                    </template>
+                  </v-date-picker>
+                </v-menu>
+
+                <v-text-field
+                  v-model="teacherData.address"
+                  label="Address"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Address is required']"
+                />
+
+                <!-- Avatar upload -->
+                <v-file-input
+                  v-model="teacherData.avatar_url"
+                  label="Upload Avatar"
+                  prepend-icon="mdi-account"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Avatar is required']"
+                  @change="previewTeacherAvatar"
+                />
+                <v-img
+                  v-if="teacherAvatarPreview"
+                  :src="teacherAvatarPreview"
+                  max-width="100"
+                  max-height="100"
+                  class="mt-2"
+                />
+              </div>
+
+              <!-- Fixed submit button at bottom -->
+              <div class="sticky bottom-0 bg-white mt-4 py-3 border-t flex justify-end">
+                <v-btn type="submit" color="#15803d" variant="flat"> Save Teacher </v-btn>
+              </div>
+            </v-form>
+          </div>
+
+          <!-- Employees form -->
+          <div v-else-if="activeTab === 'employees'" key="employees">
+            <h2 class="text-lg font-semibold mb-4">Add Employee</h2>
+            <v-form
+              ref="employeeFormRef"
+              v-model="employeeFormValid"
+              @submit.prevent="submitEmployee"
+              class="relative"
+            >
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-auto pr-2">
+                <v-text-field
+                  v-model="employeeData.full_name"
+                  label="Full Name"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Full name is required']"
+                />
+                <v-text-field
+                  v-model="employeeData.email"
+                  label="Email"
+                  type="email"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Email is required']"
+                />
+                <v-text-field
+                  v-model="employeeData.phone"
+                  label="Phone"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Phone is required']"
+                />
+                <v-select
+                  v-model="employeeData.gender"
+                  :items="genderOptions"
+                  label="Gender"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Gender is required']"
+                />
+
+                <!-- Date of Birth -->
+                <v-menu :close-on-content-click="false" v-model="employeeDobMenu">
+                  <template #activator="{ props }">
+                    <v-text-field
+                      :color="'#15803d'"
+                      variant="outlined"
+                      v-bind="props"
+                      v-model="employeeDobText"
+                      label="Date of Birth"
+                      readonly
+                    />
+                  </template>
+                  <v-date-picker
+                    v-model="employeeData.date_of_birth"
+                    @input="onEmployeeDateSelected"
+                  >
+                    <template #actions>
+                      <v-btn text @click="employeeDobMenu = false">Cancel</v-btn>
+                      <v-btn text @click="employeeDobMenu = false">OK</v-btn>
+                    </template>
+                  </v-date-picker>
+                </v-menu>
+
+                <v-select
+                  v-model="employeeData.position"
+                  :items="positionOptions"
+                  label="Position"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Position is required']"
+                />
+                <v-text-field
+                  v-model="employeeData.hire_date"
+                  label="Hire Date"
+                  type="date"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Hire date is required']"
+                />
+                <v-text-field
+                  v-model="employeeData.salary"
+                  label="Salary"
+                  type="number"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Salary is required']"
+                />
+                <v-text-field
+                  v-model="employeeData.address"
+                  label="Address"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  :rules="[(v) => !!v || 'Address is required']"
+                />
+
+                <!-- Avatar Upload with Preview -->
+                <v-file-input
+                  v-model="employeeData.avatar_url"
+                  label="Upload Avatar"
+                  prepend-icon="mdi-account"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                  @change="previewEmployeeAvatar"
+                  :rules="[(v) => !!v || 'Avatar is required']"
+                />
+                <v-img
+                  v-if="employeeAvatarPreview"
+                  :src="employeeAvatarPreview"
+                  max-height="150"
+                  max-width="150"
+                  class="rounded mt-2"
+                />
+              </div>
+
+              <!-- Fixed Save Button -->
+              <v-btn
+                type="submit"
+                class="mt-4 w-full sticky bottom-0 bg-[#15803d] text-white"
+                variant="flat"
+              >
+                Save Employee
+              </v-btn>
+            </v-form>
+          </div>
+        </transition>
+      </div>
+    </v-dialog>
   </MainLayout>
 </template>
 
 <style scoped>
+.custom-btn {
+  background-color: #15803d;
+}
 .v-slider {
   --v-slider-track-size: 4px;
   --v-slider-thumb-size: 12px;

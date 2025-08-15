@@ -32,8 +32,6 @@ const studentData = ref({
   avatar_url: null // file
 })
 
-// studentData.date_of_birth is a string 'YYYY-MM-DD'
-
 const avatarPreview = ref(null)
 
 const previewAvatar = (files) => {
@@ -42,16 +40,17 @@ const previewAvatar = (files) => {
     return
   }
 
-  // If files is an array (Vuetify v-file-input returns an array for multiple)
   const file = Array.isArray(files) ? files[0] : files
-
-  // Make sure it is a File object
-  if (file instanceof File) {
-    avatarPreview.value = URL.createObjectURL(file)
-  } else {
-    avatarPreview.value = null
-  }
+  avatarPreview.value = file instanceof File ? URL.createObjectURL(file) : null
 }
+
+const computedAvatarPreview = computed(() => {
+  const file = Array.isArray(studentData.value.avatar_url)
+    ? studentData.value.avatar_url[0]
+    : studentData.value.avatar_url
+
+  return file instanceof File ? URL.createObjectURL(file) : null
+})
 
 // helper to format Date objects to YYYY-MM-DD
 function formatDate(val) {
@@ -157,6 +156,20 @@ const genderOptions = ['Male', 'Female', 'Other']
 const openModal = () => (showModal.value = true)
 const closeModal = () => (showModal.value = false)
 
+const showPreviewModal = ref(false)
+
+const handlePreview = async () => {
+  const { valid } = await studentFormRef.value.validate()
+  if (!valid) return
+
+  // Ensure DOB is in displayable format for preview
+  if (studentData.value.date_of_birth instanceof Date) {
+    studentData.value.date_of_birth = studentData.value.date_of_birth.toISOString().split('T')[0]
+  }
+
+  showPreviewModal.value = true
+}
+
 const submitStudent = async () => {
   const { valid } = await studentFormRef.value.validate()
   if (!valid) return
@@ -204,6 +217,45 @@ const submitStudent = async () => {
     })
 
     console.log('Student saved:', data)
+    closeModal()
+  } catch (err) {
+    console.error('❌ Error saving student:', err.message)
+    ElMessage.error('Failed to save student. Please try again.')
+  }
+}
+
+const confirmSave = async () => {
+  try {
+    const payload = {
+      school_id: schoolId,
+      full_name: studentData.value.full_name,
+      email: studentData.value.email,
+      phone: studentData.value.phone,
+      gender: studentData.value.gender,
+      date_of_birth: studentData.value.date_of_birth,
+      address: studentData.value.address,
+      guardian_name: studentData.value.guardian_name,
+      guardian_contact: studentData.value.guardian_contact,
+      class_id: studentData.value.class_id,
+      avatar_url: null
+    }
+
+    console.log('📦 Final payload:', payload)
+
+    ElMessage({
+      message: 'Saving student...',
+      type: 'info',
+      duration: 1500
+    })
+    
+    const { data, error } = await supabase.from('students').insert([payload]).select()
+    if (error) throw error
+    resetFormAndClose()
+    fetchAll()
+    ElMessage.success('Student saved successfully!')
+    console.log('Student saved:', data)
+
+    showPreviewModal.value = false
     closeModal()
   } catch (err) {
     console.error('❌ Error saving student:', err.message)
@@ -332,6 +384,24 @@ const tabs = [
   { label: 'Teachers', value: 'teachers' },
   { label: 'Employees', value: 'employees' }
 ]
+
+const resetFormAndClose = () => {
+  studentFormRef.value.reset() // Clears all inputs
+  studentData.value = {
+    full_name: '',
+    email: '',
+    phone: '',
+    gender: '',
+    date_of_birth: '',
+    address: '',
+    guardian_name: '',
+    guardian_contact: '',
+    class_id: '',
+    avatar_url: null
+  }
+  avatarPreview.value = null
+  closeModal()
+}
 
 onMounted(fetchAll)
 watch(tab, (newTab) => {
@@ -848,7 +918,7 @@ watch(tab, (newTab) => {
           </button>
         </div>
 
-        <!-- Students Form -->
+        <!-- Forms -->
         <transition name="fade" mode="out-in">
           <div v-if="activeTab === 'students'" key="students">
             <h2 class="text-lg font-semibold mb-4">Add Student</h2>
@@ -994,8 +1064,15 @@ watch(tab, (newTab) => {
               </div>
 
               <!-- Save button pinned at bottom -->
-              <div class="sticky bottom-0 bg-white mt-4 py-3 border-t flex justify-end">
-                <v-btn type="submit" color="#15803d" variant="flat"> Save Student </v-btn>
+              <div class="sticky bottom-0 bg-white mt-4 py-3 border-t flex justify-end space-x-3">
+                <!-- Cancel Button -->
+                <v-btn variant="outlined" color="error" @click="resetFormAndClose"> Cancel </v-btn>
+
+                <!-- Proceed Button with Icon -->
+                <v-btn color="#15803d" variant="flat" @click="handlePreview">
+                  Proceed
+                  <v-icon class="ml-4" start icon="mdi-arrow-right-circle" />
+                </v-btn>
               </div>
             </v-form>
           </div>
@@ -1244,6 +1321,45 @@ watch(tab, (newTab) => {
             </v-form>
           </div>
         </transition>
+      </div>
+    </v-dialog>
+
+    <v-dialog v-model="showPreviewModal" max-width="600px">
+      <div class="bg-white p-6 rounded-lg shadow-lg mx-auto">
+        <h2 class="text-lg font-normal mb-4">Preview Student Details</h2>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div><strong>Full Name:</strong> {{ studentData.full_name }}</div>
+          <div><strong>Email:</strong> {{ studentData.email }}</div>
+          <div><strong>Phone:</strong> {{ studentData.phone }}</div>
+          <div><strong>Gender:</strong> {{ studentData.gender }}</div>
+          <div><strong>Date of Birth:</strong> {{ studentData.date_of_birth }}</div>
+          <div>
+            <strong>Class:</strong>
+            {{ classOptions.find((c) => c.value === studentData.class_id)?.title }}
+          </div>
+          <div class="col-span-2"><strong>Address:</strong> {{ studentData.address }}</div>
+          <div><strong>Guardian Name:</strong> {{ studentData.guardian_name }}</div>
+          <div><strong>Guardian Contact:</strong> {{ studentData.guardian_contact }}</div>
+
+          <div class="col-span-2" v-if="computedAvatarPreview">
+            <strong>Avatar Preview:</strong>
+            <v-img
+              v-if="computedAvatarPreview"
+              :src="computedAvatarPreview"
+              max-width="200"
+              max-height="200"
+              rounded
+              cover
+              contain
+            />
+          </div>
+        </div>
+
+        <div class="flex justify-end mt-6 space-x-3">
+          <v-btn variant="outlined" color="grey" @click="showPreviewModal = false"> Edit </v-btn>
+          <v-btn color="#15803d" variant="flat" @click="confirmSave"> Confirm & Save </v-btn>
+        </div>
       </div>
     </v-dialog>
   </MainLayout>

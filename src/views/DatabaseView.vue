@@ -979,6 +979,7 @@ watch(tab, (newTab) => {
                       readonly
                       :color="'#15803d'"
                       variant="outlined"
+                       :rules="[(v) => !!v || 'Date of birth is required']"
                     />
                   </template>
 

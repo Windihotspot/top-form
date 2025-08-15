@@ -267,37 +267,55 @@ const summaryDisplay = computed(() =>
 
     <div v-else>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Students -->
-        <div class="bg-white p-4 rounded shadow-md m-4">
-          <Apexchart
-            height="250"
-            type="line"
-            :options="baseChartOptions('Student')"
-            :series="generateSeries('student')"
-          />
+        <div class="bg-white rounded shadow m-2 p-4">
+          <h3 class="text-lg font-semibold mb-4">Recent Attendance</h3>
+
+          <!-- Tabs -->
+          <div class="flex space-x-4 mb-4 border-b pb-2">
+            <button
+              v-for="tab in tabs"
+              :key="tab"
+              @click="activeTab = tab"
+              :class="[
+                'capitalize px-3 py-1 rounded-md text-sm',
+                activeTab === tab
+                  ? 'bg-green-100 text-green-600 font-semibold'
+                  : 'bg-gray-100 text-gray-600'
+              ]"
+            >
+              {{ tab }}
+            </button>
+          </div>
+
+          <!-- Attendance List -->
+          <!-- Spinner and Attendance -->
+          <div v-loading="loading" class="min-h-[120px] relative">
+            <div v-if="recentLogs.length > 0">
+              <div v-for="log in recentLogs" :key="log.id" class="flex items-center mb-4">
+                <img
+                  :src="log.avatar_url || '/default-avatar.png'"
+                  alt="avatar"
+                  class="w-10 h-10 rounded-full mr-3 object-cover"
+                />
+                <div>
+                  <p class="font-medium">{{ log.user_name }}</p>
+                  <p class="text-xs text-gray-500">{{ log.user_role }}</p>
+                  <p class="text-xs text-gray-400">
+                    {{
+                      new Date(log.check_in_time).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })
+                    }}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <p v-else-if="!loading" class="text-sm text-gray-400">No recent logs found.</p>
+          </div>
         </div>
 
-        <!-- Teachers -->
-        <div class="bg-white p-4 rounded shadow-md m-4">
-          <Apexchart
-            height="250"
-            type="line"
-            :options="baseChartOptions('Teacher Attendance')"
-            :series="generateSeries('teacher')"
-          />
-        </div>
-
-        <!-- Employees -->
-        <div class="bg-white p-4 rounded shadow-md m-4">
-          <Apexchart
-            height="250"
-            type="line"
-            :options="baseChartOptions('Employee Attendance')"
-            :series="generateSeries('employee')"
-          />
-        </div>
-
-        <div class="bg-white p-4 rounded-xl shadow-md">
+         <div class="bg-white p-4 rounded shadow m-2 ">
           <h3 class="text-sm text-gray-500 mb-1">Today's Attendance</h3>
           <p class="text-xs text-gray-400 mb-4">{{ formattedDate }}</p>
 
@@ -340,6 +358,37 @@ const summaryDisplay = computed(() =>
           </div>
         </div>
 
+        <div class="bg-white p-4 rounded shadow-md m-2">
+          <Apexchart
+            height="250"
+            type="line"
+            :options="baseChartOptions('Student')"
+            :series="generateSeries('student')"
+          />
+        </div>
+
+        <!-- Teachers -->
+        <div class="bg-white p-4 rounded shadow-md m-2">
+          <Apexchart
+            height="250"
+            type="line"
+            :options="baseChartOptions('Teacher Attendance')"
+            :series="generateSeries('teacher')"
+          />
+        </div>
+
+        <!-- Employees -->
+        <div class="bg-white p-4 rounded shadow-md m-2">
+          <Apexchart
+            height="250"
+            type="line"
+            :options="baseChartOptions('Employee Attendance')"
+            :series="generateSeries('employee')"
+          />
+        </div>
+
+       
+
         <!-- Total -->
         <!-- <Apexchart
         height="250"
@@ -347,54 +396,6 @@ const summaryDisplay = computed(() =>
         :options="baseChartOptions('Overall Attendance')"
         :series="generateSeries('total')"
       /> -->
-      </div>
-
-      <div class="bg-white rounded-lg shadow p-4">
-        <h3 class="text-lg font-semibold mb-4">Recent Attendance</h3>
-
-        <!-- Tabs -->
-        <div class="flex space-x-4 mb-4 border-b pb-2">
-          <button
-            v-for="tab in tabs"
-            :key="tab"
-            @click="activeTab = tab"
-            :class="[
-              'capitalize px-3 py-1 rounded-md text-sm',
-              activeTab === tab
-                ? 'bg-green-100 text-green-600 font-semibold'
-                : 'bg-gray-100 text-gray-600'
-            ]"
-          >
-            {{ tab }}
-          </button>
-        </div>
-
-        <!-- Attendance List -->
-        <!-- Spinner and Attendance -->
-        <div v-loading="loading" class="min-h-[120px] relative">
-          <div v-if="recentLogs.length > 0">
-            <div v-for="log in recentLogs" :key="log.id" class="flex items-center mb-4">
-              <img
-                :src="log.avatar_url || '/default-avatar.png'"
-                alt="avatar"
-                class="w-10 h-10 rounded-full mr-3 object-cover"
-              />
-              <div>
-                <p class="font-medium">{{ log.user_name }}</p>
-                <p class="text-xs text-gray-500">{{ log.user_role }}</p>
-                <p class="text-xs text-gray-400">
-                  {{
-                    new Date(log.check_in_time).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })
-                  }}
-                </p>
-              </div>
-            </div>
-          </div>
-          <p v-else-if="!loading" class="text-sm text-gray-400">No recent logs found.</p>
-        </div>
       </div>
     </div>
   </MainLayout>

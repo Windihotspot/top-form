@@ -264,7 +264,7 @@ onMounted(fetchAll)
           :index="3"
         />
       </div>
-      <!-- students by gender & teachers list -->
+      <!-- students by gender & top performing students -->
       <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Students by Gender (1 column) -->
         <div class="bg-white p-4 md:col-span-1">
@@ -288,7 +288,7 @@ onMounted(fetchAll)
               class="elevation-1"
               fixed-header
               hide-default-footer
-              height="300px"
+              height="200px"
             >
               <!-- Avatar + Name -->
               <template #item.full_name="{ item }">

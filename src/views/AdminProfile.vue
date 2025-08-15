@@ -1,13 +1,10 @@
 <template>
   <MainLayout>
     <v-container class="py-8 px-4">
-      <v-progress-circular
-        v-if="loading"
-        indeterminate
-        color="primary"
-        size="48"
-        class="mx-auto my-10"
-      />
+      <div v-if="loading" class="flex items-center justify-center my-auto">
+        <v-progress-circular indeterminate color="success" size="48" />
+      </div>
+
       <div v-else>
         <!-- Profile Header -->
         <div class="flex flex-col md:flex-row gap-6 items-center md:items-start">
@@ -22,74 +19,105 @@
                 <v-avatar size="120">
                   <v-img :src="admin.avatar_url || defaultAvatar" :key="admin.avatar_url" />
                 </v-avatar>
-                <el-button icon="el-icon-upload" :loading="loading">Upload</el-button>
+
+                <!-- Upload Icon -->
+                <v-btn icon variant="text" color="success" :loading="loading" class="ml-2">
+                  <v-icon>mdi-upload</v-icon>
+                </v-btn>
+                <!-- Delete Icon -->
+                <v-btn
+                  icon
+                  variant="text"
+                  color="red"
+                  :loading="loading"
+                  @click.stop="deleteAvatar"
+                  @click="deleteAvatar"
+                  :disabled="!admin.avatar_url"
+                >
+                  <v-icon>mdi-delete</v-icon>
+                </v-btn>
               </el-upload>
-
-              <div v-if="isUploading" class="text-xs mt-1 text-gray-500">Uploading...</div>
-
-              <!-- Delete -->
-              <el-button
-                icon="el-icon-delete"
-                type="danger"
-                :loading="loading"
-                @click="deleteAvatar"
-                :disabled="!admin.avatar_url"
-              >
-                Delete
-              </el-button>
             </div>
+
+            <div v-if="isUploading" class="text-xs mt-1 text-green-500">Uploading...</div>
           </div>
 
           <!-- Contact Form -->
           <div class="w-full md:w-3/4 p-6">
             <div class="text-lg font-semibold mb-4">Contact Details</div>
 
-            <v-row dense>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  variant="outlined"
-                  color="#15803d"
-                  v-model="admin.first_name"
-                  label="First Name"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  variant="outlined"
-                  color="#15803d"
-                  v-model="admin.last_name"
-                  label="Last Name"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-text-field
-                  variant="outlined"
-                  color="#15803d"
-                  v-model="admin.phone"
-                  label="Phone Number"
-                  prefix="+234"
-                  type="tel"
-                />
-              </v-col>
-              <v-col cols="12" md="6">
-                <v-select
-                  variant="outlined"
-                  color="#15803d"
-                  v-model="admin.timezone"
-                  :items="timezones"
-                  label="Timezone"
-                />
-              </v-col>
-            </v-row>
+            <v-text-field
+              variant="outlined"
+              color="#15803d"
+              v-model="admin.fullname"
+              label="Full Name"
+            />
 
-            <v-btn :loading="saving" color="primary" class="m-2" @click="saveChanges">
+            <v-text-field
+              variant="outlined"
+              color="#15803d"
+              v-model="admin.email"
+              label="Email address"
+            />
+
+            <div class="grid grid-cols-2 gap-4">
+              <!-- Phone Number with flag -->
+              <v-text-field
+                variant="outlined"
+                color="#15803d"
+                v-model="admin.phone"
+                label="Phone Number"
+                type="tel"
+              >
+                <!-- Prepend slot for flag + code -->
+                <template #prepend-inner>
+                  <img
+                    src="https://flagcdn.com/w20/ng.png"
+                    alt="Nigeria"
+                    class="w-6 h-4 rounded-sm mr-2"
+                  />
+                  <span class="text-gray-700 mr-6">+234</span>
+                </template>
+              </v-text-field>
+
+              <!-- Created Date (disabled) -->
+              <v-text-field
+                variant="outlined"
+                color="success"
+                v-model="admin.created_at"
+                label="Created Date"
+                disabled
+              />
+            </div>
+
+            <v-text-field
+              variant="outlined"
+              color="#15803d"
+              label="Password"
+              v-model="admin.password"
+              type="password"
+              autocomplete="new-password"
+            />
+
+            <v-progress-linear
+              :value="passwordStrengthPercent"
+              :color="passwordStrengthColor"
+              height="6"
+              class="mb-1"
+            />
+
+            <p class="text-sm font-medium" :class="passwordStrengthClass">
+              {{ passwordStrengthLabel }}
+            </p>
+
+            <v-btn :loading="saving" color="success" class="m-2" @click="saveChanges">
               Save Changes
             </v-btn>
           </div>
         </div>
 
         <!-- Account Overview -->
-        <div class="mt-10 p-6">
+        <div class="mt-10">
           <v-table>
             <thead>
               <tr>
@@ -127,7 +155,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { supabase } from '@/supabase.js'
 import MainLayout from '@/layouts/full/MainLayout.vue'
 import api from '@/services/api'
@@ -137,6 +165,49 @@ import { useAuthStore } from '@/stores/auth' // adjust path if needed
 import { ElNotification, ElMessage } from 'element-plus'
 
 const auth = useAuthStore()
+
+// Password rules
+const passwordRules = [
+  (v) => !!v || 'Password is required',
+  (v) => v.length >= 6 || 'Minimum 6 characters',
+  (v) => /[A-Z]/.test(v) || 'At least one uppercase letter',
+  (v) => /[0-9]/.test(v) || 'At least one number'
+]
+
+// Password strength %
+const passwordStrengthPercent = computed(() => {
+  const p = admin.password || '' // safe fallback
+  let score = 0
+  if (p.length >= 6) score += 30
+  if (/[A-Z]/.test(p)) score += 30
+  if (/[0-9]/.test(p)) score += 20
+  if (/[^a-zA-Z0-9]/.test(p)) score += 20
+  return score
+})
+
+// Progress bar color
+const passwordStrengthColor = computed(() => {
+  const val = passwordStrengthPercent.value
+  if (val < 40) return 'red'
+  if (val < 70) return 'orange'
+  return 'green'
+})
+
+// Label & text color
+const passwordStrengthLabel = computed(() => {
+  const val = passwordStrengthPercent.value
+  if (val === 0) return ''
+  if (val < 40) return 'Weak'
+  if (val < 70) return 'Medium'
+  return 'Strong'
+})
+
+const passwordStrengthClass = computed(() => {
+  const val = passwordStrengthPercent.value
+  if (val < 40) return 'text-red-600'
+  if (val < 70) return 'text-orange-600'
+  return 'text-green-600'
+})
 
 const storeAdmin = auth.admin
 console.log('admin from store:', storeAdmin)
@@ -258,10 +329,8 @@ const uploadAvatar = async (file) => {
       duration: 4000
     })
     auth.updateAvatar(publicUrl)
-
-    fetchadminProfile()
   } catch (err) {
-    console.error('❌ Upload failed:', err)
+    console.log('❌ Upload failed:', err)
     ElNotification({
       title: 'Upload Failed',
       message: err.message || 'Avatar upload failed',
@@ -275,8 +344,6 @@ const uploadAvatar = async (file) => {
 // Delete Avatar
 const deleteAvatar = async () => {
   try {
-    loading.value = true
-
     // Extract file path from URL
     const filePath = admin.value.avatar_url?.split('/').slice(-2).join('/')
 
@@ -290,16 +357,23 @@ const deleteAvatar = async () => {
       p_action: 'delete'
     })
 
-     // Update both local and global store
-     auth.avatarRefreshKey = Date.now()
+    // Update both local and global store
+    auth.avatarRefreshKey = Date.now()
     admin.value.avatar_url = null
     auth.admin.avatar_url = null
-    ElMessage.success('Avatar removed.')
+
+    // close "deleting..." and show success
+    // show success notification
+    ElNotification({
+      title: 'Profile avatar updated',
+      message: 'Avatar removed.',
+      type: 'success',
+      position: 'top-right',
+      duration: 3000
+    })
   } catch (error) {
     console.error(error)
     ElMessage.error('Error deleting avatar')
-  } finally {
-    loading.value = false
   }
 }
 
@@ -309,5 +383,8 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+.v-btn {
+  text-transform: none;
+}
 /* Optional Tailwind enhancements */
 </style>

@@ -18,6 +18,119 @@ const studentFormValid = ref(false)
 const teacherFormValid = ref(false)
 const employeeFormValid = ref(false)
 
+const schoolSubjects = ref([]) // subjects list
+const schoolClasses = ref([])
+
+const subjectFormRef = ref(null)
+const schoolSubjectFormValid = ref(false)
+
+const subjectsCatalogue = ref([])
+
+const fetchSubjectsCatalogue = async () => {
+  const { data, error } = await supabase
+    .from('subjects')
+    .select('id, name')
+    .order('name', { ascending: true })
+
+  if (error) {
+    ElMessage.error(`Error fetching subjects: ${error.message}`)
+  } else {
+    subjectsCatalogue.value = data
+    // Map so each item is { value: id, label: name } if you prefer
+  }
+}
+
+const subjectData = ref({
+  subject_id: null,
+  custom_name: '',
+  custom_code: ''
+})
+
+// Submit new school subject
+const submitSchoolSubject = async () => {
+  if (!schoolSubjectFormValid.value) return
+
+  const { error } = await supabase.rpc('sp_add_school_subject', {
+    p_school_id: schoolId,
+    p_subject_id: subjectData.value.subject_id,
+    p_custom_name: subjectData.value.custom_name,
+    p_custom_code: subjectData.value.custom_code
+  })
+
+  if (error) {
+    ElMessage.error(`Error adding subject: ${error.message}`)
+    console.log('error adding subjects:', error)
+  } else {
+    closeModal()
+    ElMessage.success('Subject added successfully!')
+    subjectFormRef.value.reset()
+    // Optionally refresh the school subjects list
+    fetchSchoolSubjects()
+  }
+}
+
+// Fetch all subjects for the school via RPC
+// ======================
+const fetchSchoolSubjects = async () => {
+  try {
+    const { data, error } = await supabase.rpc('sp_get_school_subjects', { p_school_id: schoolId }) // replace with your param name
+    if (error) throw error
+    schoolSubjects.value = data
+    console.log('school subjects:', schoolSubjects.value)
+  } catch (err) {
+    console.log('Error fetching subjects:', err)
+  }
+}
+
+const classFormRef = ref(null)
+const classFormValid = ref(false)
+
+const classData = ref({
+  name: '',
+  level: ''
+})
+
+// Submit new class
+const submitClass = async () => {
+  if (!classFormValid.value) return
+
+  // 👀 Log what you're sending
+  console.log("Submitting class payload:", {
+    p_name: classData.value.name,
+    p_level: classData.value.level,
+    p_school_id: schoolId
+  })
+
+
+  const { data, error } = await supabase.rpc('sp_add_class', {
+    p_name: classData.value.name,
+    p_level: classData.value.level,
+    p_school_id: schoolId
+  })
+  console.log("add class data:", data)
+  if (error) {
+    ElMessage.error(`Error adding class: ${error.message}`)
+  } else {
+    closeModal()
+    ElMessage.success('Class added successfully!')
+    classFormRef.value.reset()
+  }
+}
+
+// ======================
+// Fetch all classes for the school via RPC
+// ======================
+const fetchSchoolClasses = async () => {
+  try {
+    const { data, error } = await supabase.rpc('sp_get_classes', { p_school_id: schoolId }) // replace with your param name
+    if (error) throw error
+    schoolClasses.value = data
+    console.log('school classes:', schoolClasses.value)
+  } catch (err) {
+    console.error('Error fetching classes:', err)
+  }
+}
+
 // Student fields (matches `students` table)
 const studentData = ref({
   full_name: '',
@@ -52,26 +165,18 @@ const computedAvatarPreview = computed(() => {
   return file instanceof File ? URL.createObjectURL(file) : null
 })
 
-// helper to format Date objects to YYYY-MM-DD
-function formatDate(val) {
-  if (!val) return ''
-  const d = new Date(val)
-  const yyyy = d.getFullYear()
-  const mm = String(d.getMonth() + 1).padStart(2, '0')
-  const dd = String(d.getDate()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd}`
-}
-
 // Teacher fields (matches `teachers` table)
 const teacherData = ref({
   full_name: '',
   email: '',
   phone: '',
-  subject_specialization: '',
   gender: '',
+  date_of_birth: null,
   address: '',
-  date_of_birth: '',
-  avatar_url: null // file
+  avatar_url: '',
+  subject_specializations: [], // array for multiple subjects
+  main_class_id: null,
+  other_class_ids: [] // array for additional classes
 })
 
 const teacherAvatarPreview = ref(null)
@@ -247,7 +352,7 @@ const confirmSave = async () => {
       type: 'info',
       duration: 1500
     })
-    
+
     const { data, error } = await supabase.from('students').insert([payload]).select()
     if (error) throw error
     resetFormAndClose()
@@ -363,7 +468,9 @@ const fetchAll = async () => {
     await Promise.all([
       fetchData('teachers', 'teachers'),
       loadStudents(),
-
+      fetchSubjectsCatalogue(),
+      fetchSchoolClasses(),
+      fetchSchoolSubjects(),
       fetchData('employees', 'employees')
     ])
     // Set default selected item for 'students' if data exists
@@ -382,7 +489,9 @@ const tab = ref('students')
 const tabs = [
   { label: 'Students', value: 'students' },
   { label: 'Teachers', value: 'teachers' },
-  { label: 'Employees', value: 'employees' }
+  { label: 'Employees', value: 'employees' },
+  { label: 'Subjects', value: 'subjects' },
+  { label: 'Classes', value: 'classes' }
 ]
 
 const resetFormAndClose = () => {
@@ -916,6 +1025,26 @@ watch(tab, (newTab) => {
           >
             Employees
           </button>
+
+          <button
+            @click="activeTab = 'subjects'"
+            :class="
+              activeTab === 'subjects' ? 'bg-[#15803d] text-white' : 'bg-gray-200 text-gray-700'
+            "
+            class="px-4 py-2 rounded transition"
+          >
+            Subjects
+          </button>
+
+          <button
+            @click="activeTab = 'classes'"
+            :class="
+              activeTab === 'classes' ? 'bg-[#15803d] text-white' : 'bg-gray-200 text-gray-700'
+            "
+            class="px-4 py-2 rounded transition"
+          >
+            Classes
+          </button>
         </div>
 
         <!-- Forms -->
@@ -979,7 +1108,7 @@ watch(tab, (newTab) => {
                       readonly
                       :color="'#15803d'"
                       variant="outlined"
-                       :rules="[(v) => !!v || 'Date of birth is required']"
+                      :rules="[(v) => !!v || 'Date of birth is required']"
                     />
                   </template>
 
@@ -1113,14 +1242,43 @@ watch(tab, (newTab) => {
                   density="comfortable"
                   :rules="[(v) => !!v || 'Phone is required']"
                 />
-                <v-text-field
-                  v-model="teacherData.subject_specialization"
-                  label="Subject Specialization"
+                <v-select
+                  v-model="teacherData.subject_specializations"
+                  :items="schoolSubjects"
+                  item-title="name"
+                  item-value="id"
+                  label="Subject Specializations"
+                  multiple
+                  chips
                   :color="'#15803d'"
                   variant="outlined"
                   density="comfortable"
-                  :rules="[(v) => !!v || 'Subject is required']"
                 />
+
+                <v-select
+                  v-model="teacherData.main_class_id"
+                  :items="schoolClasses"
+                  item-title="name"
+                  item-value="id"
+                  label="Main Class Teacher"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                />
+
+                <v-select
+                  v-model="teacherData.other_class_ids"
+                  :items="schoolClasses"
+                  item-title="name"
+                  item-value="id"
+                  label="Other Classes"
+                  multiple
+                  chips
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                />
+
                 <v-select
                   v-model="teacherData.gender"
                   :items="genderOptions"
@@ -1319,6 +1477,79 @@ watch(tab, (newTab) => {
               >
                 Save Employee
               </v-btn>
+            </v-form>
+          </div>
+
+          <div v-else-if="activeTab === 'subjects'" key="subjects">
+            <h2 class="text-lg font-semibold mb-4">Manage subjects in your school</h2>
+
+            <v-form
+              ref="subjectFormRef"
+              v-model="schoolSubjectFormValid"
+              @submit.prevent="submitSchoolSubject"
+            >
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+                <v-select
+                  v-model="subjectData.subject_id"
+                  :items="subjectsCatalogue"
+                  item-value="id"
+                  item-title="name"
+                  label="Select Subject"
+                  :rules="[(v) => !!v || 'Subject is required']"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                />
+
+                <v-text-field
+                  v-model="subjectData.custom_name"
+                  label="Custom Name (optional)"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                />
+
+                <v-text-field
+                  v-model="subjectData.custom_code"
+                  label="Custom Code (optional)"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                />
+              </div>
+
+              <div class="flex justify-end mt-4">
+                <v-btn type="submit" color="#15803d" variant="flat">Add Subject</v-btn>
+              </div>
+            </v-form>
+          </div>
+
+          <div v-else-if="activeTab === 'classes'" key="classes">
+            <h2 class="text-lg font-semibold mb-4">Manage classes in your school</h2>
+
+            <v-form ref="classFormRef" v-model="classFormValid" @submit.prevent="submitClass">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
+                <v-text-field
+                  v-model="classData.name"
+                  label="Class Name"
+                  :rules="[(v) => !!v || 'Class name is required']"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                />
+
+                <v-text-field
+                  v-model="classData.level"
+                  label="Section (optional)"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  density="comfortable"
+                />
+              </div>
+
+              <div class="flex justify-end mt-4">
+                <v-btn type="submit" color="#15803d" variant="flat">Add Class</v-btn>
+              </div>
             </v-form>
           </div>
         </transition>

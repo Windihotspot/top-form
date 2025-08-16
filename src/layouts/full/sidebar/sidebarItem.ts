@@ -27,7 +27,7 @@ const sidebarItems = [
   {
     title: 'Revenue',
     path: '/revenue',
-    icon: 'mdi-currency-usd', // Revenue icon
+    icon: 'mdi-currency-ngn', // Revenue icon
   },
   {
     title: 'Expenses',

@@ -257,7 +257,7 @@ onMounted(fetchAll)
           :index="2"
         />
         <AnimatedStats
-          iconClass="fas fa-dollar-sign"
+          iconClass="fas fa-naira-sign"
           iconBgClass=" text-green-500"
           title="Total Revenue"
           :value="totalRevenue"

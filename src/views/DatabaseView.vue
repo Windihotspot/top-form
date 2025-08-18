@@ -36,7 +36,6 @@ const fetchSubjectsCatalogue = async () => {
     ElMessage.error(`Error fetching subjects: ${error.message}`)
   } else {
     subjectsCatalogue.value = data
-    // Map so each item is { value: id, label: name } if you prefer
   }
 }
 
@@ -95,19 +94,18 @@ const submitClass = async () => {
   if (!classFormValid.value) return
 
   // 👀 Log what you're sending
-  console.log("Submitting class payload:", {
+  console.log('Submitting class payload:', {
     p_name: classData.value.name,
     p_level: classData.value.level,
     p_school_id: schoolId
   })
-
 
   const { data, error } = await supabase.rpc('sp_add_class', {
     p_name: classData.value.name,
     p_level: classData.value.level,
     p_school_id: schoolId
   })
-  console.log("add class data:", data)
+  console.log('add class data:', data)
   if (error) {
     ElMessage.error(`Error adding class: ${error.message}`)
   } else {
@@ -164,103 +162,6 @@ const computedAvatarPreview = computed(() => {
 
   return file instanceof File ? URL.createObjectURL(file) : null
 })
-
-// Teacher fields (matches `teachers` table)
-const teacherData = ref({
-  full_name: '',
-  email: '',
-  phone: '',
-  gender: '',
-  date_of_birth: null,
-  address: '',
-  avatar_url: '',
-  subject_specializations: [], // array for multiple subjects
-  main_class_id: null,
-  other_class_ids: [] // array for additional classes
-})
-
-const teacherAvatarPreview = ref(null)
-const previewTeacherAvatar = (file) => {
-  if (!file) return
-  teacherAvatarPreview.value = URL.createObjectURL(file)
-}
-
-const employeeData = ref({
-  firstname: '',
-  lastname: '',
-  email: '',
-  phone: '',
-  gender: '',
-  address: '',
-  department: '',
-  position: '',
-  salary: ''
-})
-
-const employeeAvatarPreview = ref(null)
-
-const previewEmployeeAvatar = (file) => {
-  if (!file) {
-    employeeAvatarPreview.value = null
-    return
-  }
-  employeeAvatarPreview.value = URL.createObjectURL(file)
-}
-
-const onDateSelected = (val) => {
-  employeeData.value.date_of_birth = val // already 'YYYY-MM-DD'
-  dobText.value = val
-}
-
-// Student DOB
-const studentDobMenu = ref(false)
-const studentDobText = ref('')
-watch(
-  () => studentData.value.date_of_birth,
-  (val) => {
-    if (val) studentDobText.value = val // already 'YYYY-MM-DD'
-  }
-)
-const onStudentDateSelected = (val) => {
-  studentData.value.date_of_birth = val
-  studentDobText.value = val
-}
-
-// Teacher DOB
-const teacherDobMenu = ref(false)
-const teacherDobText = ref('')
-watch(
-  () => teacherData.value.date_of_birth,
-  (val) => {
-    if (val) teacherDobText.value = val
-  }
-)
-const onTeacherDateSelected = (val) => {
-  teacherData.value.date_of_birth = val
-  teacherDobText.value = val
-}
-
-// Employee DOB
-const employeeDobMenu = ref(false)
-const employeeDobText = ref('')
-watch(
-  () => employeeData.value.date_of_birth,
-  (val) => {
-    if (val) employeeDobText.value = val
-  }
-)
-const onEmployeeDateSelected = (val) => {
-  employeeData.value.date_of_birth = val
-  employeeDobText.value = val
-}
-
-// Mock options (replace with API calls)
-const genderOptions = ['Male', 'Female', 'Other']
-
-// Functions
-const openModal = () => (showModal.value = true)
-const closeModal = () => (showModal.value = false)
-
 const showPreviewModal = ref(false)
 
 const handlePreview = async () => {
@@ -367,6 +268,179 @@ const confirmSave = async () => {
     ElMessage.error('Failed to save student. Please try again.')
   }
 }
+
+// Teacher fields (matches `teachers` table)
+const teacherData = ref({
+  full_name: '',
+  email: '',
+  phone: '',
+  gender: '',
+  date_of_birth: null,
+  address: '',
+  avatar_url: null, // ✅ should be null instead of ''
+  subject_specializations: [], // multiple subjects
+  main_class_id: null,
+  other_class_ids: [] // multiple classes
+})
+
+const teacherAvatarPreview = ref(null)
+
+const previewTeacherAvatar = (files) => {
+  if (!files) {
+    teacherAvatarPreview.value = null
+    return
+  }
+
+  const file = Array.isArray(files) ? files[0] : files
+  teacherAvatarPreview.value = file instanceof File ? URL.createObjectURL(file) : null
+}
+
+const computedTeacherAvatarPreview = computed(() => {
+  const file = Array.isArray(teacherData.value.avatar_url)
+    ? teacherData.value.avatar_url[0]
+    : teacherData.value.avatar_url
+
+  return file instanceof File ? URL.createObjectURL(file) : null
+})
+
+const showTeacherPreviewModal = ref(false)
+
+const handleTeacherPreview = async () => {
+  const { valid } = await teacherFormRef.value.validate()
+  if (!valid) return
+
+  if (teacherData.value.date_of_birth instanceof Date) {
+    teacherData.value.date_of_birth = teacherData.value.date_of_birth.toISOString().split('T')[0]
+  }
+
+  showTeacherPreviewModal.value = true
+}
+
+const confirmSaveTeacher = async () => {
+   showTeacherPreviewModal.value = false
+  try {
+    const payload = {
+      p_school_id: schoolId,
+      p_full_name: teacherData.value.full_name,
+      p_email: teacherData.value.email,
+      p_phone: teacherData.value.phone,
+      p_gender: teacherData.value.gender,
+      p_address: teacherData.value.address,
+      p_date_of_birth: teacherData.value.date_of_birth,
+      p_avatar_url: null,
+      p_subject_ids: teacherData.value.subject_specializations || [],
+      p_main_class_id: teacherData.value.main_class_id || null,
+      p_other_class_ids: teacherData.value.other_class_ids || []
+    }
+
+    closeModal()
+    console.log('📦 Teacher payload:', payload)
+
+    ElMessage({
+      message: 'Saving Teacher',
+      type: 'info',
+      duration: 2000,
+      offset: 20, // distance from top
+      customClass: 'el-message-top-left'
+    })
+
+    // 🔥 Call your stored procedure instead of insert
+    const { data, error } = await supabase.rpc('sp_add_teacher_with_subjects', payload)
+    if (error) throw error
+
+    ElMessage({
+      message: 'Teacher saved successfully!',
+      type: 'success',
+      duration: 2000,
+      offset: 20, // distance from top
+      customClass: 'el-message-top-left'
+    })
+
+    console.log('Teacher saved:', data)
+
+    showTeacherPreviewModal.value = false
+    resetTeacherForm()
+  } catch (err) {
+    console.error('❌ Error saving teacher:', err.message)
+    ElMessage.error('Failed to save teacher. Please try again.')
+  }
+}
+
+const employeeData = ref({
+  firstname: '',
+  lastname: '',
+  email: '',
+  phone: '',
+  gender: '',
+  address: '',
+  department: '',
+  position: '',
+  salary: ''
+})
+
+const employeeAvatarPreview = ref(null)
+
+const previewEmployeeAvatar = (file) => {
+  if (!file) {
+    employeeAvatarPreview.value = null
+    return
+  }
+  employeeAvatarPreview.value = URL.createObjectURL(file)
+}
+
+const onDateSelected = (val) => {
+  employeeData.value.date_of_birth = val // already 'YYYY-MM-DD'
+  dobText.value = val
+}
+
+// Student DOB
+const studentDobMenu = ref(false)
+const studentDobText = ref('')
+watch(
+  () => studentData.value.date_of_birth,
+  (val) => {
+    if (val) studentDobText.value = val // already 'YYYY-MM-DD'
+  }
+)
+const onStudentDateSelected = (val) => {
+  studentData.value.date_of_birth = val
+  studentDobText.value = val
+}
+
+// Teacher DOB
+const teacherDobMenu = ref(false)
+const teacherDobText = ref('')
+watch(
+  () => teacherData.value.date_of_birth,
+  (val) => {
+    if (val) teacherDobText.value = val
+  }
+)
+const onTeacherDateSelected = (val) => {
+  teacherData.value.date_of_birth = val
+  teacherDobText.value = val
+}
+
+// Employee DOB
+const employeeDobMenu = ref(false)
+const employeeDobText = ref('')
+watch(
+  () => employeeData.value.date_of_birth,
+  (val) => {
+    if (val) employeeDobText.value = val
+  }
+)
+const onEmployeeDateSelected = (val) => {
+  employeeData.value.date_of_birth = val
+  employeeDobText.value = val
+}
+
+// Mock options (replace with API calls)
+const genderOptions = ['Male', 'Female', 'Other']
+
+// Functions
+const openModal = () => (showModal.value = true)
+const closeModal = () => (showModal.value = false)
 
 const submitTeacher = () => {
   teacherFormRef.value.validate().then((success) => {
@@ -1245,12 +1319,13 @@ watch(tab, (newTab) => {
                 <v-select
                   v-model="teacherData.subject_specializations"
                   :items="schoolSubjects"
-                  item-title="name"
-                  item-value="id"
+                  item-title="subject_name"
+                  item-value="school_subject_id"
                   label="Subject Specializations"
                   multiple
                   chips
                   :color="'#15803d'"
+                  :chip-props="{ color: '#15803d', textColor: 'white' }"
                   variant="outlined"
                   density="comfortable"
                 />
@@ -1330,8 +1405,8 @@ watch(tab, (newTab) => {
                   @change="previewTeacherAvatar"
                 />
                 <v-img
-                  v-if="teacherAvatarPreview"
-                  :src="teacherAvatarPreview"
+                  v-if="computedTeacherAvatarPreview"
+                  :src="computedTeacherAvatarPreview"
                   max-width="100"
                   max-height="100"
                   class="mt-2"
@@ -1340,7 +1415,9 @@ watch(tab, (newTab) => {
 
               <!-- Fixed submit button at bottom -->
               <div class="sticky bottom-0 bg-white mt-4 py-3 border-t flex justify-end">
-                <v-btn type="submit" color="#15803d" variant="flat"> Save Teacher </v-btn>
+                <v-btn @click="handleTeacherPreview" color="#15803d" variant="flat">
+                  Save Teacher
+                </v-btn>
               </div>
             </v-form>
           </div>
@@ -1480,6 +1557,7 @@ watch(tab, (newTab) => {
             </v-form>
           </div>
 
+          <!-- Subjects form -->
           <div v-else-if="activeTab === 'subjects'" key="subjects">
             <h2 class="text-lg font-semibold mb-4">Manage subjects in your school</h2>
 
@@ -1556,6 +1634,7 @@ watch(tab, (newTab) => {
       </div>
     </v-dialog>
 
+    <!-- Add students preview modal -->
     <v-dialog v-model="showPreviewModal" max-width="600px">
       <div class="bg-white p-6 rounded-lg shadow-lg mx-auto">
         <h2 class="text-lg font-normal mb-4">Preview Student Details</h2>
@@ -1594,10 +1673,71 @@ watch(tab, (newTab) => {
         </div>
       </div>
     </v-dialog>
+
+    <!-- Add teachers preview modal -->
+    <v-dialog v-model="showTeacherPreviewModal" max-width="600px">
+      <div class="bg-white p-6 rounded-lg shadow-lg mx-auto">
+        <h2 class="text-lg font-normal mb-4">Preview Teacher Details</h2>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div><strong>Full Name:</strong> {{ teacherData.full_name }}</div>
+          <div><strong>Email:</strong> {{ teacherData.email }}</div>
+          <div><strong>Phone:</strong> {{ teacherData.phone }}</div>
+          <div><strong>Gender:</strong> {{ teacherData.gender }}</div>
+          <div><strong>Date of Birth:</strong> {{ teacherData.date_of_birth }}</div>
+          <div>
+            <strong>Main Class:</strong>
+            {{ schoolClasses.find((c) => c.id === teacherData.main_class_id)?.name }}
+          </div>
+          <div class="col-span-2">
+            <strong>Other Classes:</strong>
+            {{
+              teacherData.other_class_ids
+                .map((id) => schoolClasses.find((c) => c.id === id)?.name)
+                .join(', ')
+            }}
+          </div>
+          <div class="col-span-2">
+            <strong>Subjects:</strong>
+            {{
+              teacherData.subject_specializations
+                .map((id) => schoolSubjects.find((s) => s.school_subject_id === id)?.subject_name)
+                .join(', ')
+            }}
+          </div>
+          <div class="col-span-2"><strong>Address:</strong> {{ teacherData.address }}</div>
+
+          <div class="col-span-2" v-if="computedTeacherAvatarPreview">
+            <strong>Avatar Preview:</strong>
+            <v-img
+              :src="computedTeacherAvatarPreview"
+              max-width="200"
+              max-height="200"
+              rounded
+              cover
+              contain
+            />
+          </div>
+        </div>
+
+        <div class="flex justify-end mt-6 space-x-3">
+          <v-btn variant="outlined" color="grey" @click="showTeacherPreviewModal = false">
+            Edit
+          </v-btn>
+          <v-btn color="#15803d" variant="flat" @click="confirmSaveTeacher"> Confirm & Save </v-btn>
+        </div>
+      </div>
+    </v-dialog>
   </MainLayout>
 </template>
 
 <style scoped>
+.el-message.el-message-top-left {
+  left: 20px; /* push from the left */
+  right: auto; /* override default center */
+  transform: none; /* remove centering */
+}
+
 .custom-btn {
   background-color: #15803d;
 }

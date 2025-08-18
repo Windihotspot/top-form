@@ -315,9 +315,25 @@ const handleTeacherPreview = async () => {
 
   showTeacherPreviewModal.value = true
 }
+const resetTeacherForm = () => {
+  teacherData.value = {
+    full_name: '',
+    email: '',
+    phone: '',
+    gender: '',
+    address: '',
+    date_of_birth: null,
+    avatar_url: null,
+    subject_specializations: [],
+    main_class_id: null,
+    other_class_ids: []
+  }
+
+  teacherDobText.value = '' // also clear DOB text
+}
 
 const confirmSaveTeacher = async () => {
-   showTeacherPreviewModal.value = false
+  showTeacherPreviewModal.value = false
   try {
     const payload = {
       p_school_id: schoolId,
@@ -328,7 +344,7 @@ const confirmSaveTeacher = async () => {
       p_address: teacherData.value.address,
       p_date_of_birth: teacherData.value.date_of_birth,
       p_avatar_url: null,
-      p_subject_ids: teacherData.value.subject_specializations || [],
+      p_subject_specializations: teacherData.value.subject_specializations || [],
       p_main_class_id: teacherData.value.main_class_id || null,
       p_other_class_ids: teacherData.value.other_class_ids || []
     }
@@ -359,6 +375,7 @@ const confirmSaveTeacher = async () => {
     console.log('Teacher saved:', data)
 
     showTeacherPreviewModal.value = false
+    fetchAll()
     resetTeacherForm()
   } catch (err) {
     console.error('❌ Error saving teacher:', err.message)
@@ -366,31 +383,144 @@ const confirmSaveTeacher = async () => {
   }
 }
 
+// Employees
+const positionOptions = [
+  { label: 'Principal', value: 'principal' },
+  { label: 'Vice Principal', value: 'vice_principal' },
+  { label: 'Head Teacher', value: 'head_teacher' },
+  { label: 'Assistant Teacher', value: 'assistant_teacher' },
+  { label: 'School Administrator', value: 'administrator' },
+  { label: 'Accountant / Bursar', value: 'accountant' },
+  { label: 'Receptionist', value: 'receptionist' },
+  { label: 'Counselor', value: 'counselor' },
+  { label: 'Librarian', value: 'librarian' },
+  { label: 'IT Support', value: 'it_support' },
+  { label: 'Cleaner / Janitor', value: 'cleaner' },
+  { label: 'Security Guard', value: 'security' },
+  { label: 'Driver', value: 'driver' },
+  { label: 'Nurse / Health Officer', value: 'nurse' },
+  { label: 'Cafeteria Staff', value: 'cafeteria' },
+  { label: 'Lab Technician', value: 'lab_technician' },
+  { label: 'Sports Coach', value: 'coach' },
+  { label: 'Music / Arts Instructor', value: 'arts_instructor' },
+  { label: 'Clerk / Records Officer', value: 'clerk' },
+  { label: 'Maintenance Staff', value: 'maintenance' }
+]
+
 const employeeData = ref({
-  firstname: '',
-  lastname: '',
+  full_name: '',
   email: '',
   phone: '',
   gender: '',
+  date_of_birth: null,
+  hire_date: null,
   address: '',
-  department: '',
   position: '',
-  salary: ''
+  salary: null,
+  avatar_url: null
 })
 
 const employeeAvatarPreview = ref(null)
 
-const previewEmployeeAvatar = (file) => {
-  if (!file) {
+const previewEmployeeAvatar = (files) => {
+  if (!files) {
     employeeAvatarPreview.value = null
     return
   }
-  employeeAvatarPreview.value = URL.createObjectURL(file)
+
+  const file = Array.isArray(files) ? files[0] : files
+  employeeAvatarPreview.value = file instanceof File ? URL.createObjectURL(file) : null
 }
 
-const onDateSelected = (val) => {
-  employeeData.value.date_of_birth = val // already 'YYYY-MM-DD'
-  dobText.value = val
+const computedEmployeeAvatarPreview = computed(() => {
+  const file = Array.isArray(employeeData.value.avatar_url)
+    ? employeeData.value.avatar_url[0]
+    : employeeData.value.avatar_url
+
+  return file instanceof File ? URL.createObjectURL(file) : null
+})
+
+const resetEmployeeForm = () => {
+  employeeData.value = {
+    full_name: '',
+    email: '',
+    phone: '',
+    gender: '',
+    date_of_birth: null,
+    hire_date: null,
+    address: '',
+    position: '',
+    salary: null,
+    avatar_url: null
+  }
+  employeeDobText.value = ''
+}
+
+const showEmployeePreviewModal = ref(false)
+
+const handleEmployeePreview = async () => {
+  const { valid } = await employeeFormRef.value.validate()
+  if (!valid) return
+
+  // format dates
+  if (employeeData.value.date_of_birth instanceof Date) {
+    employeeData.value.date_of_birth = employeeData.value.date_of_birth.toISOString().split('T')[0]
+  }
+  if (employeeData.value.hire_date instanceof Date) {
+    employeeData.value.hire_date = employeeData.value.hire_date.toISOString().split('T')[0]
+  }
+
+  showEmployeePreviewModal.value = true
+}
+
+const confirmSaveEmployee = async () => {
+  showEmployeePreviewModal.value = false
+  try {
+    const payload = {
+      school_id: schoolId,
+      full_name: employeeData.value.full_name,
+      email: employeeData.value.email,
+      phone: employeeData.value.phone,
+      gender: employeeData.value.gender,
+      address: employeeData.value.address,
+      date_of_birth: employeeData.value.date_of_birth,
+      hire_date: employeeData.value.hire_date,
+      position: employeeData.value.position,
+      salary: employeeData.value.salary,
+      avatar_url: null // handle upload later
+    }
+    closeModal()
+    console.log('📦 Employee payload:', payload)
+
+    ElMessage({
+      message: 'Saving Employee',
+      type: 'info',
+      duration: 2000,
+      offset: 20,
+      customClass: 'el-message-top-left'
+    })
+
+    // simple insert (no SP needed)
+    const { data, error } = await supabase.from('employees').insert(payload).select()
+    if (error) throw error
+
+    ElMessage({
+      message: 'Employee saved successfully!',
+      type: 'success',
+      duration: 2000,
+      offset: 20,
+      customClass: 'el-message-top-left'
+    })
+
+    console.log('Employee saved:', data)
+
+    showEmployeePreviewModal.value = false
+    fetchAll() // refresh list
+    resetEmployeeForm()
+  } catch (err) {
+    console.error('❌ Error saving employee:', err.message)
+    ElMessage.error('Failed to save employee. Please try again.')
+  }
 }
 
 // Student DOB
@@ -420,19 +550,18 @@ const onTeacherDateSelected = (val) => {
   teacherData.value.date_of_birth = val
   teacherDobText.value = val
 }
-
-// Employee DOB
 const employeeDobMenu = ref(false)
 const employeeDobText = ref('')
-watch(
-  () => employeeData.value.date_of_birth,
-  (val) => {
-    if (val) employeeDobText.value = val
-  }
-)
 const onEmployeeDateSelected = (val) => {
   employeeData.value.date_of_birth = val
   employeeDobText.value = val
+}
+
+const employeeHireDateMenu = ref(false)
+const employeeHireDateText = ref('')
+const onEmployeeHireDateSelected = (val) => {
+  employeeHireDateText.value = val
+  employeeHireDateMenu.value = false
 }
 
 // Mock options (replace with API calls)
@@ -1201,10 +1330,10 @@ watch(tab, (newTab) => {
                 <!-- Class -->
                 <v-select
                   v-model="studentData.class_id"
-                  :items="classOptions"
+                  :items="schoolClasses"
+                  item-title="name"
+                  item-value="id"
                   label="Class"
-                  item-title="title"
-                  item-value="value"
                   :color="'#15803d'"
                   variant="outlined"
                   density="comfortable"
@@ -1428,10 +1557,13 @@ watch(tab, (newTab) => {
             <v-form
               ref="employeeFormRef"
               v-model="employeeFormValid"
-              @submit.prevent="submitEmployee"
+              @submit.prevent="handleEmployeePreview"
               class="relative"
             >
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-auto pr-2">
+              <div
+                class="p-2 grid grid-cols-1 md:grid-cols-2 gap-4 max-h-[60vh] overflow-auto pr-2"
+              >
+                <!-- Full Name -->
                 <v-text-field
                   v-model="employeeData.full_name"
                   label="Full Name"
@@ -1440,6 +1572,8 @@ watch(tab, (newTab) => {
                   density="comfortable"
                   :rules="[(v) => !!v || 'Full name is required']"
                 />
+
+                <!-- Email -->
                 <v-text-field
                   v-model="employeeData.email"
                   label="Email"
@@ -1449,6 +1583,8 @@ watch(tab, (newTab) => {
                   density="comfortable"
                   :rules="[(v) => !!v || 'Email is required']"
                 />
+
+                <!-- Phone -->
                 <v-text-field
                   v-model="employeeData.phone"
                   label="Phone"
@@ -1457,6 +1593,8 @@ watch(tab, (newTab) => {
                   density="comfortable"
                   :rules="[(v) => !!v || 'Phone is required']"
                 />
+
+                <!-- Gender -->
                 <v-select
                   v-model="employeeData.gender"
                   :items="genderOptions"
@@ -1468,46 +1606,65 @@ watch(tab, (newTab) => {
                 />
 
                 <!-- Date of Birth -->
-                <v-menu :close-on-content-click="false" v-model="employeeDobMenu">
+                <v-menu
+                  v-model="employeeDobMenu"
+                  :close-on-content-click="false"
+                  transition="scale-transition"
+                  offset-y
+                >
                   <template #activator="{ props }">
                     <v-text-field
-                      :color="'#15803d'"
-                      variant="outlined"
-                      v-bind="props"
-                      v-model="employeeDobText"
+                      v-model="employeeData.date_of_birth"
                       label="Date of Birth"
                       readonly
+                      v-bind="props"
+                      :color="'#15803d'"
+                      variant="outlined"
                     />
                   </template>
+
                   <v-date-picker
                     v-model="employeeData.date_of_birth"
-                    @input="onEmployeeDateSelected"
-                  >
-                    <template #actions>
-                      <v-btn text @click="employeeDobMenu = false">Cancel</v-btn>
-                      <v-btn text @click="employeeDobMenu = false">OK</v-btn>
-                    </template>
-                  </v-date-picker>
+                    @update:modelValue="employeeDobMenu = false"
+                  />
                 </v-menu>
 
+                <!-- Position -->
                 <v-select
                   v-model="employeeData.position"
                   :items="positionOptions"
-                  label="Position"
-                  :color="'#15803d'"
+                  item-title="label"
+                  item-value="value"
+                  label="Select Position"
                   variant="outlined"
-                  density="comfortable"
                   :rules="[(v) => !!v || 'Position is required']"
                 />
-                <v-text-field
-                  v-model="employeeData.hire_date"
-                  label="Hire Date"
-                  type="date"
-                  :color="'#15803d'"
-                  variant="outlined"
-                  density="comfortable"
-                  :rules="[(v) => !!v || 'Hire date is required']"
-                />
+
+                <!-- Hire Date -->
+                <v-menu
+                  v-model="employeeHireDateMenu"
+                  :close-on-content-click="false"
+                  transition="scale-transition"
+                  offset-y
+                >
+                  <template #activator="{ props }">
+                    <v-text-field
+                      v-model="employeeData.hire_date"
+                      label="Hire Date"
+                      readonly
+                      v-bind="props"
+                      :color="'#15803d'"
+                      variant="outlined"
+                    />
+                  </template>
+
+                  <v-date-picker
+                    v-model="employeeData.hire_date"
+                    @update:modelValue="employeeHireDateMenu = false"
+                  />
+                </v-menu>
+
+                <!-- Salary -->
                 <v-text-field
                   v-model="employeeData.salary"
                   label="Salary"
@@ -1517,6 +1674,8 @@ watch(tab, (newTab) => {
                   density="comfortable"
                   :rules="[(v) => !!v || 'Salary is required']"
                 />
+
+                <!-- Address -->
                 <v-text-field
                   v-model="employeeData.address"
                   label="Address"
@@ -1547,13 +1706,16 @@ watch(tab, (newTab) => {
               </div>
 
               <!-- Fixed Save Button -->
-              <v-btn
-                type="submit"
-                class="mt-4 w-full sticky bottom-0 bg-[#15803d] text-white"
+               <div class="flex justify-end mt-4">
+                  <v-btn
+                @click="handleEmployeePreview"
+               color="#15803d"
                 variant="flat"
               >
                 Save Employee
               </v-btn>
+               </div>
+            
             </v-form>
           </div>
 
@@ -1725,6 +1887,49 @@ watch(tab, (newTab) => {
             Edit
           </v-btn>
           <v-btn color="#15803d" variant="flat" @click="confirmSaveTeacher"> Confirm & Save </v-btn>
+        </div>
+      </div>
+    </v-dialog>
+
+    <!-- Add employees dialog -->
+    <!-- Add employees preview modal -->
+    <v-dialog v-model="showEmployeePreviewModal" max-width="600px">
+      <div class="bg-white p-6 rounded-lg shadow-lg mx-auto">
+        <h2 class="text-lg font-normal mb-4">Preview Employee Details</h2>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div><strong>Full Name:</strong> {{ employeeData.full_name }}</div>
+          <div><strong>Email:</strong> {{ employeeData.email }}</div>
+          <div><strong>Phone:</strong> {{ employeeData.phone }}</div>
+          <div><strong>Gender:</strong> {{ employeeData.gender }}</div>
+          <div><strong>Date of Birth:</strong> {{ employeeData.date_of_birth }}</div>
+          <div><strong>Position:</strong> {{ employeeData.position }}</div>
+          <div><strong>Department:</strong> {{ employeeData.department }}</div>
+          <div><strong>Employment Type:</strong> {{ employeeData.employment_type }}</div>
+          <div><strong>Salary:</strong> {{ employeeData.salary }}</div>
+          <div><strong>Date of Hire:</strong> {{ employeeData.date_of_hire }}</div>
+          <div class="col-span-2"><strong>Address:</strong> {{ employeeData.address }}</div>
+
+          <div class="col-span-2" v-if="computedEmployeeAvatarPreview">
+            <strong>Avatar Preview:</strong>
+            <v-img
+              :src="computedEmployeeAvatarPreview"
+              max-width="200"
+              max-height="200"
+              rounded
+              cover
+              contain
+            />
+          </div>
+        </div>
+
+        <div class="flex justify-end mt-6 space-x-3">
+          <v-btn variant="outlined" color="grey" @click="showEmployeePreviewModal = false">
+            Edit
+          </v-btn>
+          <v-btn color="#15803d" variant="flat" @click="confirmSaveEmployee">
+            Confirm & Save
+          </v-btn>
         </div>
       </div>
     </v-dialog>

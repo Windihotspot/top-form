@@ -8,6 +8,7 @@ import AdminProfile from '@/views/AdminProfile.vue'
 import DatabaseView from '@/views/DatabaseView.vue'
 import AttendanceView from '@/views/AttendanceView.vue'
 import SchoolCalendar from '@/views/SchoolCalendar.vue'
+import ExpensesView from '@/views/ExpensesView.vue'
 
 
 const router = createRouter({
@@ -57,6 +58,11 @@ const router = createRouter({
       path: '/calendar',
       name: 'calendar',
       component: SchoolCalendar
+    },
+    {
+      path: '/expenses',
+      name: 'expenses',
+      component: ExpensesView
     },
     
   ]

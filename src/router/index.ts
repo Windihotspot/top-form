@@ -9,6 +9,7 @@ import DatabaseView from '@/views/DatabaseView.vue'
 import AttendanceView from '@/views/AttendanceView.vue'
 import SchoolCalendar from '@/views/SchoolCalendar.vue'
 import ExpensesView from '@/views/ExpensesView.vue'
+import Onboarding from '@/views/Onboarding.vue'
 
 
 const router = createRouter({
@@ -63,6 +64,11 @@ const router = createRouter({
       path: '/expenses',
       name: 'expenses',
       component: ExpensesView
+    },
+    {
+      path: '/onboarding',
+      name: 'onboarding',
+      component: Onboarding
     },
     
   ]

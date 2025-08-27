@@ -24,6 +24,8 @@ import MainLayout from '@/layouts/full/MainLayout.vue'
         </v-btn>
       </div>
     </div>
+
+
   </MainLayout>
 </template>
 

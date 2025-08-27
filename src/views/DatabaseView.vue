@@ -23,8 +23,110 @@ const schoolClasses = ref([])
 
 const subjectFormRef = ref(null)
 const schoolSubjectFormValid = ref(false)
+const expenseFormRef = ref(null)
+const expenseFormValid = ref(false)
 
 const subjectsCatalogue = ref([])
+const categories = ref([])
+const newCategory = ref({
+  name: '',
+  description: ''
+})
+const expenses = ref([])
+const fetchExpenses = async () => {
+  
+  if (!schoolId) {
+    console.error("❌ No schoolId found in authStore")
+    return []
+  }
+  const { data, error } = await supabase
+    .from('expenses')
+    .select('*') // fetches all columns
+    .eq('school_id', schoolId)
+    .order('date', { ascending: false }) // newest first
+  expenses.value = data
+  console.log('school expenses:', data)
+  if (error) {
+    console.error('Error fetching expenses:', error.message)
+    return []
+  }
+
+  return data
+}
+
+// Fetch expense categories (global + school-specific)
+const fetchExpenseCategories = async (schoolId) => {
+  try {
+    let query = supabase.from('expense_categories').select('*')
+
+    if (schoolId) {
+      // fetch both global + school categories
+      query = query.or(`is_global.eq.true,school_id.eq.${schoolId}`)
+    } else {
+      // fetch only global categories
+      query = query.eq('is_global', true)
+    }
+
+    const { data, error } = await query
+      .order('is_global', { ascending: false }) // global first
+      .order('name', { ascending: true }) // alphabetical
+
+    if (error) {
+      console.error('Error fetching categories:', error.message)
+      return []
+    }
+
+    categories.value = data
+    console.log('expenses categories:', data)
+
+    return data
+  } catch (err) {
+    console.error('Unexpected error:', err)
+    return []
+  }
+}
+
+const addExpenseCategory = async (schoolId, name, description = null) => {
+  if (!expenseFormValid.value) return
+  closeModal()
+  ElMessage({
+    message: 'Saving expense category...',
+    type: 'info',
+    duration: 1500
+  })
+
+  try {
+    const { data, error } = await supabase
+      .from('expense_categories')
+      .insert([
+        {
+          school_id: schoolId,
+          name,
+          description,
+          is_global: false
+        }
+      ])
+      .select()
+      .single()
+    ElMessage.success('Expense saved successfully!')
+    console.log('added expense')
+    if (error) {
+      ElMessage({
+        message: 'Error Saving expense category...',
+        type: 'error',
+        duration: 1500
+      })
+
+      console.log('Error adding category:', error.message)
+      throw error
+    }
+
+    return data
+  } catch (err) {
+    console.error('Unexpected error adding category:', err)
+    throw err
+  }
+}
 
 const fetchSubjectsCatalogue = async () => {
   const { data, error } = await supabase
@@ -671,9 +773,11 @@ const fetchAll = async () => {
     await Promise.all([
       fetchData('teachers', 'teachers'),
       loadStudents(),
+      fetchExpenses(),
       fetchSubjectsCatalogue(),
       fetchSchoolClasses(),
       fetchSchoolSubjects(),
+      fetchExpenseCategories(),
       fetchData('employees', 'employees')
     ])
     // Set default selected item for 'students' if data exists
@@ -694,7 +798,8 @@ const tabs = [
   { label: 'Teachers', value: 'teachers' },
   { label: 'Employees', value: 'employees' },
   { label: 'Subjects', value: 'subjects' },
-  { label: 'Classes', value: 'classes' }
+  { label: 'Classes', value: 'classes' },
+  { label: 'Expenses', value: 'expenses' }
 ]
 
 const resetFormAndClose = () => {
@@ -1248,6 +1353,15 @@ watch(tab, (newTab) => {
           >
             Classes
           </button>
+          <button
+            @click="activeTab = 'expenses'"
+            :class="
+              activeTab === 'expenses' ? 'bg-[#15803d] text-white' : 'bg-gray-200 text-gray-700'
+            "
+            class="px-4 py-2 rounded transition"
+          >
+            Expenses
+          </button>
         </div>
 
         <!-- Forms -->
@@ -1706,16 +1820,11 @@ watch(tab, (newTab) => {
               </div>
 
               <!-- Fixed Save Button -->
-               <div class="flex justify-end mt-4">
-                  <v-btn
-                @click="handleEmployeePreview"
-               color="#15803d"
-                variant="flat"
-              >
-                Save Employee
-              </v-btn>
-               </div>
-            
+              <div class="flex justify-end mt-4">
+                <v-btn @click="handleEmployeePreview" color="#15803d" variant="flat">
+                  Save Employee
+                </v-btn>
+              </div>
             </v-form>
           </div>
 
@@ -1789,6 +1898,48 @@ watch(tab, (newTab) => {
 
               <div class="flex justify-end mt-4">
                 <v-btn type="submit" color="#15803d" variant="flat">Add Class</v-btn>
+              </div>
+            </v-form>
+          </div>
+          <div v-else-if="activeTab === 'expenses'" key="expenses">
+            <h2 class="text-lg font-semibold mb-4">Manage expenses categories for your school</h2>
+
+            <v-form
+              ref="expenseFormRef"
+              v-model="expenseFormValid"
+              @submit.prevent="
+                addExpenseCategory(schoolId, newCategory.category_id, newCategory.description)
+              "
+            >
+              <div class="">
+                <v-select
+                  variant="outlined"
+                  color="#15803d"
+                  v-model="newCategory.category_id"
+                  :items="categories"
+                  item-value="id"
+                  item-title="name"
+                  label="Select Expense Category"
+                  :rules="[(v) => !!v || 'Please select a category']"
+                >
+                </v-select>
+
+                <v-textarea
+                  :rules="[
+                    (v) => !!v || 'Description is required',
+                    (v) => (v && v.length >= 5) || 'Must be at least 5 characters'
+                  ]"
+                  variant="outlined"
+                  color="#15803d"
+                  v-model="newCategory.description"
+                  label="Description"
+                />
+              </div>
+
+              <div class="flex justify-end mt-4">
+                <v-btn :disabled="!expenseFormValid" type="submit" color="#15803d" variant="flat"
+                  >Add Expense Categories</v-btn
+                >
               </div>
             </v-form>
           </div>

@@ -1,5 +1,123 @@
 <script setup>
+import { ref, onMounted } from 'vue'
 import MainLayout from '@/layouts/full/MainLayout.vue'
+import { supabase } from '@/supabase'
+import { useAuthStore } from '@/stores/auth'
+const authStore = useAuthStore()
+const schoolId = authStore.admin?.school_id
+const adminId = authStore.admin?.id
+
+const expenses = ref([])
+const loading = ref(false)
+const errorMessage = ref(null)
+
+const showDialog = ref(false)
+const form = ref({
+  category_id: '',
+  vendor_id: '',
+  amount: null,
+  payment_method: '',
+  date: '',
+  description: ''
+})
+const isValid = ref(false)
+const formRef = ref(null)
+
+const rules = {
+  required: v => !!v || 'This field is required',
+  number: v => (!isNaN(parseFloat(v)) && v >= 0) || 'Must be a valid number'
+}
+
+const closeDialog = () => {
+  showDialog.value = false
+  form.value = {
+    category_id: '',
+    vendor_id: '',
+    amount: null,
+    payment_method: '',
+    date: '',
+    description: ''
+  }
+}
+
+const submitForm = async () => {
+  if (!(await formRef.value.validate())) return
+
+  const result = await addExpense(form.value)
+  if (result) {
+    await getExpenses() // refresh list
+    closeDialog()
+  }
+}
+
+
+// 🔹 Base call wrapper
+const callManageExpense = async (action, params = {}) => {
+  loading.value = true
+  errorMessage.value = null
+  try {
+    const { data, error } = await supabase.rpc('manage_expense', {
+      p_action: action,
+      p_admin_id: adminId,
+      p_amount: params.amount || null,
+      p_category_id: params.category_id || null,
+      p_date: params.date || null,
+      p_description: params.description || null,
+      p_expense_id: params.expense_id || null,
+      p_payment_method: params.payment_method || null,
+      p_school_id: schoolId,
+      p_vendor_id: params.vendor_id || null
+    })
+    console.log('manage expense data:', data)
+    if (error) throw error
+    return data
+  } catch (err) {
+    console.error('manage_expense error:', err)
+    errorMessage.value = err.message
+    return null
+  } finally {
+    loading.value = false
+  }
+}
+
+// 🔹 CRUD actions
+const getExpenses = async () => {
+  loading.value = true
+  errorMessage.value = null
+  try {
+    const { data, error } = await supabase.from('expenses').select('*').eq('school_id', schoolId)
+
+    if (error) throw error
+    expenses.value = data
+    console.log('expenses:', expenses.value)
+    return data
+  } catch (err) {
+    console.error('getExpenses error:', err)
+    errorMessage.value = err.message
+    return null
+  } finally {
+    loading.value = false
+  }
+}
+
+const addExpense = async (payload) => {
+  return await callManageExpense('insert', payload)
+}
+
+const updateExpense = async (payload) => {
+  return await callManageExpense('update', payload)
+}
+
+const deleteExpense = async (expenseId, schoolId) => {
+  return await callManageExpense('delete', {
+    expense_id: expenseId,
+    school_id: schoolId
+  })
+}
+
+onMounted(() => {
+  getExpenses()
+})
 </script>
 
 <template>
@@ -12,6 +130,7 @@ import MainLayout from '@/layouts/full/MainLayout.vue'
         </div>
 
         <v-btn
+        @click="showDialog = true"
           size="medium"
           class="normal-case custom-btn hover:bg-green-700 text-white text-sm font-semibold px-6 py-3 rounded-md shadow-md"
         >
@@ -23,6 +142,88 @@ import MainLayout from '@/layouts/full/MainLayout.vue'
           Add new expenses
         </v-btn>
       </div>
+
+      <!-- Loading -->
+      <div
+        v-if="loading"
+        class="fill-height d-flex justify-center align-center mx-auto items-center flex my-auto mx-auto"
+      >
+        <v-progress-circular indeterminate color="success" size="48" />
+      </div>
+
+      <!-- Add Expense Dialog -->
+      <v-dialog v-model="showDialog" max-width="600px" persistent>
+        <v-card>
+          <v-card-title class="text-lg font-bold">Add New Expense</v-card-title>
+          <v-card-text>
+            <v-form ref="form" v-model="isValid" lazy-validation>
+              <!-- Category -->
+              <v-text-field
+                v-model="form.category_id"
+                label="Category ID"
+                :rules="[rules.required]"
+                required
+              />
+
+              <!-- Vendor -->
+              <v-text-field
+                v-model="form.vendor_id"
+                label="Vendor ID"
+                :rules="[rules.required]"
+                required
+              />
+
+              <!-- Amount -->
+              <v-text-field
+                v-model="form.amount"
+                label="Amount"
+                type="number"
+                :rules="[rules.required, rules.number]"
+                required
+              />
+
+              <!-- Payment Method -->
+              <v-select
+                v-model="form.payment_method"
+                :items="['cash', 'card', 'bank_transfer']"
+                label="Payment Method"
+                :rules="[rules.required]"
+                required
+              />
+
+              <!-- Date -->
+              <v-text-field
+                v-model="form.date"
+                label="Date"
+                type="date"
+                :rules="[rules.required]"
+                required
+              />
+
+              <!-- Description -->
+              <v-textarea
+                v-model="form.description"
+                label="Description"
+                :rules="[rules.required]"
+                auto-grow
+                required
+              />
+            </v-form>
+          </v-card-text>
+
+          <v-card-actions class="justify-end">
+            <v-btn text @click="closeDialog">Cancel</v-btn>
+            <v-btn
+              color="success"
+              class="text-white"
+              :disabled="!isValid || loading"
+              @click="submitForm"
+            >
+              Save
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
     </div>
 
 

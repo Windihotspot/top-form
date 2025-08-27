@@ -1,20 +1,21 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, reactive } from 'vue'
 import MainLayout from '@/layouts/full/MainLayout.vue'
 import { supabase } from '@/supabase'
 import { useAuthStore } from '@/stores/auth'
 const authStore = useAuthStore()
 const schoolId = authStore.admin?.school_id
 const adminId = authStore.admin?.id
-
+import { useFormattedField } from '@/composables/useFormattedFields.js'
+import { ElMessage } from 'element-plus'
 const expenses = ref([])
 const loading = ref(false)
 const errorMessage = ref(null)
 
 const showDialog = ref(false)
-const form = ref({
-  category_id: '',
-  vendor_id: '',
+const form = reactive({
+  category: '',
+  vendor: '',
   amount: null,
   payment_method: '',
   date: '',
@@ -22,31 +23,61 @@ const form = ref({
 })
 const isValid = ref(false)
 const formRef = ref(null)
-
+// use the composable for currency formatting
+const formattedAmount = useFormattedField(form, 'amount', { currency: true })
 const rules = {
-  required: v => !!v || 'This field is required',
-  number: v => (!isNaN(parseFloat(v)) && v >= 0) || 'Must be a valid number'
+  required: (v) => !!v || 'This field is required',
+  number: (v) => (!isNaN(parseFloat(v)) && v >= 0) || 'Must be a valid number'
 }
 
 const closeDialog = () => {
   showDialog.value = false
-  form.value = {
-    category_id: '',
-    vendor_id: '',
+  Object.assign(form, {
+    category: '',
+    vendor: '',
     amount: null,
     payment_method: '',
     date: '',
     description: ''
-  }
+  })
 }
 
 const submitForm = async () => {
   if (!(await formRef.value.validate())) return
+    // 🔹 log the payload
+  const payload = {
+    amount: form.amount,
+    category: form.category,
+    date: form.date,
+    description: form.description,
+    payment_method: form.payment_method,
+    vendor: form.vendor
+  }
+  console.log('Submitting payload:', payload)
+  closeDialog()
 
-  const result = await addExpense(form.value)
-  if (result) {
-    await getExpenses() // refresh list
-    closeDialog()
+  try {
+    ElMessage({
+      message: 'Saving expense...',
+      type: 'info',
+      duration: 2000
+    })
+
+    // 🔹 Pass in the right fields explicitly
+    const result = await addExpense(payload)
+    console.log(result)
+    if (result) {
+      ElMessage({
+        message: 'Expense saved successfully!',
+        type: 'success',
+        duration: 2000
+      })
+
+      await getExpenses() // refresh list
+      closeDialog()
+    }
+  } catch (error) {
+    ElMessage.error('Failed to save expense. Please try again.')
   }
 }
 
@@ -60,13 +91,13 @@ const callManageExpense = async (action, params = {}) => {
       p_action: action,
       p_admin_id: adminId,
       p_amount: params.amount || null,
-      p_category_id: params.category_id || null,
+      p_category: params.category || null,
       p_date: params.date || null,
       p_description: params.description || null,
       p_expense_id: params.expense_id || null,
       p_payment_method: params.payment_method || null,
       p_school_id: schoolId,
-      p_vendor_id: params.vendor_id || null
+      p_vendor: params.vendor || null
     })
     console.log('manage expense data:', data)
     if (error) throw error
@@ -100,9 +131,7 @@ const getExpenses = async () => {
   }
 }
 
-const addExpense = async (payload) => {
-  return await callManageExpense('insert', payload)
-}
+const addExpense = (params) => callManageExpense('add', params)
 
 const updateExpense = async (payload) => {
   return await callManageExpense('update', payload)
@@ -115,8 +144,31 @@ const deleteExpense = async (expenseId, schoolId) => {
   })
 }
 
+const categories = ref([])
+
+const fetchExpenseCategories = async (schoolId) => {
+  try {
+    const { data, error } = await supabase
+      .from('expense_categories')
+      .select('*')
+      .eq('school_id', schoolId) // 👈 only this school's categories
+      .order('name', { ascending: true })
+
+    if (error) throw error
+
+    categories.value = data
+    console.log('school expense categories:', data)
+
+    return data
+  } catch (err) {
+    console.error('fetchExpenseCategories error:', err)
+    return []
+  }
+}
+
 onMounted(() => {
   getExpenses()
+  fetchExpenseCategories(schoolId)
 })
 </script>
 
@@ -130,7 +182,7 @@ onMounted(() => {
         </div>
 
         <v-btn
-        @click="showDialog = true"
+          @click="showDialog = true"
           size="medium"
           class="normal-case custom-btn hover:bg-green-700 text-white text-sm font-semibold px-6 py-3 rounded-md shadow-md"
         >
@@ -156,34 +208,48 @@ onMounted(() => {
         <v-card>
           <v-card-title class="text-lg font-bold">Add New Expense</v-card-title>
           <v-card-text>
-            <v-form ref="form" v-model="isValid" lazy-validation>
+            <v-form ref="formRef" v-model="isValid">
               <!-- Category -->
-              <v-text-field
-                v-model="form.category_id"
-                label="Category ID"
-                :rules="[rules.required]"
-                required
-              />
+              <v-select
+                variant="outlined"
+                color="#15803d"
+                v-model="form.category"
+                :items="categories"
+                item-value="description"
+                item-title="description"
+                label="Select Expense Category"
+                :rules="[(v) => !!v || 'Please select a category']"
+              >
+              </v-select>
 
               <!-- Vendor -->
               <v-text-field
-                v-model="form.vendor_id"
-                label="Vendor ID"
+              class="mt-4"
+                color="#15803d"
+                variant="outlined"
+                v-model="form.vendor"
+                label="Vendor name"
                 :rules="[rules.required]"
                 required
               />
 
               <!-- Amount -->
               <v-text-field
-                v-model="form.amount"
+                  class="mt-4"
+                variant="outlined"
+                color="#15803d"
+                v-model="formattedAmount"
                 label="Amount"
-                type="number"
-                :rules="[rules.required, rules.number]"
+              
+                :rules="[rules.required]"
                 required
               />
 
               <!-- Payment Method -->
               <v-select
+              class="mt-4"
+                variant="outlined"
+                color="#15803d"
                 v-model="form.payment_method"
                 :items="['cash', 'card', 'bank_transfer']"
                 label="Payment Method"
@@ -193,6 +259,9 @@ onMounted(() => {
 
               <!-- Date -->
               <v-text-field
+              class="mt-4"
+                variant="outlined"
+                color="#15803d"
                 v-model="form.date"
                 label="Date"
                 type="date"
@@ -202,6 +271,9 @@ onMounted(() => {
 
               <!-- Description -->
               <v-textarea
+              class="mt-4"
+              variant="outlined"
+                  color="#15803d"
                 v-model="form.description"
                 label="Description"
                 :rules="[rules.required]"
@@ -225,8 +297,6 @@ onMounted(() => {
         </v-card>
       </v-dialog>
     </div>
-
-
   </MainLayout>
 </template>
 

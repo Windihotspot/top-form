@@ -251,7 +251,7 @@ onMounted(() => {
                 variant="outlined"
                 color="#15803d"
                 v-model="form.payment_method"
-                :items="['cash', 'card', 'bank_transfer']"
+              :items="['Cash', 'Bank', 'Card', 'Mobile', 'Other']"
                 label="Payment Method"
                 :rules="[rules.required]"
                 required

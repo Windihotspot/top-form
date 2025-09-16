@@ -8,6 +8,7 @@ const schoolId = authStore.admin?.school_id
 const adminId = authStore.admin?.id
 import { useFormattedField } from '@/composables/useFormattedFields.js'
 import { ElMessage } from 'element-plus'
+import moment from 'moment'
 const expenses = ref([])
 const loading = ref(false)
 const errorMessage = ref(null)
@@ -44,7 +45,7 @@ const closeDialog = () => {
 
 const submitForm = async () => {
   if (!(await formRef.value.validate())) return
-    // 🔹 log the payload
+  // 🔹 log the payload
   const payload = {
     amount: form.amount,
     category: form.category,
@@ -80,7 +81,6 @@ const submitForm = async () => {
     ElMessage.error('Failed to save expense. Please try again.')
   }
 }
-
 
 // 🔹 Base call wrapper
 const callManageExpense = async (action, params = {}) => {
@@ -166,6 +166,19 @@ const fetchExpenseCategories = async (schoolId) => {
   }
 }
 
+// Format currency
+const formatCurrency = (value) => {
+  return new Intl.NumberFormat('en-NG', {
+    style: 'currency',
+    currency: 'NGN'
+  }).format(value)
+}
+
+// Format date
+const formatDate = (date) => {
+  return moment(date).format('DD MMM YYYY')
+}
+
 onMounted(() => {
   getExpenses()
   fetchExpenseCategories(schoolId)
@@ -203,6 +216,93 @@ onMounted(() => {
         <v-progress-circular indeterminate color="success" size="48" />
       </div>
 
+      <div v-else class="overflow-x-auto bg-white rounded shadow">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Category
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Vendor
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Amount
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Payment Method
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Date
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Status
+              </th>
+              <th
+                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Description
+              </th>
+              <th
+                class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-for="expense in expenses" :key="expense.id">
+              <td class="px-6 py-4 whitespace-nowrap">{{ expense.category }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ expense.vendor }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ formatCurrency(expense.amount) }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ expense.payment_method }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ formatDate(expense.date) }}</td>
+              <!-- Inside <tbody> for each expense -->
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span
+                  :class="[
+                    'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
+                    expense.status === 'approved'
+                      ? 'bg-green-100 text-green-800'
+                      : expense.status === 'pending'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : expense.status === 'rejected'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800'
+                  ]"
+                >
+                  {{ expense.status }}
+                </span>
+              </td>
+
+              <td class="px-6 py-4 whitespace-nowrap">{{ expense.description }}</td>
+              <td class="px-6 py-4 whitespace-nowrap text-center flex justify-center space-x-2">
+                <button @click="editExpense(expense)" class="text-blue-500 hover:text-blue-700">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button @click="deleteExpense(expense.id)" class="text-red-500 hover:text-red-700">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div v-if="!expenses.length && !loading" class="p-4 text-gray-500">No expenses found.</div>
+      </div>
+
       <!-- Add Expense Dialog -->
       <v-dialog v-model="showDialog" max-width="600px" persistent>
         <v-card>
@@ -224,7 +324,7 @@ onMounted(() => {
 
               <!-- Vendor -->
               <v-text-field
-              class="mt-4"
+                class="mt-4"
                 color="#15803d"
                 variant="outlined"
                 v-model="form.vendor"
@@ -235,23 +335,22 @@ onMounted(() => {
 
               <!-- Amount -->
               <v-text-field
-                  class="mt-4"
+                class="mt-4"
                 variant="outlined"
                 color="#15803d"
                 v-model="formattedAmount"
                 label="Amount"
-              
                 :rules="[rules.required]"
                 required
               />
 
               <!-- Payment Method -->
               <v-select
-              class="mt-4"
+                class="mt-4"
                 variant="outlined"
                 color="#15803d"
                 v-model="form.payment_method"
-              :items="['Cash', 'Bank', 'Card', 'Mobile', 'Other']"
+                :items="['Cash', 'Bank', 'Card', 'Mobile', 'Other']"
                 label="Payment Method"
                 :rules="[rules.required]"
                 required
@@ -259,7 +358,7 @@ onMounted(() => {
 
               <!-- Date -->
               <v-text-field
-              class="mt-4"
+                class="mt-4"
                 variant="outlined"
                 color="#15803d"
                 v-model="form.date"
@@ -271,9 +370,9 @@ onMounted(() => {
 
               <!-- Description -->
               <v-textarea
-              class="mt-4"
-              variant="outlined"
-                  color="#15803d"
+                class="mt-4"
+                variant="outlined"
+                color="#15803d"
                 v-model="form.description"
                 label="Description"
                 :rules="[rules.required]"

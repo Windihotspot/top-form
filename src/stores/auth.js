@@ -1,5 +1,5 @@
+// stores/auth.js
 import { defineStore } from 'pinia'
-import api from '../services/api'
 import { supabase } from '@/supabase'
 
 export const useAuthStore = defineStore('auth', {
@@ -12,59 +12,115 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   actions: {
+    // 🔹 Signup (Supabase Auth + related rows)
+    // inside actions of your auth store
     async signup(onboardingData) {
       this.loading = true
       try {
-        const { data } = await api.post('/onboarding', onboardingData)
-        await this.fetchUser()
-        return data
-      } catch (err) {
-        console.log('error:', err)
-      } finally {
-        this.loading = false
-      }
-    },
+        const { admin, school } = onboardingData
+        console.log('onboarding data:', onboardingData)
 
-    async login({ email, password }) {
-      this.loading = true
-      try {
-        const response = await api.post('/auth/login', { email, password })
-        console.log('Backend login response:', response.data)
-        this.user = response.data.data.user
-        this.admin = response.data.data.admin // <-- Add this line
-        this.token = response.data.data.token
-        api.defaults.headers.common['Authorization'] = `Bearer ${this.token}`
-        this.school_id = response.data.data.admin.school_id
+        // 1. Create Supabase auth user
+        const { data: signupData, error: signupError } = await supabase.auth.signUp({
+          email: admin.email,
+          password: admin.password,
+          options: {
+            data: {
+              fullname: admin.fullname, // ✅ lowercase
+              phone: admin.phone,
+              role: admin.role
+            },
+             emailRedirectTo: 'http://localhost:3002/auth/callback'
+          }
+        })
+        if (signupError) throw signupError
+        const { user, session } = signupData
+        console.log('school data:', onboardingData.school)
+
+        // 2. Insert into `schools` table
+        const { data: schoolData, error: schoolError } = await supabase
+          .from('schools')
+          .insert([
+            {
+              name: school.name, // ✅ required
+              address: school.address || null,
+              city: school.city || null,
+              state: school.state || null,
+              contact: school.contact || null,
+              type: school.type || null
+            }
+          ])
+          .select()
+          .single()
+        if (schoolError) throw schoolError
+          console.log('Admin data:', onboardingData.admin)
+
+        // 3. Insert admin profile (link to auth user + school)
+        const { data: adminData, error: adminError } = await supabase
+          .from('admins')
+          .insert([
+            {
+              user_id: user.id,
+              fullname: admin.fullname, // ✅ matches schema
+              email: admin.email, // ✅ required
+              phone: admin.phone || null,
+              role: admin.role || 'Owner/Admin',
+              school_id: schoolData.id
+            }
+          ])
+          .select()
+          .single()
+        if (adminError) throw adminError
+
+        // 4. Save state + localStorage
+        this.user = user
+        this.admin = adminData
+        this.token = session?.access_token || null
+
         localStorage.setItem('user', JSON.stringify(this.user))
-        localStorage.setItem('admin', JSON.stringify(this.admin)) // <-- Save it
-        localStorage.setItem('token', this.token)
+        localStorage.setItem('admin', JSON.stringify(this.admin))
+        if (this.token) localStorage.setItem('token', this.token)
 
-        return response.data
+        return { user: this.user, admin: this.admin }
       } catch (err) {
-        console.error('Login error:', err)
+        console.error('Signup error:', err)
         throw err
       } finally {
         this.loading = false
       }
     },
-    async logout() {
-      try {
-        // Tell backend to log out & revoke Supabase session
-        await api.post(
-          '/auth/logout',
-          {},
-          {
-            headers: {
-              Authorization: `Bearer ${this.token}`
-            }
-          }
-        )
-      } catch (err) {
-        console.error('Logout error:', err)
-        // Even if backend fails, still clear frontend state
-      }
 
-      // Frontend cleanup
+    // 🔹 Login (Supabase Auth)
+    async login({ email, password }) {
+      this.loading = true
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+        if (error) throw error
+
+        this.user = data.user
+        this.token = data.session?.access_token || null
+
+        // Fetch admin profile
+        const { data: adminProfile } = await supabase
+          .from('admins')
+          .select('*')
+          .eq('user_id', this.user.id)
+          .single()
+        this.admin = adminProfile || null
+
+        // Persist
+        localStorage.setItem('user', JSON.stringify(this.user))
+        localStorage.setItem('admin', JSON.stringify(this.admin))
+        localStorage.setItem('token', this.token)
+
+        return { user: this.user, admin: this.admin }
+      } finally {
+        this.loading = false
+      }
+    },
+
+    // 🔹 Logout
+    async logout() {
       await supabase.auth.signOut()
       this.user = null
       this.admin = null
@@ -72,20 +128,31 @@ export const useAuthStore = defineStore('auth', {
       localStorage.removeItem('user')
       localStorage.removeItem('admin')
       localStorage.removeItem('token')
-
-      // 🔹 Remove token from API defaults
-      delete api.defaults.headers.common['Authorization']
     },
+
+    // 🔹 Restore user on refresh
     async fetchUser() {
       const { data, error } = await supabase.auth.getUser()
-      if (!error) this.user = data.user
-      localStorage.setItem('user', JSON.stringify(this.user))
+      if (!error && data.user) {
+        this.user = data.user
+        localStorage.setItem('user', JSON.stringify(this.user))
+
+        const { data: adminProfile } = await supabase
+          .from('admins')
+          .select('*')
+          .eq('user_id', this.user.id)
+          .single()
+        this.admin = adminProfile || null
+        localStorage.setItem('admin', JSON.stringify(this.admin))
+      }
     },
 
+    // 🔹 Avatar update
     updateAvatar(url) {
       if (this.admin) {
         this.admin.avatar_url = url
-        this.avatarRefreshKey = Date.now() // force refresh only when updated
+        this.avatarRefreshKey = Date.now()
+        localStorage.setItem('admin', JSON.stringify(this.admin))
       }
     }
   }

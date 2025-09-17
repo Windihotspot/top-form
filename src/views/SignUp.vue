@@ -1,12 +1,12 @@
 <script setup>
 import { ref, computed } from 'vue'
-import { useAuth } from '@/composables/useAuth'
+import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'vue-router'
 import { ElNotification, ElMessage } from 'element-plus'
-
-const { signup, loading } = useAuth()
+const authStore = useAuthStore()
+const { signup } = authStore
 const router = useRouter()
-
+const loading = ref(false)
 // Form data
 const schoolForm = ref({
   name: '',
@@ -18,7 +18,7 @@ const schoolForm = ref({
 })
 
 const adminForm = ref({
-  fullName: '',
+  fullname: '',
   email: '',
   phone: '',
   password: '',
@@ -61,7 +61,6 @@ const passwordStrengthPercent = computed(() => {
   return score
 })
 const passwordStrengthColor = computed(() => {
-  
   const val = passwordStrengthPercent.value
   if (val >= 80) return 'green'
   if (val >= 50) return 'orange'
@@ -93,10 +92,8 @@ const nextStep = async () => {
 
 const handleFinishSignup = async () => {
   try {
-    // Set loading state
     loading.value = true
 
-    // Construct payload from form data
     const payload = {
       school: {
         name: schoolForm.value.name,
@@ -107,7 +104,7 @@ const handleFinishSignup = async () => {
         type: schoolForm.value.type
       },
       admin: {
-        fullName: adminForm.value.fullName,
+        fullname: adminForm.value.fullname,
         email: adminForm.value.email,
         phone: adminForm.value.phone,
         password: adminForm.value.password,
@@ -115,10 +112,11 @@ const handleFinishSignup = async () => {
       }
     }
 
-    // Send signup request
-    const response = await signup(payload)
-    console.log('signup response:', response)
-    // Handle success
+    console.log("signup payload:", payload)
+
+    const response = await signup(payload) // ✅ comes from Pinia store
+    console.log("sign up response:", response)
+
     ElNotification({
       title: 'Well done!',
       message: 'Verify your email to activate your account!',
@@ -126,10 +124,8 @@ const handleFinishSignup = async () => {
       position: 'top-right'
     })
 
-    // Redirect to dashboard or login
     router.push('/verifyemail')
   } catch (error) {
-    // Handle failure
     ElNotification({
       title: 'Error',
       message: error?.message || 'An error occurred while signing up.',
@@ -140,6 +136,7 @@ const handleFinishSignup = async () => {
     loading.value = false
   }
 }
+
 </script>
 
 <template>
@@ -235,7 +232,7 @@ const handleFinishSignup = async () => {
             variant="outlined"
             color="#15803d"
             label="Full Name"
-            v-model="adminForm.fullName"
+            v-model="adminForm.fullname"
             :rules="[required]"
           />
           <v-text-field

@@ -15,6 +15,16 @@ const sidebarItems = [
     icon: 'mdi-account-check', // Attendance icon
   },
   {
+    title: 'Expenses',
+    path: '/expenses',
+    icon: 'mdi-cash-multiple', // Expenses icon
+  },
+   {
+    title: 'Revenue',
+    path: '/revenue',
+    icon: 'mdi-currency-ngn', // Revenue icon
+  },
+  {
     title: 'Exams',
     path: '/exams',
     icon: 'mdi-file-document-edit', // Exams icon
@@ -24,16 +34,7 @@ const sidebarItems = [
     path: '/transport',
     icon: 'mdi-bus', // Transport icon
   },
-  {
-    title: 'Revenue',
-    path: '/revenue',
-    icon: 'mdi-currency-ngn', // Revenue icon
-  },
-  {
-    title: 'Expenses',
-    path: '/expenses',
-    icon: 'mdi-cash-multiple', // Expenses icon
-  }
+ 
 ]
 
 export default sidebarItems

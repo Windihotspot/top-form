@@ -1,9 +1,12 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth' // adjust path if needed
 import { useRouter } from 'vue-router'
 const auth = useAuthStore()
 const router = useRouter()
+
+// Notification menu state
+const notifMenu = ref(false)
 
 // Use the store's admin directly
 const displayName = computed(() => auth.admin?.fullname || 'Admin')
@@ -27,6 +30,29 @@ const handleLogout = async () => {
   <div class="header items-center px-4 py-4 bg-white">
     <!-- Icons (Right) -->
     <div class="space-x-4 flex">
+      <!-- Notification Icon -->
+       <v-menu
+        v-model="notifMenu"
+        offset-y
+        location="bottom right"
+        origin="top right"
+        min-width="300"
+      >
+        <template v-slot:activator="{ props }">
+          <v-btn v-bind="props" icon variant="text" class="hover:bg-green-100">
+            <i class="fas fa-bell text-gray-600 text-3xl"></i>
+          </v-btn>
+        </template>
+
+        <!-- Notification Content -->
+        <v-card>
+          <v-card-title class="text-xs font-semibold">Notifications</v-card-title>
+          <v-divider></v-divider>
+          <v-list class="max-h-60 overflow-y-auto">
+            
+          </v-list>
+        </v-card>
+      </v-menu>
       <v-menu offset-y location="bottom left" origin="top left" min-width="200">
         <template v-slot:activator="{ props }">
           <div

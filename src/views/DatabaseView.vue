@@ -1,7 +1,6 @@
 <script setup>
 import { ref, onMounted, watch, computed } from 'vue'
 import MainLayout from '@/layouts/full/MainLayout.vue'
-import api from '@/services/api'
 import { ElMessage } from 'element-plus'
 const loading = ref(true)
 import { supabase } from '@/supabase'
@@ -18,7 +17,7 @@ const studentFormValid = ref(false)
 const teacherFormValid = ref(false)
 const employeeFormValid = ref(false)
 
-const schoolSubjects = ref([]) // subjects list
+const schoolSubjects = ref([])
 const schoolClasses = ref([])
 
 const subjectFormRef = ref(null)
@@ -34,9 +33,8 @@ const newCategory = ref({
 })
 const expenses = ref([])
 const fetchExpenses = async () => {
-  
   if (!schoolId) {
-    console.error("❌ No schoolId found in authStore")
+    console.error('❌ No schoolId found in authStore')
     return []
   }
   const { data, error } = await supabase
@@ -673,51 +671,14 @@ const genderOptions = ['Male', 'Female', 'Other']
 const openModal = () => (showModal.value = true)
 const closeModal = () => (showModal.value = false)
 
-const submitTeacher = () => {
-  teacherFormRef.value.validate().then((success) => {
-    if (success.valid) {
-      console.log('Teacher data:', employeeData.value)
-      // send to Supabase
-      closeModal()
-    }
-  })
-}
-
-const submitEmployee = () => {
-  employeeFormRef.value.validate().then((success) => {
-    if (success.valid) {
-      console.log('Teacher data:', teacherData.value)
-      // send to Supabase
-      closeModal()
-    }
-  })
-}
 const data = ref({
   students: [],
   teachers: [],
-  employees: []
+  employees: [],
+  subjects: [],
+  classes: []
 })
 const loadingTabs = ref({})
-
-const fetchData = async (endpoint, key) => {
-  try {
-    loadingTabs.value[key] = true
-    const response = await api.get(`/${endpoint}`)
-    data.value[key] = response.data.data
-    console.log(key, response)
-
-    // Set default selected if none exists
-    if (!selectedItems.value[key] && response.data.data.length > 0) {
-      selectedItems.value[key] = response.data.data[0]
-    }
-    return response.data.data
-  } catch (err) {
-    console.error(`Error fetching ${key || endpoint}:`, err)
-    return []
-  } finally {
-    loadingTabs.value[key] = false
-  }
-}
 
 const selectedItems = ref({})
 const selectedItem = computed({
@@ -752,33 +713,72 @@ const mapClassIdToName = (classId) => {
 }
 
 const loadStudents = async () => {
-  const students = await fetchData('students', 'students') // Now sets and logs correctly
+  try {
+    const { data: students, error } = await supabase
+      .from('students')
+      .select('*')
+      .eq('school_id', authStore.admin?.school_id)
 
-  const mappedStudents = students.map((s) => ({
-    ...s,
-    class_name: mapClassIdToName(s.class_id),
-    marks_percent: s.marks_percent || Math.floor(Math.random() * 100),
-    rank: s.rank || '-'
-  }))
+    if (error) throw error
 
-  // Sort by marks_percent in descending order
-  mappedStudents.sort((a, b) => b.marks_percent - a.marks_percent)
+    const mappedStudents = students.map((s) => ({
+      ...s,
+      class_name: mapClassIdToName(s.class_id),
+      marks_percent: s.marks_percent || Math.floor(Math.random() * 100),
+      rank: s.rank || '-'
+    }))
 
-  data.value.students = mappedStudents
+    mappedStudents.sort((a, b) => b.marks_percent - a.marks_percent)
+
+    data.value.students = mappedStudents
+  } catch (err) {
+    console.error('❌ Error loading students:', err.message)
+    data.value.students = []
+  }
+}
+
+const loadTeachers = async () => {
+  try {
+    const { data: teachers, error } = await supabase
+      .from('teachers')
+      .select('*')
+      .eq('school_id', authStore.admin?.school_id)
+
+    if (error) throw error
+    data.value.teachers = teachers
+  } catch (err) {
+    console.error('❌ Error loading teachers:', err.message)
+    data.value.teachers = []
+  }
+}
+
+const loadEmployees = async () => {
+  try {
+    const { data: employees, error } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('school_id', authStore.admin?.school_id)
+
+    if (error) throw error
+    data.value.employees = employees
+  } catch (err) {
+    console.error('❌ Error loading employees:', err.message)
+    data.value.employees = []
+  }
 }
 
 const fetchAll = async () => {
   loading.value = true
   try {
     await Promise.all([
-      fetchData('teachers', 'teachers'),
+      loadTeachers(),
       loadStudents(),
       fetchExpenses(),
+      loadEmployees(),
       fetchSubjectsCatalogue(),
       fetchSchoolClasses(),
       fetchSchoolSubjects(),
-      fetchExpenseCategories(),
-      fetchData('employees', 'employees')
+      fetchExpenseCategories()
     ])
     // Set default selected item for 'students' if data exists
     if (data.value.students.length && tab.value === 'students') {
@@ -799,7 +799,7 @@ const tabs = [
   { label: 'Employees', value: 'employees' },
   { label: 'Subjects', value: 'subjects' },
   { label: 'Classes', value: 'classes' },
-  { label: 'Expenses', value: 'expenses' }
+  
 ]
 
 const resetFormAndClose = () => {
@@ -1290,6 +1290,38 @@ watch(tab, (newTab) => {
                 </div>
               </Transition>
             </div>
+          </v-tabs-window-item>
+          <v-tabs-window-item value="subjects">
+            <section>
+              <h2 class="text-lg font-bold mb-3">Subjects</h2>
+              <div class="flex flex-wrap gap-2">
+                <v-chip
+                  v-for="sub in schoolSubjects"
+                  :key="sub.school_subject_id"
+                  color="teal"
+                  variant="outlined"
+                  class="rounded-full px-4 py-2 text-sm font-medium bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100"
+                >
+                  {{ sub.subject_name }} ({{ sub.subject_code }})
+                </v-chip>
+              </div>
+            </section>
+          </v-tabs-window-item>
+          <v-tabs-window-item value="classes">
+            <section class="mb-8">
+              <h2 class="text-lg font-bold mb-3">Classes</h2>
+              <div class="flex flex-wrap gap-2">
+                <v-chip
+                  v-for="cls in schoolClasses"
+                  :key="cls.id"
+                  color="indigo"
+                  variant="outlined"
+                  class="rounded-full px-4 py-2 text-sm font-medium bg-indigo-50 text-indigo-700 border border-indigo-200 hover:bg-indigo-100"
+                >
+                  {{ cls.name }} ({{ cls.level }})
+                </v-chip>
+              </div>
+            </section>
           </v-tabs-window-item>
         </v-tabs-window>
       </div>

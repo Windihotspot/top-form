@@ -1,18 +1,17 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import MainLayout from '@/layouts/full/MainLayout.vue'
-import api from '@/services/api'
 import AnimatedStats from '@/components/AnimatedStats.vue'
 import StudentsGenderChart from '@/components/StudentsGenderChart.vue'
 import AttendanceChart from '@/components/AttendanceChart.vue'
 import EarningsChart from '@/components/EarningsChart.vue'
 import { supabase } from '@/supabase'
 import { useAuthStore } from '@/stores/auth'
+
 const authStore = useAuthStore()
 const notifications = ref([])
-
 const loading = ref(true)
-
+const schoolId = authStore.admin?.school_id
 const studentsHeaders = [
   { title: 'Name', key: 'full_name' },
   { title: 'Class', key: 'class' },
@@ -31,32 +30,168 @@ const data = ref({
   notifications: []
 })
 
-const fetchData = async (endpoint, key) => {
+/**
+ * STUDENTS
+ */
+const classMap = {
+  '54c2929a-de11-4829-87ab-5ccd2fdf8998': 'JSS1',
+  '2ab9da37-18d7-4b21-b089-c907c9fee25b': 'JSS2',
+  '7b614ee8-5f72-427b-bd78-eeef84d2347a': 'JSS3',
+  'e2679e5e-5fe9-44c1-bf2b-4b6aa0f82425': 'SSS1',
+  '608b08db-906d-4f11-86dc-09c6a0d13ff5': 'SSS2',
+  'b316c14c-8877-42b5-b0c6-c4370cc6e3a3': 'SSS3'
+}
+const mapClassIdToName = (classId) => {
+  return classMap[classId] || 'Unknown'
+}
+
+const loadStudents = async () => {
   try {
-    const response = await api.get(`/${endpoint}`)
-    if (key) data.value[key] = response.data.data
-    console.log(`${key || endpoint}`, response)
-    return response.data.data
+    const { data: students, error } = await supabase
+      .from('students')
+      .select('*')
+      .eq('school_id', authStore.admin?.school_id)
+
+    if (error) throw error
+
+    const mappedStudents = students.map((s) => ({
+      ...s,
+      class_name: mapClassIdToName(s.class_id),
+      marks_percent: s.marks_percent || Math.floor(Math.random() * 100),
+      rank: s.rank || '-'
+    }))
+
+    mappedStudents.sort((a, b) => b.marks_percent - a.marks_percent)
+
+    data.value.students = mappedStudents
   } catch (err) {
-    console.error(`Error fetching ${key || endpoint}:`, err)
-    return [] // Ensure it always returns an array
+    console.error('❌ Error loading students:', err.message)
+    data.value.students = []
   }
 }
 
-const fetchAttendanceSummary = async () => {
-  const now = new Date()
-  const month = now.getMonth() + 1 // JS months are 0-based
-  const year = now.getFullYear()
-
+/**
+ * TEACHERS
+ */
+const loadTeachers = async () => {
   try {
-    const response = await api.get(`/attendance/summary?month=${month}&year=${year}`)
-    data.value.attendance = response.data.data
-    console.log('Attendance summary:', response.data.data)
+    const { data: teachers, error } = await supabase
+      .from('teachers')
+      .select('*')
+      .eq('school_id', authStore.admin?.school_id)
+
+    if (error) throw error
+    data.value.teachers = teachers
   } catch (err) {
-    console.error('Error fetching attendance summary:', err)
+    console.error('❌ Error loading teachers:', err.message)
+    data.value.teachers = []
   }
 }
 
+/**
+ * EMPLOYEES
+ */
+const loadEmployees = async () => {
+  try {
+    const { data: employees, error } = await supabase
+      .from('employees')
+      .select('*')
+      .eq('school_id', authStore.admin?.school_id)
+
+    if (error) throw error
+    data.value.employees = employees
+  } catch (err) {
+    console.error('❌ Error loading employees:', err.message)
+    data.value.employees = []
+  }
+}
+
+/**
+ * REVENUE
+ */
+const loadRevenue = async () => {
+  try {
+    const { data: revenue, error } = await supabase
+      .from('revenue')
+      .select('*')
+      .eq('school_id', authStore.admin?.school_id)
+
+    if (error) throw error
+    data.value.revenue = revenue
+  } catch (err) {
+    console.error('❌ Error loading revenue:', err.message)
+    data.value.revenue = []
+  }
+}
+
+/**
+ * EXPENSES
+ */
+const loadExpenses = async () => {
+  try {
+    const { data: expenses, error } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('school_id', authStore.admin?.school_id)
+
+    if (error) throw error
+    data.value.expenses = expenses
+  } catch (err) {
+    console.error('❌ Error loading expenses:', err.message)
+    data.value.expenses = []
+  }
+}
+
+/**
+ * ATTENDANCE SUMMARY
+ */
+const loadAttendanceSummary = async () => {
+  try {
+    const now = new Date()
+    const month = now.getMonth() + 1
+    const year = now.getFullYear()
+
+    const { data: summary, error } = await supabase.rpc('get_attendance_summary', {
+      input_school_id: schoolId,
+      input_month: month,
+      input_year: year
+    })
+
+    if (error) throw error
+    data.value.attendance = summary
+  } catch (err) {
+    console.error('❌ Error loading attendance summary:', err.message)
+    data.value.attendance = []
+  }
+}
+
+/**
+ * EARNINGS SUMMARY
+ */
+const loadEarningsSummary = async () => {
+  try {
+    const now = new Date()
+    const month = now.getMonth() + 1
+    const year = now.getFullYear()
+
+    const { data: summary, error } = await supabase.rpc('get_earnings_summary', {
+      input_school_id: schoolId,
+      input_month: month,
+      input_year: year
+    })
+
+    if (error) throw error
+    data.value.earnings = summary
+  } catch (err) {
+    console.error('❌ Error loading earnings summary:', err.message)
+    data.value.earnings = []
+  }
+}
+
+
+/**
+ * NOTIFICATIONS (via RPC function)
+ */
 const fetchStoredNotifications = async () => {
   const adminId = authStore.admin?.id
   const adminRole = authStore.admin?.role
@@ -68,7 +203,7 @@ const fetchStoredNotifications = async () => {
     return
   }
 
-  const { data, error } = await supabase.rpc('manage_notifications', {
+  const { data: notifs, error } = await supabase.rpc('manage_notifications', {
     p_action: 'fetch',
     p_admin_id: adminId,
     p_school_id: schoolId,
@@ -83,132 +218,52 @@ const fetchStoredNotifications = async () => {
     return
   }
 
-  notifications.value = data || []
+  notifications.value = notifs || []
   console.log('stored notifications:', notifications.value)
 }
+// const loadAttendance = async () => {
+//   try {
+//     const { data: attendance, error } = await supabase
+//       .from('attendance')
+//       .select('*, students(full_name)')
+//       .eq('school_id', authStore.admin?.school_id)
 
-const formatDate = (date) => {
-  return new Date(date).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  })
-}
-
-const importanceColor = (level) => {
-  switch (level) {
-    case 'High':
-      return 'red'
-    case 'Medium':
-      return 'orange'
-    case 'Low':
-      return 'green'
-    default:
-      return 'blue'
-  }
-}
-
-const markAsRead = (id) => {
-  console.log('Mark as read:', id)
-}
-
-const archive = (id) => {
-  console.log('Archive:', id)
-}
-
-const deleteItem = (id) => {
-  console.log('Delete:', id)
-}
-const fetchNotifications = async () => {
-  try {
-    const response = await api.get('/notifications')
-    data.value.notifications = response.data.data
-    console.log('Notifications:', response.data.data)
-  } catch (err) {
-    console.log('Error fetching notifications:', err)
-  }
-}
-const fetchEarningsSummary = async () => {
-  const now = new Date()
-  const month = now.getMonth() + 1
-  const year = now.getFullYear()
-
-  try {
-    const response = await api.get(`/earnings/summary?month=${month}&year=${year}`)
-    data.value.earnings = response.data.data
-    console.log('Earnings summary:', response.data.data)
-  } catch (err) {
-    console.error('Error fetching earnings summary:', err)
-  }
-}
-
-// const fetchStudentsWithClasses = async () => {
-//   const { data: students, error } = await supabase
-//     .from('students')
-//     .select(`*, class:classes(name)`)
-//     .order('marks_percent', { ascending: false })
-//   console.log('students with classes:', students)
-//   if (error) {
-//     console.log('Supabase error:', error)
-//     return
+//     if (error) throw error
+//     data.value.attendance = attendance
+//   } catch (err) {
+//     console.error('❌ Error loading attendance:', err.message)
+//     data.value.attendance = []
 //   }
-
-//   data.value.students = students.map((s) => ({
-//     ...s,
-//     class_name: s.class?.name || 'N/A',
-//     marks_percent: s.marks_percent || Math.floor(Math.random() * 100),
-//     rank: s.rank
-//   }))
 // }
-const classMap = {
-  '54c2929a-de11-4829-87ab-5ccd2fdf8998': 'JSS1',
-  '2ab9da37-18d7-4b21-b089-c907c9fee25b': 'JSS2',
-  '7b614ee8-5f72-427b-bd78-eeef84d2347a': 'JSS3',
-  'e2679e5e-5fe9-44c1-bf2b-4b6aa0f82425': 'SSS1',
-  '608b08db-906d-4f11-86dc-09c6a0d13ff5': 'SSS2',
-  'b316c14c-8877-42b5-b0c6-c4370cc6e3a3': 'SSS3'
-}
-const mapClassIdToName = (classId) => {
-  return classMap[classId] || 'Unknown'
-}
 
-const loadStudents = async () => {
-  const students = await fetchData('students') // don't pass a key here
 
-  const mappedStudents = students.map((s) => ({
-    ...s,
-    class_name: mapClassIdToName(s.class_id),
-    marks_percent: s.marks_percent || Math.floor(Math.random() * 100),
-    rank: s.rank || '-'
-  }))
-
-  // Sort by marks_percent in descending order
-  mappedStudents.sort((a, b) => b.marks_percent - a.marks_percent)
-
-  data.value.students = mappedStudents
-}
-
+/**
+ * MASTER FETCH
+ */
 const fetchAll = async () => {
   loading.value = true
   try {
     await Promise.all([
-      fetchData('teachers', 'teachers'),
       loadStudents(),
-      fetchData('employees', 'employees'),
-      fetchData('revenue', 'revenue'),
-      fetchData('expenses', 'expenses'),
-      fetchAttendanceSummary(),
-      fetchEarningsSummary(),
-      fetchNotifications(),
+      loadTeachers(),
+      loadEmployees(),
+      loadRevenue(),
+      loadExpenses(),
+   
+      // loadAttendanceSummary(),
+      // loadEarningsSummary(),
       fetchStoredNotifications()
     ])
   } catch (err) {
-    console.error('❌ Error fetching data:', err)
+    console.error('❌ Error fetching all:', err.message)
   } finally {
     loading.value = false
   }
 }
 
+/**
+ * COMPUTED TOTALS
+ */
 const totalStudents = computed(() => data.value.students.length)
 const totalTeachers = computed(() => data.value.teachers.length)
 const totalEmployees = computed(() => data.value.employees.length)
@@ -374,7 +429,7 @@ onMounted(fetchAll)
 
         <div>
           <v-card class="w-full p-4 mb-4 shadow-md rounded">
-             <h2 class="m-4 text-sm font-semibold">Notice Board</h2>
+            <h2 class="m-4 text-sm font-semibold">Notice Board</h2>
             <div
               v-for="item in notifications"
               :key="item.id"
@@ -393,7 +448,7 @@ onMounted(fetchAll)
                 <!-- Title + Date -->
                 <div class="w-60">
                   <!-- fixed width -->
-                  <div class=" text-gray-800">
+                  <div class="text-gray-800">
                     {{ item.title }}
                   </div>
                   <div class="text-xs text-gray-500">

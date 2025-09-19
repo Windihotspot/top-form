@@ -257,7 +257,25 @@ const summaryDisplay = computed(() =>
 
 <template>
   <MainLayout>
-    <div class="m-4 font-bold text-xl">Attendance</div>
+      <div class="bg-white flex rounded shadow justify-between items-center border-b p-4 mb-4">
+        <div class="mb-2">
+          <h1 class="text-xl font-bold mt-4">Attendance</h1>
+          <p class="text-gray-500 text-sm mt-1">View and Manage your attendance records</p>
+        </div>
+
+        <v-btn
+         
+          size="medium"
+          class="normal-case custom-btn hover:bg-green-700 text-white text-sm font-semibold px-6 py-3 rounded-md shadow-md"
+        >
+          <span
+            class="bg-white text-blue-600 rounded-full p-1 flex items-center justify-center w-4 h-4 mr-2"
+          >
+            <i class="fa-solid fa-plus text-sm text-[#15803d]"></i>
+          </span>
+          Add new record
+        </v-btn>
+      </div>
     <div
       v-if="isLoading"
       class="fill-height d-flex justify-center align-center mx-auto items-center flex my-auto mx-auto"
@@ -401,4 +419,12 @@ const summaryDisplay = computed(() =>
   </MainLayout>
 </template>
 
-<style scoped></style>
+<style scoped>
+  .custom-btn {
+  background-color: #15803d;
+  text-transform: none;
+}
+.v-btn{
+  text-transform: none;
+}
+</style>

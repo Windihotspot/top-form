@@ -3,17 +3,27 @@ import { ref, onMounted, reactive } from 'vue'
 import MainLayout from '@/layouts/full/MainLayout.vue'
 import { supabase } from '@/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { useFormattedField } from '@/composables/useFormattedFields.js'
+import { ElMessage, ElNotification } from 'element-plus'
+import moment from 'moment'
+
 const authStore = useAuthStore()
 const schoolId = authStore.admin?.school_id
 const adminId = authStore.admin?.id
-import { useFormattedField } from '@/composables/useFormattedFields.js'
-import { ElMessage } from 'element-plus'
-import moment from 'moment'
+
+// ---- State ----
 const expenses = ref([])
+const categories = ref([])
 const loading = ref(false)
 const errorMessage = ref(null)
 
 const showDialog = ref(false)
+const dialogMode = ref('add') // 'add' | 'edit'
+const selectedExpenseId = ref(null)
+
+const showDeleteDialog = ref(false)
+const expenseToDelete = ref(null)
+
 const form = reactive({
   category: '',
   vendor: '',
@@ -24,15 +34,17 @@ const form = reactive({
 })
 const isValid = ref(false)
 const formRef = ref(null)
-// use the composable for currency formatting
+
 const formattedAmount = useFormattedField(form, 'amount', { currency: true })
+
+// ---- Validation ----
 const rules = {
   required: (v) => !!v || 'This field is required',
   number: (v) => (!isNaN(parseFloat(v)) && v >= 0) || 'Must be a valid number'
 }
 
-const closeDialog = () => {
-  showDialog.value = false
+// ---- Helpers ----
+const resetForm = () => {
   Object.assign(form, {
     category: '',
     vendor: '',
@@ -41,149 +53,170 @@ const closeDialog = () => {
     date: '',
     description: ''
   })
+  selectedExpenseId.value = null
 }
 
+const closeDialog = () => {
+  showDialog.value = false
+  resetForm()
+}
+
+const openAddDialog = () => {
+  dialogMode.value = 'add'
+  resetForm()
+  showDialog.value = true
+}
+
+const openEditDialog = (expense) => {
+  dialogMode.value = 'edit'
+  selectedExpenseId.value = expense.id
+  Object.assign(form, {
+    category: expense.category,
+    vendor: expense.vendor,
+    amount: expense.amount,
+    payment_method: expense.payment_method,
+    date: expense.date,
+    description: expense.description
+  })
+  showDialog.value = true
+}
+
+// ---- Submit ----
 const submitForm = async () => {
   if (!(await formRef.value.validate())) return
-  // 🔹 log the payload
+
   const payload = {
     amount: form.amount,
     category: form.category,
     date: form.date,
     description: form.description,
     payment_method: form.payment_method,
-    vendor: form.vendor
+    vendor: form.vendor,
+    expense_id: selectedExpenseId.value || null
   }
-  console.log('Submitting payload:', payload)
-  closeDialog()
 
   try {
-    ElMessage({
-      message: 'Saving expense...',
-      type: 'info',
-      duration: 2000
-    })
-
-    // 🔹 Pass in the right fields explicitly
-    const result = await addExpense(payload)
-    console.log(result)
-    if (result) {
-      ElMessage({
-        message: 'Expense saved successfully!',
-        type: 'success',
-        duration: 2000
+    loading.value = true
+    if (dialogMode.value === 'add') {
+      await addExpense(payload)
+      ElNotification.success({
+        title: 'Success',
+        message: 'Expense added successfully!'
       })
-
-      await getExpenses() // refresh list
-      closeDialog()
+    } else {
+      await updateExpense(payload)
+      ElNotification.success({
+        title: 'Success',
+        message: 'Expense updated successfully!'
+      })
     }
+    await getExpenses()
+    closeDialog()
   } catch (error) {
-    ElMessage.error('Failed to save expense. Please try again.')
-  }
-}
-
-// 🔹 Base call wrapper
-const callManageExpense = async (action, params = {}) => {
-  loading.value = true
-  errorMessage.value = null
-  try {
-    const { data, error } = await supabase.rpc('manage_expense', {
-      p_action: action,
-      p_admin_id: adminId,
-      p_amount: params.amount || null,
-      p_category: params.category || null,
-      p_date: params.date || null,
-      p_description: params.description || null,
-      p_expense_id: params.expense_id || null,
-      p_payment_method: params.payment_method || null,
-      p_school_id: schoolId,
-      p_vendor: params.vendor || null
-    })
-    console.log('manage expense data:', data)
-    if (error) throw error
-    return data
-  } catch (err) {
-    console.error('manage_expense error:', err)
-    errorMessage.value = err.message
-    return null
+    ElMessage.error(error.message || 'Failed to save expense.')
   } finally {
     loading.value = false
   }
 }
 
-// 🔹 CRUD actions
-const getExpenses = async () => {
-  loading.value = true
-  errorMessage.value = null
+// ---- Delete ----
+const confirmDeleteExpense = (expense) => {
+  expenseToDelete.value = expense
+  showDeleteDialog.value = true
+}
+
+const performDeleteExpense = async () => {
   try {
-    const { data, error } = await supabase.from('expenses').select('*').eq('school_id', schoolId)
+    loading.value = true
+    await deleteExpense(expenseToDelete.value.id)
+    ElNotification.success({
+      title: 'Deleted',
+      message: 'Expense deleted successfully!'
+    })
+    await getExpenses()
+  } catch (err) {
+    ElMessage.error(err.message || 'Failed to delete expense.')
+  } finally {
+    loading.value = false
+    showDeleteDialog.value = false
+    expenseToDelete.value = null
+  }
+}
+
+// ---- Supabase RPC wrappers ----
+const callManageExpense = async (action, params = {}) => {
+  const { data, error } = await supabase.rpc('manage_expense', {
+    p_action: action,
+    p_admin_id: adminId,
+    p_amount: params.amount || null,
+    p_category: params.category || null,
+    p_date: params.date || null,
+    p_description: params.description || null,
+    p_expense_id: params.expense_id || null,
+    p_payment_method: params.payment_method || null,
+    p_school_id: schoolId,
+    p_vendor: params.vendor || null
+  })
+  if (error) throw error
+  return data
+}
+
+const getExpenses = async () => {
+  try {
+    loading.value = true
+    const { data, error } = await supabase
+      .from('expenses')
+      .select('*')
+      .eq('school_id', schoolId)
+      .order('date', { ascending: false })
 
     if (error) throw error
-    expenses.value = data
-    console.log('expenses:', expenses.value)
+    expenses.value = data || []
     return data
   } catch (err) {
-    console.error('getExpenses error:', err)
-    errorMessage.value = err.message
-    return null
+    ElMessage.error(err.message || 'Failed to fetch expenses.')
+    expenses.value = []
   } finally {
     loading.value = false
   }
 }
 
 const addExpense = (params) => callManageExpense('add', params)
+const updateExpense = (params) => callManageExpense('update', params)
+const deleteExpense = (expenseId) => callManageExpense('delete', { expense_id: expenseId })
 
-const updateExpense = async (payload) => {
-  return await callManageExpense('update', payload)
-}
-
-const deleteExpense = async (expenseId, schoolId) => {
-  return await callManageExpense('delete', {
-    expense_id: expenseId,
-    school_id: schoolId
-  })
-}
-
-const categories = ref([])
-
-const fetchExpenseCategories = async (schoolId) => {
+const fetchExpenseCategories = async () => {
   try {
+    loading.value = true
     const { data, error } = await supabase
       .from('expense_categories')
       .select('*')
-      .eq('school_id', schoolId) // 👈 only this school's categories
+      .eq('school_id', schoolId)
       .order('name', { ascending: true })
 
     if (error) throw error
-
-    categories.value = data
-    console.log('school expense categories:', data)
-
-    return data
+    categories.value = data || []
   } catch (err) {
-    console.error('fetchExpenseCategories error:', err)
-    return []
+    ElMessage.error(err.message || 'Failed to fetch categories.')
+    categories.value = []
+  } finally {
+    loading.value = false
   }
 }
 
-// Format currency
-const formatCurrency = (value) => {
-  return new Intl.NumberFormat('en-NG', {
-    style: 'currency',
-    currency: 'NGN'
-  }).format(value)
-}
+// ---- Formatters ----
+const formatCurrency = (value) =>
+  new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(value)
 
-// Format date
-const formatDate = (date) => {
-  return moment(date).format('DD MMM YYYY')
-}
+const formatDate = (date) => moment(date).format('DD MMM YYYY')
 
+// ---- Init ----
 onMounted(() => {
   getExpenses()
-  fetchExpenseCategories(schoolId)
+  fetchExpenseCategories()
 })
 </script>
+
 
 <template>
   <MainLayout>
@@ -195,7 +228,7 @@ onMounted(() => {
         </div>
 
         <v-btn
-          @click="showDialog = true"
+          @click="openAddDialog"
           size="medium"
           class="normal-case custom-btn hover:bg-green-700 text-white text-sm font-semibold px-6 py-3 rounded-md shadow-md"
         >
@@ -288,11 +321,14 @@ onMounted(() => {
               </td>
 
               <td class="px-6 py-4 whitespace-nowrap">{{ expense.description }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-center flex justify-center space-x-2">
-                <button @click="editExpense(expense)" class="text-blue-500 hover:text-blue-700">
+              <td class="px-6 py-4 whitespace-nowrap text-center flex gap-4 justify-center space-x-2">
+                <button @click="openEditDialog(expense)" class="text-blue-500 hover:text-blue-700">
                   <i class="fa-solid fa-pen-to-square"></i>
                 </button>
-                <button @click="deleteExpense(expense.id)" class="text-red-500 hover:text-red-700">
+                <button
+                  @click="confirmDeleteExpense(expense)"
+                  class="text-red-500 hover:text-red-700"
+                >
                   <i class="fa-solid fa-trash"></i>
                 </button>
               </td>
@@ -306,7 +342,9 @@ onMounted(() => {
       <!-- Add Expense Dialog -->
       <v-dialog v-model="showDialog" max-width="600px" persistent>
         <v-card>
-          <v-card-title class="text-lg font-bold">Add New Expense</v-card-title>
+          <v-card-title class="text-lg font-bold">
+            {{ dialogMode === 'add' ? 'Add New Expense' : 'Edit Expense' }}
+          </v-card-title>
           <v-card-text>
             <v-form ref="formRef" v-model="isValid">
               <!-- Category -->
@@ -390,8 +428,24 @@ onMounted(() => {
               :disabled="!isValid || loading"
               @click="submitForm"
             >
-              Save
+              {{ dialogMode === 'add' ? 'Save' : 'Update' }}
             </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
+      <!-- delete confirmation modal -->
+      <v-dialog v-model="showDeleteDialog" max-width="400px">
+        <v-card>
+          <v-card-title class="text-lg font-bold">Confirm Delete</v-card-title>
+          <v-card-text>
+            Are you sure you want to delete this expense?
+            <strong>{{ expenseToDelete?.category }}</strong> –
+            {{ formatCurrency(expenseToDelete?.amount) }}
+          </v-card-text>
+          <v-card-actions class="justify-end">
+            <v-btn text @click="showDeleteDialog = false">Cancel</v-btn>
+            <v-btn color="red" class="text-white" @click="performDeleteExpense">Delete</v-btn>
           </v-card-actions>
         </v-card>
       </v-dialog>
@@ -402,6 +456,9 @@ onMounted(() => {
 <style scoped>
 .custom-btn {
   background-color: #15803d;
+  text-transform: none;
+}
+.v-btn{
   text-transform: none;
 }
 </style>

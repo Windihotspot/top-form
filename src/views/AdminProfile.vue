@@ -229,48 +229,57 @@ const defaultAvatar = 'https://cdn.pixabay.com/photo/2020/06/29/20/31/man-535430
 const saveChanges = async () => {
   saving.value = true
   try {
-    const response = await api.put('/admins/me', {
-      first_name: admin.value.first_name,
-      last_name: admin.value.last_name,
-      phone: admin.value.phone,
-      avatar_url: admin.value.avatar_url,
-      timezone: admin.value.timezone,
-      gender: admin.value.gender,
-      date_of_birth: admin.value.date_of_birth
-    })
+    const { error } = await supabase
+      .from('admins')
+      .update({
+        first_name: admin.value.first_name,
+        last_name: admin.value.last_name,
+        phone: admin.value.phone,
+        avatar_url: admin.value.avatar_url,
+        timezone: admin.value.timezone,
+        gender: admin.value.gender,
+        date_of_birth: admin.value.date_of_birth
+      })
+      .eq('id', auth.admin.id)
+
+    if (error) throw error
 
     ElNotification({
       title: 'Success',
       message: 'Profile updated successfully!',
       type: 'success'
     })
-
-    admin.value = response.data.data
   } catch (error) {
-    console.error('Failed to update profile:', error)
+    console.error('Failed to update profile:', error.message)
     ElNotification({
       title: 'Error',
-      message: error.response?.data?.message || 'Something went wrong',
+      message: error.message || 'Something went wrong',
       type: 'error'
     })
   } finally {
     saving.value = false
   }
 }
-const fetchadminProfile = async () => {
+
+const fetchAdminProfile = async () => {
   loading.value = true
   try {
-    const response = await api.get('/admins/me')
+    const { data, error } = await supabase
+      .from('admins')
+      .select('*')
+      .eq('id', auth.admin.id) // use the id from your store
+      .single()
+
+    if (error) throw error
+
     admin.value = {
-      ...response.data.data,
-      avatar_url: response.data.data.avatar_url
-        ? `${response.data.data.avatar_url}?t=${Date.now()}`
-        : null
+      ...data,
+      avatar_url: data.avatar_url ? `${data.avatar_url}?t=${Date.now()}` : null
     }
 
     console.log('admin profile:', admin.value)
   } catch (error) {
-    console.error('Error fetching profile:', error)
+    console.error('Error fetching profile:', error.message)
   } finally {
     loading.value = false
   }
@@ -378,7 +387,7 @@ const deleteAvatar = async () => {
 }
 
 onMounted(async () => {
-  fetchadminProfile()
+  fetchAdminProfile()
 })
 </script>
 

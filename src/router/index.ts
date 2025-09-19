@@ -10,6 +10,9 @@ import AttendanceView from '@/views/AttendanceView.vue'
 import SchoolCalendar from '@/views/SchoolCalendar.vue'
 import ExpensesView from '@/views/ExpensesView.vue'
 import Onboarding from '@/views/Onboarding.vue'
+import ExamsView from '@/views/ExamsView.vue'
+import TransportView from '@/views/TransportView.vue'
+import RevenueView from '@/views/RevenueView.vue'
 
 
 const router = createRouter({
@@ -64,6 +67,21 @@ const router = createRouter({
       path: '/expenses',
       name: 'expenses',
       component: ExpensesView
+    },
+    {
+      path: '/exams',
+      name: 'exams',
+      component: ExamsView
+    },
+    {
+      path: '/transport',
+      name: 'transport',
+      component: TransportView
+    },
+    {
+      path: '/revenue',
+      name: 'revenue',
+      component: RevenueView
     },
     {
       path: '/onboarding',

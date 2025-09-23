@@ -22,7 +22,7 @@ const userAvatarUrl = computed(() => {
 // Logout handler
 const handleLogout = async () => {
   await auth.logout()
-  router.push('/login') // redirect to login after logout
+  router.push('/') // redirect to login after logout
 }
 </script>
 

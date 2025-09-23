@@ -19,15 +19,15 @@ const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
-      path: '/login',
+      path: '/',
       name: 'login',
       component: LoginView
     },
-    {
-      path: '/',
-      name: 'signup',
-      component: SignUp
-    },
+    // {
+    //   path: '/',
+    //   name: 'signup',
+    //   component: SignUp
+    // },
     {
       path: '/verifyemail',
       name: 'verifyemail',

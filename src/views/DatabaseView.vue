@@ -210,6 +210,7 @@ const submitClass = async () => {
     ElMessage.error(`Error adding class: ${error.message}`)
   } else {
     closeModal()
+    fetchSchoolClasses()
     ElMessage.success('Class added successfully!')
     classFormRef.value.reset()
   }
@@ -1293,7 +1294,7 @@ watch(tab, (newTab) => {
           </v-tabs-window-item>
           <v-tabs-window-item value="subjects">
             <section>
-              <h2 class="text-lg font-bold mb-3">Subjects</h2>
+             
               <div class="flex flex-wrap gap-2">
                 <v-chip
                   v-for="sub in schoolSubjects"
@@ -1309,7 +1310,7 @@ watch(tab, (newTab) => {
           </v-tabs-window-item>
           <v-tabs-window-item value="classes">
             <section class="mb-8">
-              <h2 class="text-lg font-bold mb-3">Classes</h2>
+              
               <div class="flex flex-wrap gap-2">
                 <v-chip
                   v-for="cls in schoolClasses"

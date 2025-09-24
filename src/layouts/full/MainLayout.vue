@@ -25,9 +25,9 @@ onMounted(() => {
     <!--- Header -->
     <!-- ---------------------------------------------- -->
     <v-app-bar app elevation="1" class="pa-2">
-     <v-btn class="hidden-md-and-up" icon @click="drawer = !drawer">
-  <i class="fa-solid fa-bars"></i>
-</v-btn>
+      <v-btn class="hidden-md-and-up" icon @click="drawer = !drawer">
+        <i class="fa-solid fa-bars"></i>
+      </v-btn>
 
       <div class="logo pa-6">
         <!-- <p class="font-semibold text-lg">FlowkyAi</p> -->

@@ -20,8 +20,8 @@ const sidebarItems = [
     icon: 'mdi-cash-multiple', // Expenses icon
   },
    {
-    title: 'Revenue',
-    path: '/revenue',
+    title: 'Payments',
+    path: '/payments',
     icon: 'mdi-currency-ngn', // Revenue icon
   },
   {

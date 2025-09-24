@@ -79,8 +79,8 @@ const router = createRouter({
       component: TransportView
     },
     {
-      path: '/revenue',
-      name: 'revenue',
+      path: '/payments',
+      name: 'payments',
       component: RevenueView
     },
     {

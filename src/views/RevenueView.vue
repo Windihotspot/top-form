@@ -418,8 +418,8 @@ onMounted(async () => {
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="p in payments" :key="p.id">
-              <td class="px-6 py-4">{{ p.students?.full_name || '—' }}</td>
-              <td class="px-6 py-4">{{ p.fees?.description || '—' }}</td>
+              <td class="px-6 py-4">{{ p.student_name || '—' }}</td>
+              <td class="px-6 py-4">{{ formatCurrency(p.fee_amount) }}</td>
               <td class="px-6 py-4">{{ formatCurrency(p.amount) }}</td>
               <td class="px-6 py-4">{{ p.method }}</td>
               <td class="px-6 py-4">{{ formatDate(p.payment_date) }}</td>

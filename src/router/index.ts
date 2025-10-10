@@ -13,6 +13,7 @@ import Onboarding from '@/views/Onboarding.vue'
 import ExamsView from '@/views/ExamsView.vue'
 import TransportView from '@/views/TransportView.vue'
 import RevenueView from '@/views/RevenueView.vue'
+import FeesView from '@/views/FeesView.vue'
 
 
 const router = createRouter({
@@ -82,6 +83,11 @@ const router = createRouter({
       path: '/payments',
       name: 'payments',
       component: RevenueView
+    },
+    {
+      path: '/fees',
+      name: 'fees',
+      component: FeesView
     },
     {
       path: '/onboarding',

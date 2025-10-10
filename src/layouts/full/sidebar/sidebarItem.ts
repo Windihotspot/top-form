@@ -24,16 +24,21 @@ const sidebarItems = [
     path: '/payments',
     icon: 'mdi-currency-ngn', // Revenue icon
   },
-  {
-    title: 'Exams',
-    path: '/exams',
-    icon: 'mdi-file-document-edit', // Exams icon
+   {
+    title: 'Fees',
+    path: '/fees',
+    icon: 'mdi-currency-ngn', // Revenue icon
   },
-  {
-    title: 'Transport',
-    path: '/transport',
-    icon: 'mdi-bus', // Transport icon
-  },
+  // {
+  //   title: 'Exams',
+  //   path: '/exams',
+  //   icon: 'mdi-file-document-edit', // Exams icon
+  // },
+  // {
+  //   title: 'Transport',
+  //   path: '/transport',
+  //   icon: 'mdi-bus', // Transport icon
+  // },
  
 ]
 

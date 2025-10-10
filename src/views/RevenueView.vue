@@ -28,7 +28,7 @@ const error = ref(null)
 // ========== FUNCTIONS ==========
 const getKPIs = async () => {
   const { data, error: err } = await supabase.rpc('get_payments_summary', {
-    school_id: schoolId
+    p_school_id: schoolId
   })
 
   if (err) {

@@ -45,22 +45,13 @@ const getFees = async () => {
     loading.value = true
     const { data, error } = await supabase
       .from('fees')
-      .select(`
-        id,
-        amount,
-        description,
-        due_date,
-        created_at,
-        status,
-        payment_status,
-        classes:class_id (id, name),
-        academic_terms:term_id (id, name)
-      `)
+      .select('*')
       .eq('school_id', schoolId)
       .order('created_at', { ascending: false })
 
     if (error) throw error
     fees.value = data || []
+    console.log("fees:", data)
   } catch (err) {
     console.error(err)
     ElMessage.error(err.message || 'Failed to load fees.')
@@ -264,9 +255,7 @@ onMounted(() => {
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                 Due Date
               </th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
-                Status
-              </th>
+             
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
                 Description
               </th>
@@ -278,24 +267,11 @@ onMounted(() => {
 
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="fee in fees" :key="fee.id">
-              <td class="px-6 py-4">{{ fee.classes?.name || '—' }}</td>
-              <td class="px-6 py-4">{{ fee.academic_terms?.name || '—' }}</td>
+              <td class="px-6 py-4">{{ fee.class_name }}</td>
+              <td class="px-6 py-4">{{ fee.term_name }}</td>
               <td class="px-6 py-4">{{ formatCurrency(fee.amount) }}</td>
               <td class="px-6 py-4">{{ formatDate(fee.due_date) }}</td>
-              <td class="px-6 py-4">
-                <span
-                  :class="[
-                    'px-2 inline-flex text-xs leading-5 font-semibold rounded-full',
-                    fee.payment_status === 'paid'
-                      ? 'bg-green-100 text-green-800'
-                      : fee.payment_status === 'partial'
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
-                  ]"
-                >
-                  {{ fee.payment_status }}
-                </span>
-              </td>
+              
               <td class="px-6 py-4">{{ fee.description }}</td>
               <td class="px-6 py-4 text-center flex justify-center gap-4">
                 <button @click="openEditDialog(fee)" class="text-blue-500 hover:text-blue-700">

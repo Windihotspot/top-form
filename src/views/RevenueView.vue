@@ -41,14 +41,43 @@ const getPayments = async () => {
     loading.value = true
     const { data, error } = await supabase
       .from('payments')
-      .select('*')
+      .select(
+        `
+    id,
+    amount,
+    method,
+    reference,
+    payment_date,
+    students:student_id (
+      id,
+      full_name,
+      class_id
+    ),
+    fees:fee_id (
+      id,
+      description,
+      amount
+    )
+  `
+      )
       .eq('school_id', schoolId)
       .order('payment_date', { ascending: false })
-    if (error) throw error
-    payments.value = data || []
-    console.log("payments:", data)
+
+    if (error) console.error('Error fetching payments:', error)
+    else console.log('Payments:', data)
+
+    // Optional: map flattened fields for easier template use
+    payments.value = (data || []).map((p) => ({
+      ...p,
+      student_name: p.students?.full_name || '—',
+      fee_description: p.fees?.description || '—',
+      fee_amount: p.fees?.amount || 0
+    }))
+
+    console.log('payments:', payments.value)
   } catch (err) {
     ElMessage.error(err.message || 'Failed to load payments.')
+    console.log('errro fetching paymnets:', err.message)
   } finally {
     loading.value = false
   }
@@ -89,7 +118,6 @@ const loadFees = async () => {
     .eq('school_id', schoolId)
   if (!error) classFees.value = data || []
 }
-
 
 // ========== FUNCTIONS ==========
 const getKPIs = async () => {
@@ -269,7 +297,21 @@ const openAddDialog = async () => {
 const openEditDialog = async (payment) => {
   dialogMode.value = 'edit'
   selectedPaymentId.value = payment.id
-  await Promise.all([loadStudents(), loadFees()])
+
+  // Load only this student's data (instead of all)
+  const { data: studentData, error: studentError } = await supabase
+    .from('students')
+    .select('id, full_name, class_id')
+    .eq('id', payment.students?.id)
+    .single()
+
+  if (studentError) console.error('Error fetching student:', studentError)
+  else students.value = [studentData] // replace the list with only this student
+
+  // Load all fees as usual (in case they need to pick a new one)
+  await loadFees()
+
+  // Prefill form fields
   Object.assign(paymentForm, {
     student_id: payment.students?.id || '',
     fee_id: payment.fees?.id || '',
@@ -278,6 +320,7 @@ const openEditDialog = async (payment) => {
     reference: payment.reference,
     payment_date: payment.payment_date
   })
+
   paymentDialog.value = true
 }
 
@@ -297,7 +340,6 @@ const closePaymentDialog = () => {
   resetForm()
 }
 
-
 const submitPayment = async () => {
   if (!(await paymentFormRef.value.validate())) return
   try {
@@ -316,8 +358,13 @@ const submitPayment = async () => {
       const { error } = await supabase.from('payments').insert([payload])
       if (error) throw error
       ElNotification.success({ title: 'Payment Added', message: 'Payment recorded successfully!' })
+      getPayments()
+      getKPIs()
     } else {
-      const { error } = await supabase.from('payments').update(payload).eq('id', selectedPaymentId.value)
+      const { error } = await supabase
+        .from('payments')
+        .update(payload)
+        .eq('id', selectedPaymentId.value)
       if (error) throw error
       ElNotification.success({ title: 'Updated', message: 'Payment updated successfully!' })
     }
@@ -356,7 +403,6 @@ const deletePayment = async () => {
 const formatCurrency = (value) =>
   new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(value)
 const formatDate = (date) => moment(date).format('DD MMM YYYY')
-
 
 // ========== PAGE LOAD ==========
 onMounted(async () => {
@@ -401,19 +447,28 @@ onMounted(async () => {
       <v-progress-circular indeterminate color="success" size="48" />
     </div>
 
-
     <div v-else>
-        <!-- Payments Table -->
+      <!-- Payments Table -->
       <div class="overflow-x-auto bg-white rounded shadow m-4">
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Student</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                Student
+              </th>
               <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Fee</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Amount</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Method</th>
-              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Payment Date</th>
-              <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">Actions</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                Amount
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                Method
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                Payment Date
+              </th>
+              <th class="px-6 py-3 text-center text-xs font-semibold text-gray-500 uppercase">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -442,8 +497,8 @@ onMounted(async () => {
         <AnimatedStats
           iconClass="fas fa-file-invoice-dollar"
           iconBgClass="text-blue-500"
-          title="Total Fees Assigned"
-          :value="kpis.total_fees_assigned"
+          title="Total Expected fees"
+          :value="kpis.total_expected_fees"
           :index="0"
         />
 
@@ -502,114 +557,115 @@ onMounted(async () => {
     </div>
 
     <!-- Add/Edit Payment Dialog -->
-      <v-dialog v-model="paymentDialog" max-width="600px" persistent>
-        <v-card>
-          <v-card-title class="text-lg font-bold">
-            {{ dialogMode === 'add' ? 'Add New Payment' : 'Edit Payment' }}
-          </v-card-title>
+    <v-dialog v-model="paymentDialog" max-width="600px" persistent>
+      <v-card>
+        <v-card-title class="text-lg font-bold">
+          {{ dialogMode === 'add' ? 'Add New Payment' : 'Edit Payment' }}
+        </v-card-title>
 
-          <v-card-text>
-            <v-form ref="paymentFormRef">
-              <v-select
-                v-model="paymentForm.student_id"
-                :items="students"
-                item-title="full_name"
-                item-value="id"
-                label="Select Student"
-                variant="outlined"
-                color="#15803d"
-                :rules="[(v) => !!v || 'Student is required']"
-              />
+        <v-card-text>
+          <v-form ref="paymentFormRef">
+            <v-select
+              v-model="paymentForm.student_id"
+              :items="students"
+              item-title="full_name"
+              item-value="id"
+              label="Select Student"
+              variant="outlined"
+              color="#15803d"
+              :rules="[(v) => !!v || 'Student is required']"
+            />
 
-              <v-select
-                v-model="paymentForm.fee_id"
-                :items="classFees"
-                item-title="description"
-                item-value="id"
-                label="Select Fee"
-                class="mt-4"
-                variant="outlined"
-                color="#15803d"
-                :rules="[(v) => !!v || 'Fee is required']"
-              />
+            <v-select
+              v-model="paymentForm.fee_id"
+              :items="classFees"
+              item-title="description"
+              item-value="id"
+              label="Select Fee"
+              class="mt-4"
+              variant="outlined"
+              color="#15803d"
+              :rules="[(v) => !!v || 'Fee is required']"
+            />
 
-              <v-text-field
-                v-model="formattedPaymentAmount"
-                label="Amount"
-                class="mt-4"
-                variant="outlined"
-                color="#15803d"
-                :rules="[(v) => !!v || 'Amount is required']"
-              />
+            <v-text-field
+              v-model="formattedPaymentAmount"
+              label="Amount"
+              class="mt-4"
+              variant="outlined"
+              color="#15803d"
+              :rules="[(v) => !!v || 'Amount is required']"
+            />
 
-              <v-select
-                v-model="paymentForm.method"
-                :items="['Cash', 'Transfer', 'POS']"
-                label="Payment Method"
-                class="mt-4"
-                variant="outlined"
-                color="#15803d"
-                :rules="[(v) => !!v || 'Method is required']"
-              />
+            <v-select
+              v-model="paymentForm.method"
+              :items="['Cash', 'Transfer', 'POS']"
+              label="Payment Method"
+              class="mt-4"
+              variant="outlined"
+              color="#15803d"
+              :rules="[(v) => !!v || 'Method is required']"
+            />
 
-              <v-menu
-                v-model="dateMenu"
-                :close-on-content-click="false"
-                transition="scale-transition"
-                offset-y
-              >
-                <template #activator="{ props }">
-                  <v-text-field
-                    v-bind="props"
-                    v-model="paymentForm.payment_date"
-                    label="Payment Date"
-                    readonly
-                    variant="outlined"
-                    color="#15803d"
-                    class="mt-4"
-                  />
-                </template>
-                <v-date-picker
+            <v-menu
+              v-model="dateMenu"
+              :close-on-content-click="false"
+              transition="scale-transition"
+              offset-y
+            >
+              <template #activator="{ props }">
+                <v-text-field
+                  v-bind="props"
                   v-model="paymentForm.payment_date"
-                  @update:modelValue="onPaymentDateSelected"
+                  label="Payment Date"
+                  readonly
+                  variant="outlined"
+                  color="#15803d"
+                  class="mt-4"
                 />
-              </v-menu>
-
-              <v-text-field
-                v-model="paymentForm.reference"
-                label="Reference (optional)"
-                class="mt-4"
-                variant="outlined"
-                color="#15803d"
+              </template>
+              <v-date-picker
+                v-model="paymentForm.payment_date"
+                @update:modelValue="onPaymentDateSelected"
               />
-            </v-form>
-          </v-card-text>
+            </v-menu>
 
-          <v-card-actions class="justify-end">
-            <v-btn text @click="closePaymentDialog">Cancel</v-btn>
-            <v-btn color="success" class="text-white" :loading="submitting" @click="submitPayment">
-              {{ dialogMode === 'add' ? 'Save Payment' : 'Update Payment' }}
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+            <v-text-field
+              v-model="paymentForm.reference"
+              label="Reference (optional)"
+              class="mt-4"
+              variant="outlined"
+              color="#15803d"
+            />
+          </v-form>
+        </v-card-text>
 
-      <!-- Delete Confirmation -->
-      <v-dialog v-model="deleteDialog" max-width="400px">
-        <v-card>
-          <v-card-title class="text-lg font-bold">Confirm Delete</v-card-title>
-          <v-card-text>
-            Are you sure you want to delete this payment for
-            <strong>{{ paymentToDelete?.students?.full_name }}</strong>?
-          </v-card-text>
-          <v-card-actions class="justify-end">
-            <v-btn text @click="deleteDialog = false">Cancel</v-btn>
-            <v-btn color="red" class="text-white" :loading="submitting" @click="deletePayment">
-              Delete
-            </v-btn>
-          </v-card-actions>
-        </v-card>
-      </v-dialog>
+        <v-card-actions class="justify-end">
+          <v-btn text @click="closePaymentDialog">Cancel</v-btn>
+          <v-btn color="success" class="text-white" :loading="submitting" @click="submitPayment">
+            {{ dialogMode === 'add' ? 'Save Payment' : 'Update Payment' }}
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <!-- Delete Confirmation -->
+    <v-dialog v-model="deleteDialog" max-width="400px">
+      <v-card>
+        <v-card-title class="text-lg font-bold">Confirm Delete</v-card-title>
+        <v-card-text>
+          Are you sure you want to delete this payment for
+          <strong>{{ paymentToDelete?.students?.full_name }}</strong
+          >?
+        </v-card-text>
+        <v-card-actions class="justify-end">
+          <v-btn text @click="deleteDialog = false">Cancel</v-btn>
+          <v-btn color="red" class="text-white" :loading="submitting" @click="deletePayment">
+            Delete
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </MainLayout>
 </template>
 

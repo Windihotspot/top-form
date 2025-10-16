@@ -7,6 +7,119 @@ const authStore = useAuthStore()
 const schoolId = authStore.admin?.school_id
 import Apexchart from 'vue3-apexcharts'
 
+import { ElMessage } from 'element-plus'
+
+const showDialog = ref(false)
+const formRef = ref(null)
+const formValid = ref(false)
+
+const form = ref({
+  userType: '',
+  userId: '',
+  status: 'Present',
+  checkInTime: '',
+  remarks: ''
+})
+
+const userTypes = ['student', 'teacher', 'employee']
+const usersList = ref([])
+const loadingUsers = ref(false)
+
+// ✅ Validation Rules
+const rules = {
+  required: (v) => !!v || 'This field is required',
+  userType: (v) => !!v || 'Select a user type',
+  userId: (v) => !!v || 'Select a user'
+}
+
+// ✅ Fetch users dynamically when type changes
+const fetchUsersList = async () => {
+  if (!form.value.userType) return
+  loadingUsers.value = true
+  if (form.value.userType === 'student') await fetchClassesList()
+
+  let table = ''
+  if (form.value.userType === 'student') table = 'students'
+  if (form.value.userType === 'teacher') table = 'teachers'
+  if (form.value.userType === 'employee') table = 'employees'
+
+  const { data, error } = await supabase
+    .from(table)
+    .select('id, full_name')
+    .eq('school_id', schoolId)
+    .order('full_name')
+
+  if (error) {
+    console.error('Error loading users:', error)
+    ElMessage.error('Failed to load users')
+  } else {
+    usersList.value = data.map((u) => ({ id: u.id, name: u.full_name }))
+  }
+
+  loadingUsers.value = false
+}
+const openAddDialog = () => {
+  showDialog.value = true
+}
+
+const openEditDialog = () => {}
+
+const resetForm = () => {}
+
+const closeDialog = () => {
+  showDialog.value = false
+}
+
+const classesList = ref([])
+const loadingClasses = ref(false)
+
+const fetchClassesList = async () => {
+  loadingClasses.value = true
+  const { data, error } = await supabase
+    .from('classes')
+    .select('id, name')
+    .eq('school_id', schoolId)
+    .order('name')
+
+  if (error) {
+    console.error('Error loading classes:', error)
+    ElMessage.error('Failed to load classes')
+  } else {
+    classesList.value = data
+  }
+  loadingClasses.value = false
+}
+
+// ✅ Handle submission
+const submitAttendance = async () => {
+  const valid = await formRef.value.validate()
+  if (!valid) return
+
+  const { data, error } = await supabase.rpc('add_attendance_record', {
+    p_school_id: schoolId,
+    p_user_id: form.value.userId,
+    p_user_type: form.value.userType,
+    p_class_id: form.value.classId || null,
+    p_date: new Date().toISOString().slice(0, 10),
+    p_status: form.value.status,
+    p_remarks: form.value.remarks,
+    p_check_in_time: form.value.checkInTime
+      ? new Date(`1970-01-01T${form.value.checkInTime}:00Z`).toISOString()
+      : null,
+    p_recorded_by: authStore.admin?.id
+  })
+
+  if (error) {
+    console.error('Error adding attendance:', error)
+    ElMessage.error('Failed to add attendance')
+  } else {
+    ElMessage.success('Attendance added successfully!')
+    showDialog.value = false
+    formRef.value.reset()
+    await loadRecentAttendance(activeTab.value)
+  }
+}
+
 const dayLabels = ref([])
 
 const generateDayLabels = () => {
@@ -257,25 +370,25 @@ const summaryDisplay = computed(() =>
 
 <template>
   <MainLayout>
-      <div class="bg-white flex rounded shadow justify-between items-center border-b p-4 mb-4">
-        <div class="mb-2">
-          <h1 class="text-xl font-bold mt-4">Attendance</h1>
-          <p class="text-gray-500 text-sm mt-1">View and Manage your attendance records</p>
-        </div>
-
-        <v-btn
-         
-          size="medium"
-          class="normal-case custom-btn hover:bg-green-700 text-white text-sm font-semibold px-6 py-3 rounded-md shadow-md"
-        >
-          <span
-            class="bg-white text-blue-600 rounded-full p-1 flex items-center justify-center w-4 h-4 mr-2"
-          >
-            <i class="fa-solid fa-plus text-sm text-[#15803d]"></i>
-          </span>
-          Add new record
-        </v-btn>
+    <div class="bg-white flex rounded shadow justify-between items-center border-b p-4 mb-4">
+      <div class="mb-2">
+        <h1 class="text-xl font-bold mt-4">Attendance</h1>
+        <p class="text-gray-500 text-sm mt-1">View and Manage your attendance records</p>
       </div>
+
+      <v-btn
+        @click="openAddDialog"
+        size="medium"
+        class="normal-case custom-btn hover:bg-green-700 text-white text-sm font-semibold px-6 py-3 rounded-md shadow-md"
+      >
+        <span
+          class="bg-white text-blue-600 rounded-full p-1 flex items-center justify-center w-4 h-4 mr-2"
+        >
+          <i class="fa-solid fa-plus text-sm text-[#15803d]"></i>
+        </span>
+        Add new record
+      </v-btn>
+    </div>
     <div
       v-if="isLoading"
       class="fill-height d-flex justify-center align-center mx-auto items-center flex my-auto mx-auto"
@@ -333,7 +446,7 @@ const summaryDisplay = computed(() =>
           </div>
         </div>
 
-         <div class="bg-white p-4 rounded shadow m-2 ">
+        <div class="bg-white p-4 rounded shadow m-2">
           <h3 class="text-sm text-gray-500 mb-1">Today's Attendance</h3>
           <p class="text-xs text-gray-400 mb-4">{{ formattedDate }}</p>
 
@@ -405,8 +518,6 @@ const summaryDisplay = computed(() =>
           />
         </div>
 
-       
-
         <!-- Total -->
         <!-- <Apexchart
         height="250"
@@ -416,15 +527,101 @@ const summaryDisplay = computed(() =>
       /> -->
       </div>
     </div>
+
+    <!-- ✅ Attendance Add Dialog -->
+    <v-dialog v-model="showDialog" max-width="500px" persistent>
+      <v-card class="p-4">
+        <v-card-title class="text-lg font-semibold">Add Attendance Record</v-card-title>
+        <v-card-text>
+          <v-form ref="formRef" v-model="formValid" lazy-validation>
+            <!-- User Type -->
+            <v-select
+              v-model="form.userType"
+              :items="userTypes"
+              label="User Type"
+              :rules="[rules.userType]"
+              variant="outlined"
+              color="green"
+              @update:model-value="fetchUsersList"
+            />
+
+            <!-- User -->
+            <v-select
+              v-model="form.userId"
+              :items="usersList"
+              item-title="name"
+              item-value="id"
+              label="User"
+              :disabled="!form.userType"
+              :loading="loadingUsers"
+              :rules="[rules.userId]"
+              variant="outlined"
+              color="green"
+              class="mt-3"
+            />
+
+            <!-- Class (only for students) -->
+            <v-select
+              v-if="form.userType === 'student'"
+              v-model="form.classId"
+              :items="classesList"
+              item-title="name"
+              item-value="id"
+              label="Class"
+              variant="outlined"
+              color="green"
+              class="mt-3"
+              :rules="[rules.required]"
+              :loading="loadingClasses"
+            />
+
+            <!-- Status -->
+            <v-select
+              v-model="form.status"
+              :items="['Present', 'Absent', 'Late']"
+              label="Status"
+              variant="outlined"
+              color="green"
+              class="mt-3"
+            />
+
+            <!-- Check-in Time -->
+            <v-text-field
+              v-model="form.checkInTime"
+              label="Check-in Time"
+              type="time"
+              variant="outlined"
+              color="green"
+              class="mt-3"
+            />
+
+            <!-- Remarks -->
+            <v-textarea
+              v-model="form.remarks"
+              label="Remarks"
+              rows="2"
+              variant="outlined"
+              color="green"
+              class="mt-3"
+            />
+          </v-form>
+        </v-card-text>
+
+        <v-card-actions class="justify-end space-x-2">
+          <v-btn text color="grey" @click="showDialog = false">Cancel</v-btn>
+          <v-btn color="green" @click="submitAttendance" :disabled="!formValid">Save</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </MainLayout>
 </template>
 
 <style scoped>
-  .custom-btn {
+.custom-btn {
   background-color: #15803d;
   text-transform: none;
 }
-.v-btn{
+.v-btn {
   text-transform: none;
 }
 </style>

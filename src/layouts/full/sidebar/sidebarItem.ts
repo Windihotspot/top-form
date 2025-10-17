@@ -2,32 +2,39 @@ const sidebarItems = [
   {
     title: 'Dashboard',
     path: '/dashboard',
-    icon: 'mdi-view-dashboard', // Dashboard icon
+    icon: 'mdi-view-dashboard', 
   },
   {
     title: 'Database',
     path: '/database',
-    icon: 'mdi-database', // Database icon
+    icon: 'mdi-database',
   },
   {
     title: 'Attendance',
     path: '/attendance',
-    icon: 'mdi-account-check', // Attendance icon
+    icon: 'mdi-account-check',
   },
   {
     title: 'Expenses',
     path: '/expenses',
-    icon: 'mdi-cash-multiple', // Expenses icon
+    icon: 'mdi-cash-multiple', 
   },
    {
     title: 'Payments',
     path: '/payments',
-    icon: 'mdi-currency-ngn', // Revenue icon
+    icon: 'mdi-currency-ngn',
   },
    {
     title: 'Fees',
     path: '/fees',
-    icon: 'mdi-currency-ngn', // Revenue icon
+    icon: 'mdi-receipt-text-outline', 
+  },
+
+   {
+    title: 'Exams Builder',
+    path: '/exams-builder',
+    icon: 'mdi-file-document-edit-outline'
+
   },
   // {
   //   title: 'Exams',

@@ -7,9 +7,9 @@
       <v-card class="pa-4 space-y-4">
         <v-text-field v-model="exam.title" label="Exam Title" variant="outlined" color="#15803d" />
         <v-select
-          v-model="exam.exam_type"
-          :items="examTypes"
-          label="Exam Type"
+          v-model="exam.component"
+          :items="components"
+          label="Assessment Type"
           variant="outlined"
           color="#15803d"
         />
@@ -22,16 +22,15 @@
           variant="outlined"
           color="#15803d"
         />
-
         <v-select
-          v-model="exam.subject"
-          :items="schoolSubjects"
-          item-title="subject_name"
-          item-value="id"
-          label="Subject"
-          variant="outlined"
-          color="#15803d"
-        />
+  v-model="exam.subject_id"
+  :items="schoolSubjects"
+  item-title="subject_name"
+  item-value="school_subject_id"
+  label="Subject"
+  variant="outlined"
+  color="#15803d"
+/>
 
         <v-textarea
           v-model="exam.instructions"
@@ -87,7 +86,6 @@
             :toolbar="editorToolbar"
             v-model:content="q.question"
             theme="snow"
-            
             class="bg-white mb-4 rounded shadow p-2"
           />
 
@@ -132,7 +130,6 @@
               :toolbar="editorToolbar"
               v-model:content="q.answer"
               theme="snow"
-              
               class="bg-white rounded shadow p-2"
             />
           </div>
@@ -167,7 +164,6 @@
                 v-model:content="q.question"
                 read-only
                 theme="bubble"
-                
               />
             </p>
             <div v-if="q.type !== 'theory'">
@@ -191,38 +187,29 @@ import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 import { supabase } from '@/supabase'
 import { useAuthStore } from '@/stores/auth'
+import { ElMessage } from 'element-plus'
+
 const authStore = useAuthStore()
 const schoolId = authStore.admin?.school_id
-/* ----------------------------------------------------------
-   DATA: Static lists (you can later fetch dynamically)
----------------------------------------------------------- */
-const examTypes = ['Test', 'Midterm', 'Final Exam']
+
+const components = ['Test', 'Exam', 'Assignment', 'Project', 'Quiz', 'Other']
 const questionTypes = ['objective', 'mcq', 'theory']
 const schoolClasses = ref([])
 const schoolSubjects = ref([])
+const questions = ref([])
+const showPreview = ref(false)
 
-/* ----------------------------------------------------------
-   FORM: Exam metadata
----------------------------------------------------------- */
 const exam = reactive({
   title: '',
-  exam_type: '',
+  component: '',
   class_id: '',
-  subject: '',
+  subject_id: '',
   instructions: '',
   duration: 60,
   exam_date: ''
 })
 
-/* ----------------------------------------------------------
-   STATE: Questions + preview
----------------------------------------------------------- */
-const questions = ref([])
-const showPreview = ref(false)
-
-/* ----------------------------------------------------------
-   QUILL CONFIG: Enable all advanced features
----------------------------------------------------------- */
+/* ───────────── Fetch helpers ───────────── */
 const fetchClasses = async () => {
   const { data, error } = await supabase
     .from('classes')
@@ -236,135 +223,112 @@ const fetchSchoolSubjects = async () => {
     const { data, error } = await supabase.rpc('sp_get_school_subjects', { p_school_id: schoolId })
     if (error) throw error
     schoolSubjects.value = data
-    console.log('school subjects:', schoolSubjects.value)
+    console.log("school subjects:", data)
   } catch (err) {
-    console.log('Error fetching subjects:', err)
-  }
-}
-const quillModules = {
-  toolbar: [
-    [{ header: [1, 2, 3, 4, 5, 6, false] }],
-    [{ font: [] }],
-    [{ size: ['small', false, 'large', 'huge'] }],
-    ['bold', 'italic', 'underline', 'strike'],
-    [{ color: [] }, { background: [] }],
-    [{ script: 'sub' }, { script: 'super' }],
-    [{ list: 'ordered' }, { list: 'bullet' }],
-    [{ indent: '-1' }, { indent: '+1' }],
-    [{ direction: 'rtl' }],
-    [{ align: [] }],
-    ['blockquote', 'code-block'],
-    ['link', 'image', 'video'],
-    ['clean']
-  ],
-  clipboard: { 
-    matchVisual: false 
-  },
-  history: {
-    delay: 1000,
-    maxStack: 50,
-    userOnly: true
+    console.error('Error fetching subjects:', err)
   }
 }
 
-// Simplified toolbar configuration
-const editorToolbar = [
-  [{ header: [1, 2, 3, false] }],
-  ['bold', 'italic', 'underline', 'strike'],
-  [{ color: [] }, { background: [] }],
-  [{ script: 'sub' }, { script: 'super' }],
-  [{ list: 'ordered' }, { list: 'bullet' }],
-  [{ indent: '-1' }, { indent: '+1' }],
-  [{ align: [] }],
-  ['blockquote', 'code-block'],
-  ['link', 'image'],
-  ['clean']
-]
-
-/* ----------------------------------------------------------
-   HANDLERS: Question logic
----------------------------------------------------------- */
+/* ───────────── Question Handlers ───────────── */
 const addQuestion = () => {
   questions.value.push({
     id: uuidv4(),
     type: 'theory',
-    question: '',  // string for HTML/text
+    question: '',
     options: [],
     correct_answer: '',
     marks: 10,
-    answer: ''     // string for suggested answer
+    answer: ''
   })
 }
 
+const removeQuestion = (index) => questions.value.splice(index, 1)
+const addOption = (q) => q.options.push('')
+const removeOption = (q, i) => q.options.splice(i, 1)
+const previewExam = () => (showPreview.value = true)
 
-const removeQuestion = (index) => {
-  questions.value.splice(index, 1)
-}
-
-const addOption = (q) => {
-  q.options.push('')
-}
-
-const removeOption = (q, i) => {
-  q.options.splice(i, 1)
-}
-
-const previewExam = () => {
-  showPreview.value = true
-}
-
-/* ----------------------------------------------------------
-   SAVE: Insert exam with questions to Supabase
----------------------------------------------------------- */
+/* ───────────── Save Exam ───────────── */
 const saveExam = async () => {
+  const debug = true
   try {
-    // Compute total marks
+    console.log('🟢 Starting saveExam()')
     const totalMarks = questions.value.reduce((sum, q) => sum + Number(q.marks || 0), 0)
 
-    // Prepare payload
-   const payload = {
-  id: uuidv4(),
-  title: exam.title,
-  exam_type: exam.exam_type,
-  class_id: exam.class_id,
-  subject: exam.subject,
-  instructions: exam.instructions,
-  duration: exam.duration,
-  total_marks: totalMarks,
-  content: questions.value.map(q => ({
-    ...q,
-    question: q.question, // HTML string
-    answer: q.answer      // HTML string
-  })),
-  exam_date: new Date(),
-  created_at: new Date()
-}
+    const paperPayload = {
+      school_id: schoolId,
+      class_id: exam.class_id || null,
+      subject_id: exam.subject_id || null,
+      title: exam.title?.trim() || null,
+      component: exam.component || null,
+      instructions: exam.instructions || null,
+      duration: exam.duration || null,
+      total_marks: totalMarks,
+      exam_date: new Date()
+    }
 
-    console.log("save exam payload:", payload)
-    const { data, error } = await supabase.from('exams').insert([payload]).select()
+    if (debug) console.log('📝 Paper Payload:', paperPayload)
+    const { data: paper, error: paperError } = await supabase
+      .from('exam_papers')
+      .insert([paperPayload])
+      .select()
+      .single()
 
-    if (error) throw error
+    if (debug) console.log('📄 Paper Response:', paper, 'Error:', paperError)
+    if (paperError) throw paperError
 
-    console.log('✅ Exam saved successfully!:', data)
+    const formattedQuestions = questions.value.map((q, i) => ({
+      exam_paper_id: paper.id,
+      question_number: i + 1,
+      question_content: q.question || '',
+      question_type: q.type || 'theory',
+      options: q.options?.length ? q.options : null,
+      correct_answer: q.correct_answer || null,
+      marks: Number(q.marks || 0),
+      answer: q.answer || null
+    }))
+
+    if (debug) console.log('🧩 Questions Payload:', formattedQuestions)
+    const { data: questionData, error: qError } = await supabase
+      .from('exam_questions')
+      .insert(formattedQuestions)
+      .select()
+
+    if (debug) console.log('📦 Question Response:', questionData, 'Error:', qError)
+    if (qError) throw qError
+
+    ElMessage.success('✅ Exam and questions saved successfully!')
     resetForm()
   } catch (err) {
-    console.log('❌ Failed to save exam:', err)
-    console.log('❌ Failed to save exam.')
+    console.error('❌ Failed to save exam:', err)
+    ElMessage.error(`Failed to save exam: ${err.message || err}`)
   }
 }
 
+const editorToolbar = [
+  ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+  ['blockquote', 'code-block'],
+  [{ list: 'ordered' }, { list: 'bullet' }],
+  [{ header: [1, 2, 3, false] }],
+  [{ align: [] }],
+  ['clean']                                         // remove formatting
+]
+
+/* ───────────── Helpers ───────────── */
 const resetForm = () => {
-  exam.title = ''
-  exam.exam_type = ''
-  exam.class_id = ''
-  exam.subject = ''
-  exam.instructions = ''
-  exam.duration = 60
-  exam.exam_date = ''
+  Object.assign(exam, {
+    title: '',
+    component: '',
+    class_id: '',
+    subject_id: '',
+    instructions: '',
+    duration: 60,
+    exam_date: ''
+  })
   questions.value = []
   showPreview.value = false
 }
 
+/* ───────────── Lifecycle ───────────── */
 onMounted(() => {
   fetchClasses()
   fetchSchoolSubjects()

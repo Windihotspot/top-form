@@ -36,6 +36,12 @@ const sidebarItems = [
     icon: 'mdi-file-document-edit-outline'
 
   },
+   {
+    title: 'Exams Scoring',
+    path: '/exams-scoring',
+    icon: 'mdi-clipboard-check-outline'
+
+  },
   // {
   //   title: 'Exams',
   //   path: '/exams',

@@ -85,14 +85,43 @@ const getExams = async () => {
     loading.value = false
   }
 }
+const subjects = ref([])
+
+const getSubjectsForStudent = async () => {
+  if (!form.student_id) return
+
+  try {
+    const student = students.value.find(s => s.id === form.student_id)
+    if (!student?.class_id) {
+      subjects.value = []
+      return
+    }
+
+    const { data, error } = await supabase
+      .from('class_subjects_view')
+      .select('subject_id, subject_name')
+      .eq('class_id', student.class_id)
+      .eq('school_id', schoolId)
+    console.log("subjects:", data)
+    if (error) throw error
+
+    subjects.value = data.map(item => ({
+      id: item.subject_id,
+      name: item.subject_name
+    }))
+  } catch (err) {
+    ElMessage.error(err.message || 'Failed to load class subjects.')
+  }
+}
+
 
 const getStudents = async () => {
   try {
     const { data, error } = await supabase
       .from('students')
-      .select('*')
+
+      .select('id, full_name, class_id')
       .eq('school_id', schoolId)
-     
 
     if (error) throw error
     students.value = data || []
@@ -105,6 +134,7 @@ const getScores = async () => {
   if (!selectedExamId.value) return
   try {
     loading.value = true
+    await getSubjectsForStudent()
     const { data, error } = await supabase.rpc('get_exam_scores', {
       p_exam_paper_id: selectedExamId.value
     })
@@ -208,7 +238,9 @@ onMounted(async () => {
           size="medium"
           class="normal-case custom-btn hover:bg-green-700 text-white text-sm font-semibold px-6 py-3 rounded-md shadow-md"
         >
-          <span class="bg-white text-blue-600 rounded-full p-1 flex items-center justify-center w-4 h-4 mr-2">
+          <span
+            class="bg-white text-blue-600 rounded-full p-1 flex items-center justify-center w-4 h-4 mr-2"
+          >
             <i class="fa-solid fa-plus text-sm text-[#15803d]"></i>
           </span>
           Add New Score
@@ -239,11 +271,19 @@ onMounted(async () => {
         <table class="min-w-full divide-y divide-gray-200">
           <thead class="bg-gray-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Student
+              </th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Subject
+              </th>
               <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Score</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Remarks</th>
-              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actions</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Remarks
+              </th>
+              <th class="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
@@ -283,20 +323,24 @@ onMounted(async () => {
                 color="#15803d"
                 v-model="form.student_id"
                 :items="students"
+                item-title="full_name"
                 item-value="id"
-                item-title="first_name"
                 label="Select Student"
                 :rules="[(v) => !!v || 'Student is required']"
                 required
+                  @update:modelValue="getSubjectsForStudent"
               />
 
-              <v-text-field
+              <v-select
                 class="mt-4"
                 variant="outlined"
                 color="#15803d"
                 v-model="form.subject_id"
-                label="Subject ID"
-                :rules="[(v) => !!v || 'Subject ID is required']"
+                :items="subjects"
+                item-title="name"
+                item-value="id"
+                label="Select Subject"
+                :rules="[(v) => !!v || 'Subject is required']"
                 required
               />
 
@@ -307,7 +351,7 @@ onMounted(async () => {
                 v-model="form.score"
                 label="Score"
                 type="number"
-                :rules="[(v) => v !== '' && v >= 0 || 'Enter a valid score']"
+                :rules="[(v) => (v !== '' && v >= 0) || 'Enter a valid score']"
                 required
               />
 
@@ -324,7 +368,12 @@ onMounted(async () => {
 
           <v-card-actions class="justify-end">
             <v-btn text @click="closeDialog">Cancel</v-btn>
-            <v-btn color="success" class="text-white" :disabled="!isValid || loading" @click="submitForm">
+            <v-btn
+              color="success"
+              class="text-white"
+              :disabled="!isValid || loading"
+              @click="submitForm"
+            >
               {{ dialogMode === 'add' ? 'Save' : 'Update' }}
             </v-btn>
           </v-card-actions>
@@ -337,7 +386,8 @@ onMounted(async () => {
           <v-card-title class="text-lg font-bold">Confirm Delete</v-card-title>
           <v-card-text>
             Are you sure you want to delete this score for
-            <strong>{{ scoreToDelete?.student_name }}</strong>?
+            <strong>{{ scoreToDelete?.student_name }}</strong
+            >?
           </v-card-text>
           <v-card-actions class="justify-end">
             <v-btn text @click="showDeleteDialog = false">Cancel</v-btn>

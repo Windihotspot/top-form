@@ -23,12 +23,19 @@ const data = ref({
   students: [],
   teachers: [],
   employees: [],
-  revenue: [],
   expenses: [],
   attendance: [],
   earnings: [],
   notifications: []
 })
+
+const kpis = ref({
+  total_fees_assigned: 0,
+  total_collected: 0,
+  pending_fees: 0,
+  overdue_fees: 0
+})
+
 
 /**
  * STUDENTS
@@ -62,7 +69,7 @@ const loadStudents = async () => {
     }))
 
     mappedStudents.sort((a, b) => b.marks_percent - a.marks_percent)
-
+    
     data.value.students = mappedStudents
   } catch (err) {
     console.error('❌ Error loading students:', err.message)
@@ -109,20 +116,20 @@ const loadEmployees = async () => {
 /**
  * REVENUE
  */
-const loadRevenue = async () => {
-  try {
-    const { data: revenue, error } = await supabase
-      .from('revenue')
-      .select('*')
-      .eq('school_id', authStore.admin?.school_id)
+// const loadRevenue = async () => {
+//   try {
+//     const { data: revenue, error } = await supabase
+//       .from('revenue')
+//       .select('*')
+//       .eq('school_id', authStore.admin?.school_id)
 
-    if (error) throw error
-    data.value.revenue = revenue
-  } catch (err) {
-    console.error('❌ Error loading revenue:', err.message)
-    data.value.revenue = []
-  }
-}
+//     if (error) throw error
+//     data.value.revenue = revenue
+//   } catch (err) {
+//     console.error('❌ Error loading revenue:', err.message)
+//     data.value.revenue = []
+//   }
+// }
 
 /**
  * EXPENSES

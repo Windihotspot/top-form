@@ -15,6 +15,7 @@ import TransportView from '@/views/TransportView.vue'
 import RevenueView from '@/views/RevenueView.vue'
 import FeesView from '@/views/FeesView.vue'
 import ExamsBuilder from '@/views/ExamsBuilder.vue'
+import ExamsScoring from '@/views/ExamsScoring.vue'
 
 
 const router = createRouter({
@@ -99,6 +100,11 @@ const router = createRouter({
       path: '/exams-builder',
       name: 'exams-builder',
       component: ExamsBuilder
+    },
+    {
+      path: '/exams-scoring',
+      name: 'exams-scoring',
+      component: ExamsScoring
     },
     
   ]

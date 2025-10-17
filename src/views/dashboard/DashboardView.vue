@@ -7,7 +7,7 @@ import AttendanceChart from '@/components/AttendanceChart.vue'
 import EarningsChart from '@/components/EarningsChart.vue'
 import { supabase } from '@/supabase'
 import { useAuthStore } from '@/stores/auth'
-
+import moment from 'moment'
 const authStore = useAuthStore()
 const notifications = ref([])
 const loading = ref(true)
@@ -18,6 +18,17 @@ const studentsHeaders = [
   { title: 'Marks %', key: 'marks_percent' },
   { title: 'Rank', key: 'rank' }
 ]
+const formatCurrency = (value) =>
+  new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN' }).format(value)
+const formatDate = (date) => moment(date).format('DD MMM YYYY')
+const kpis = ref({
+  total_fees_assigned: 0,
+  total_collected: 0,
+  pending_fees: 0,
+  overdue_fees: 0
+})
+
+
 
 const data = ref({
   students: [],
@@ -130,6 +141,21 @@ const loadEmployees = async () => {
 //     data.value.revenue = []
 //   }
 // }
+
+const getKPIs = async () => {
+  const { data, error: err } = await supabase.rpc('get_payments_summary', {
+    p_school_id: schoolId
+  })
+
+  if (err) {
+    
+    return
+  }
+  if (data) {
+    kpis.value = data
+    console.log('payments kpis:', data)
+  }
+}
 
 /**
  * EXPENSES
@@ -251,6 +277,7 @@ const fetchAll = async () => {
   loading.value = true
   try {
     await Promise.all([
+      getKPIs(),
       loadStudents(),
       loadTeachers(),
       loadEmployees(),
@@ -322,7 +349,7 @@ onMounted(fetchAll)
           iconClass="fas fa-naira-sign"
           iconBgClass=" text-green-500"
           title="Total Revenue"
-          :value="totalRevenue"
+            :value="formatCurrency(kpis.total_collected)"
           :index="3"
         />
       </div>

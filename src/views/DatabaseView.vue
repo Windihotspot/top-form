@@ -16,7 +16,7 @@ const employeeFormRef = ref(null)
 const studentFormValid = ref(false)
 const teacherFormValid = ref(false)
 const employeeFormValid = ref(false)
-
+const classList = ref([])
 const schoolSubjects = ref([])
 const schoolClasses = ref([])
 
@@ -147,26 +147,57 @@ const subjectData = ref({
 
 // Submit new school subject
 const submitSchoolSubject = async () => {
-  if (!schoolSubjectFormValid.value) return
+  // ✅ Check if form is valid
+  if (!schoolSubjectFormValid.value) {
+    ElMessage.warning('Please fill out all required fields correctly.')
+    return
+  }
 
-  const { error } = await supabase.rpc('sp_add_school_subject', {
+  // ✅ Check for required fields manually (in case the form flag misses something)
+  if (
+    !schoolId ||
+    !subjectData.value.subject_id ||
+    !subjectData.value.class_id ||
+    !subjectData.value.custom_name
+  ) {
+    console.warn('Missing required data:', {
+      schoolId,
+      subjectData: subjectData.value
+    })
+    ElMessage.warning('Please ensure all fields are filled (School, Subject, Class, and Name).')
+    return
+  }
+
+  // ✅ Prepare payload
+  const payload = {
     p_school_id: schoolId,
     p_subject_id: subjectData.value.subject_id,
-    p_custom_name: subjectData.value.custom_name,
-    p_custom_code: subjectData.value.custom_code
-  })
-
-  if (error) {
-    ElMessage.error(`Error adding subject: ${error.message}`)
-    console.log('error adding subjects:', error)
-  } else {
-    closeModal()
-    ElMessage.success('Subject added successfully!')
-    subjectFormRef.value.reset()
-    // Optionally refresh the school subjects list
-    fetchSchoolSubjects()
+    p_custom_name: subjectData.value.custom_name?.trim(),
+    p_custom_code: subjectData.value.custom_code?.trim() || null,
+     p_class_ids: [subjectData.value.class_id]
   }
+
+  // ✅ Log payload for debugging
+  console.log('🧾 Submitting subject payload to RPC:', payload)
+
+  // ✅ RPC call
+  const { data, error } = await supabase.rpc('sp_add_school_subject', payload)
+
+  // ✅ Handle response
+  if (error) {
+    console.error('❌ Error adding subject via RPC:', error)
+    ElMessage.error(`Error adding subject: ${error.message}`)
+    return
+  }
+
+  // ✅ Success
+  console.log('✅ Subject added successfully:', data)
+  ElMessage.success('Subject added successfully!')
+  subjectFormRef.value?.reset()
+  closeModal()
+  fetchSchoolSubjects()
 }
+
 
 // Fetch all subjects for the school via RPC
 // ======================
@@ -303,7 +334,7 @@ const submitStudent = async () => {
       avatar_url: null // Skipping upload for now
     }
 
-    console.log('📦 Payload to insert:', payload)
+    console.log('📦Submit student Payload:', payload)
 
     // 3️⃣ Show uploading message
     ElMessage({
@@ -717,21 +748,36 @@ const loadStudents = async () => {
   try {
     const { data: students, error } = await supabase
       .from('students')
-      .select('*')
+      .select(`
+        *,
+        class:classes(name, id),
+        school:schools(name, id)
+      `)
       .eq('school_id', authStore.admin?.school_id)
 
     if (error) throw error
 
     const mappedStudents = students.map((s) => ({
-      ...s,
-      class_name: mapClassIdToName(s.class_id),
-      marks_percent: s.marks_percent || Math.floor(Math.random() * 100),
-      rank: s.rank || '-'
+      id: s.id,
+      full_name: s.full_name,
+      email: s.email,
+      phone: s.phone,
+      gender: s.gender,
+      date_of_birth: s.date_of_birth,
+      address: s.address,
+      guardian_name: s.guardian_name,
+      guardian_contact: s.guardian_contact,
+      avatar_url: s.avatar_url,
+      class_name: s.class?.name || 'N/A',
+      school_name: s.school?.name || 'N/A',
+      marks_percent: s.marks_percent ?? Math.floor(Math.random() * 100),
+      rank: s.rank ?? '-'
     }))
 
     mappedStudents.sort((a, b) => b.marks_percent - a.marks_percent)
 
     data.value.students = mappedStudents
+    console.log("mapped students:", mappedStudents)
   } catch (err) {
     console.error('❌ Error loading students:', err.message)
     data.value.students = []
@@ -772,6 +818,7 @@ const fetchAll = async () => {
   loading.value = true
   try {
     await Promise.all([
+      fetchClasses(),
       loadTeachers(),
       loadStudents(),
       fetchExpenses(),
@@ -799,8 +846,7 @@ const tabs = [
   { label: 'Teachers', value: 'teachers' },
   { label: 'Employees', value: 'employees' },
   { label: 'Subjects', value: 'subjects' },
-  { label: 'Classes', value: 'classes' },
-  
+  { label: 'Classes', value: 'classes' }
 ]
 
 const resetFormAndClose = () => {
@@ -819,6 +865,18 @@ const resetFormAndClose = () => {
   }
   avatarPreview.value = null
   closeModal()
+}
+
+const fetchClasses = async () => {
+  const { data, error } = await supabase
+    .from('classes')
+    .select('id, name')
+    .eq('school_id', schoolId)
+  if (error) {
+    console.error('Error loading classes:', error)
+  } else {
+    classList.value = data
+  }
 }
 
 onMounted(fetchAll)
@@ -1294,7 +1352,6 @@ watch(tab, (newTab) => {
           </v-tabs-window-item>
           <v-tabs-window-item value="subjects">
             <section>
-             
               <div class="flex flex-wrap gap-2">
                 <v-chip
                   v-for="sub in schoolSubjects"
@@ -1310,7 +1367,6 @@ watch(tab, (newTab) => {
           </v-tabs-window-item>
           <v-tabs-window-item value="classes">
             <section class="mb-8">
-              
               <div class="flex flex-wrap gap-2">
                 <v-chip
                   v-for="cls in schoolClasses"
@@ -1890,6 +1946,17 @@ watch(tab, (newTab) => {
                   variant="outlined"
                   density="comfortable"
                 />
+
+                <v-select
+                  v-model="subjectData.class_id"
+                  :items="classList"
+                  :color="'#15803d'"
+                  variant="outlined"
+                  item-title="name"
+                  item-value="id"
+                  label="Select Class"
+                  class=""
+                ></v-select>
 
                 <v-text-field
                   v-model="subjectData.custom_code"

@@ -67,26 +67,42 @@ const loadStudents = async () => {
   try {
     const { data: students, error } = await supabase
       .from('students')
-      .select('*')
+      .select(`
+        *,
+        class:classes(name, id),
+        school:schools(name, id)
+      `)
       .eq('school_id', authStore.admin?.school_id)
 
     if (error) throw error
 
     const mappedStudents = students.map((s) => ({
-      ...s,
-      class_name: mapClassIdToName(s.class_id),
-      marks_percent: s.marks_percent || Math.floor(Math.random() * 100),
-      rank: s.rank || '-'
+      id: s.id,
+      full_name: s.full_name,
+      email: s.email,
+      phone: s.phone,
+      gender: s.gender,
+      date_of_birth: s.date_of_birth,
+      address: s.address,
+      guardian_name: s.guardian_name,
+      guardian_contact: s.guardian_contact,
+      avatar_url: s.avatar_url,
+      class_name: s.class?.name || 'N/A',
+      school_name: s.school?.name || 'N/A',
+      marks_percent: s.marks_percent ?? Math.floor(Math.random() * 100),
+      rank: s.rank ?? '-'
     }))
 
     mappedStudents.sort((a, b) => b.marks_percent - a.marks_percent)
     
     data.value.students = mappedStudents
+    console.log("mapped students:", mappedStudents)
   } catch (err) {
     console.error('❌ Error loading students:', err.message)
     data.value.students = []
   }
 }
+
 
 /**
  * TEACHERS

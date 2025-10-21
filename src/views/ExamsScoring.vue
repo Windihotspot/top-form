@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import MainLayout from '@/layouts/full/MainLayout.vue'
 import { supabase } from '@/supabase'
 import { useAuthStore } from '@/stores/auth'
@@ -24,6 +24,7 @@ const showDeleteDialog = ref(false)
 
 // ---- Form ----
 const form = reactive({
+  exam_paper_id: '',
   student_id: '',
   subject_id: '',
   score: '',
@@ -52,7 +53,7 @@ const closeDialog = () => {
 const openAddDialog = () => {
   dialogMode.value = 'add'
   resetForm()
-  
+
   showDialog.value = true
 }
 
@@ -130,6 +131,33 @@ const getStudents = async () => {
   }
 }
 
+const subjectExamPapers = ref([])
+
+const getExamPapersForSubject = async (subjectId) => {
+  if (!subjectId) {
+    subjectExamPapers.value = []
+    return
+  }
+
+  try {
+    loading.value = true
+    const { data, error } = await supabase
+      .from('exam_papers')
+      .select('id, title, exam_date')
+      .eq('subject_id', subjectId)
+      .eq('school_id', schoolId)
+      .order('exam_date', { ascending: false })
+
+    if (error) throw error
+    subjectExamPapers.value = data || []
+    console.log('exam papers:', data)
+  } catch (err) {
+    ElMessage.error(err.message || 'Failed to fetch exam papers.')
+  } finally {
+    loading.value = false
+  }
+}
+
 // ---- State ----
 const selectedSubjectId = ref(null)
 
@@ -181,8 +209,8 @@ const getScores = async () => {
 // ---- CRUD ----
 const addScore = async () => {
   const payload = {
-    p_school_id: authStore.admin.school_id, // ✅ added
-    p_exam_paper_id: selectedExamId.value,
+    p_school_id: schoolId, // ✅ added
+    p_exam_paper_id: form.exam_paper_id,
     p_student_id: form.student_id,
     p_subject_id: form.subject_id,
     p_score: form.score,
@@ -249,8 +277,6 @@ const updateScore = async () => {
   }
 }
 
-
-
 const deleteScore = async (id) => {
   await supabase.rpc('delete_exam_score', { p_id: id })
 }
@@ -297,6 +323,14 @@ const performDelete = async () => {
 
 // ---- Formatters ----
 const formatDate = (date) => moment(date).format('DD MMM YYYY')
+
+watch(
+  () => form.subject_id,
+  async (newVal) => {
+    if (newVal) await getExamPapersForSubject()
+  }
+)
+
 
 // ---- Init ----
 onMounted(async () => {
@@ -415,31 +449,43 @@ onMounted(async () => {
               />
 
               <!-- Subject Dropdown (readonly when editing) -->
-<v-select
-  v-if="dialogMode === 'add'"
-  class="mt-4"
-  variant="outlined"
-  color="#15803d"
-  v-model="form.subject_id"
-  :items="subjects"
-  item-title="name"
-  item-value="id"
-  label="Select Subject"
-  :rules="[(v) => !!v || 'Subject is required']"
-  required
-/>
+              <v-select
+                v-if="dialogMode === 'add'"
+                class="mt-4"
+                variant="outlined"
+                color="#15803d"
+                v-model="form.subject_id"
+                :items="subjects"
+                item-title="name"
+                item-value="id"
+                label="Select Subject"
+                :rules="[(v) => !!v || 'Subject is required']"
+                required
+              />
 
-<!-- Readonly version for edit mode -->
-<v-text-field
-  v-else
-  class="mt-4"
-  variant="outlined"
-  color="#15803d"
-  :value="subjects.find((s) => s.id === form.subject_id)?.name || '—'"
-  label="Subject"
-  readonly
-/>
+              <!-- Readonly version for edit mode -->
+              <v-text-field
+                v-else
+                class="mt-4"
+                variant="outlined"
+                color="#15803d"
+                :value="subjects.find((s) => s.id === form.subject_id)?.name || '—'"
+                label="Subject"
+                readonly
+              />
 
+              <v-select
+                class="mt-4"
+                variant="outlined"
+                color="#15803d"
+                v-model="form.exam_paper_id"
+                :items="subjectExamPapers"
+                item-title="title"
+                item-value="id"
+                label="Select Exam Paper"
+                :rules="[(v) => !!v || 'Exam paper is required']"
+                required
+              />
 
               <v-text-field
                 class="mt-4"

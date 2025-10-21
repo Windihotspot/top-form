@@ -52,6 +52,7 @@ const closeDialog = () => {
 const openAddDialog = () => {
   dialogMode.value = 'add'
   resetForm()
+  
   showDialog.value = true
 }
 
@@ -60,9 +61,9 @@ const openEditDialog = (score) => {
   selectedScoreId.value = score.id
   Object.assign(form, {
     student_id: score.student_id,
-    subject_id: score.subject_id,
     score: score.score,
-    remarks: score.remarks
+    remarks: score.remarks,
+    subject_id: selectedSubjectId.value // keep subject consistent
   })
   showDialog.value = true
 }
@@ -91,7 +92,7 @@ const getSubjectsForStudent = async () => {
   if (!form.student_id) return
 
   try {
-    const student = students.value.find(s => s.id === form.student_id)
+    const student = students.value.find((s) => s.id === form.student_id)
     if (!student?.class_id) {
       subjects.value = []
       return
@@ -102,10 +103,10 @@ const getSubjectsForStudent = async () => {
       .select('subject_id, subject_name')
       .eq('class_id', student.class_id)
       .eq('school_id', schoolId)
-    console.log("subjects:", data)
+    console.log('subjects:', data)
     if (error) throw error
 
-    subjects.value = data.map(item => ({
+    subjects.value = data.map((item) => ({
       id: item.subject_id,
       name: item.subject_name
     }))
@@ -113,7 +114,6 @@ const getSubjectsForStudent = async () => {
     ElMessage.error(err.message || 'Failed to load class subjects.')
   }
 }
-
 
 const getStudents = async () => {
   try {
@@ -130,18 +130,48 @@ const getStudents = async () => {
   }
 }
 
-const getScores = async () => {
-  if (!selectedExamId.value) return
+// ---- State ----
+const selectedSubjectId = ref(null)
+
+// ---- Fetch Subjects ----
+const getSubjects = async () => {
   try {
     loading.value = true
-    await getSubjectsForStudent()
-    const { data, error } = await supabase.rpc('get_exam_scores', {
-      p_exam_paper_id: selectedExamId.value
-    })
+    const { data, error } = await supabase
+      .from('school_subjects')
+      .select('id, custom_name, subjects(name)')
+      .eq('school_id', schoolId)
+      .order('custom_name', { ascending: true })
+
+    if (error) throw error
+
+    subjects.value = data.map((item) => ({
+      id: item.id, // school_subjects.id
+      name: item.custom_name || item.subjects.name
+    }))
+  } catch (err) {
+    ElMessage.error(err.message || 'Failed to fetch subjects.')
+  } finally {
+    loading.value = false
+  }
+}
+
+// ---- Fetch Scores for Selected Subject ----
+const getScores = async () => {
+  if (!selectedSubjectId.value) return
+  try {
+    loading.value = true
+    const { data, error } = await supabase
+      .from('subject_scores_view') // <— new view
+      .select('*')
+      .eq('school_id', schoolId)
+      .eq('subject_id', selectedSubjectId.value)
+      .order('full_name')
+
     if (error) throw error
     scores.value = data || []
   } catch (err) {
-    ElMessage.error(err.message || 'Failed to fetch scores.')
+    ElMessage.error(err.message || 'Failed to fetch subject scores.')
     scores.value = []
   } finally {
     loading.value = false
@@ -150,24 +180,76 @@ const getScores = async () => {
 
 // ---- CRUD ----
 const addScore = async () => {
-  await supabase.rpc('add_or_update_exam_score', {
+  const payload = {
+    p_school_id: authStore.admin.school_id, // ✅ added
     p_exam_paper_id: selectedExamId.value,
     p_student_id: form.student_id,
     p_subject_id: form.subject_id,
     p_score: form.score,
     p_remarks: form.remarks
-  })
+  }
+
+  console.log('🟢 [addScore] Sending payload:', payload)
+
+  try {
+    const { data, error } = await supabase.rpc('add_or_update_exam_score', payload)
+
+    if (error) {
+      console.error('🔴 [addScore] Error:', error)
+      ElNotification({
+        title: 'Error Adding Score',
+        message: error.message,
+        type: 'error'
+      })
+    } else {
+      console.log('✅ [addScore] Response data:', data)
+      ElNotification({
+        title: 'Success',
+        message: data?.message || 'Score added successfully!',
+        type: 'success'
+      })
+    }
+  } catch (err) {
+    console.error('⚠️ [addScore] Unexpected exception:', err)
+  }
 }
 
 const updateScore = async () => {
-  await supabase.rpc('add_or_update_exam_score', {
+  const payload = {
+    p_school_id: authStore.admin.school_id, // ✅ added
     p_exam_paper_id: selectedExamId.value,
     p_student_id: form.student_id,
     p_subject_id: form.subject_id,
     p_score: form.score,
     p_remarks: form.remarks
-  })
+  }
+
+  console.log('🟣 [updateScore] Sending payload:', payload)
+
+  try {
+    const { data, error } = await supabase.rpc('add_or_update_exam_score', payload)
+
+    if (error) {
+      console.error('🔴 [updateScore] Error:', error)
+      ElNotification({
+        title: 'Error Updating Score',
+        message: error.message,
+        type: 'error'
+      })
+    } else {
+      console.log('✅ [updateScore] Response data:', data)
+      ElNotification({
+        title: 'Success',
+        message: data?.message || 'Score updated successfully!',
+        type: 'success'
+      })
+    }
+  } catch (err) {
+    console.error('⚠️ [updateScore] Unexpected exception:', err)
+  }
 }
+
+
 
 const deleteScore = async (id) => {
   await supabase.rpc('delete_exam_score', { p_id: id })
@@ -218,6 +300,7 @@ const formatDate = (date) => moment(date).format('DD MMM YYYY')
 
 // ---- Init ----
 onMounted(async () => {
+  await getSubjects()
   await getExams()
   await getStudents()
 })
@@ -250,11 +333,11 @@ onMounted(async () => {
       <!-- Exam Filter -->
       <div class="bg-white p-4 rounded shadow mb-4 flex items-center gap-4">
         <v-select
-          v-model="selectedExamId"
-          :items="exams"
-          item-title="title"
+          v-model="selectedSubjectId"
+          :items="subjects"
+          item-title="name"
           item-value="id"
-          label="Select Exam Paper"
+          label="Select Subject"
           variant="outlined"
           color="#15803d"
           class="w-72"
@@ -288,7 +371,7 @@ onMounted(async () => {
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             <tr v-for="score in scores" :key="score.id">
-              <td class="px-6 py-4 whitespace-nowrap">{{ score.student_name }}</td>
+              <td class="px-6 py-4 whitespace-nowrap">{{ score.full_name }}</td>
               <td class="px-6 py-4 whitespace-nowrap">{{ score.subject_name }}</td>
               <td class="px-6 py-4 whitespace-nowrap">{{ score.score }}</td>
               <td class="px-6 py-4 whitespace-nowrap">{{ score.remarks }}</td>
@@ -328,21 +411,35 @@ onMounted(async () => {
                 label="Select Student"
                 :rules="[(v) => !!v || 'Student is required']"
                 required
-                  @update:modelValue="getSubjectsForStudent"
+                @update:modelValue="getSubjectsForStudent"
               />
 
-              <v-select
-                class="mt-4"
-                variant="outlined"
-                color="#15803d"
-                v-model="form.subject_id"
-                :items="subjects"
-                item-title="name"
-                item-value="id"
-                label="Select Subject"
-                :rules="[(v) => !!v || 'Subject is required']"
-                required
-              />
+              <!-- Subject Dropdown (readonly when editing) -->
+<v-select
+  v-if="dialogMode === 'add'"
+  class="mt-4"
+  variant="outlined"
+  color="#15803d"
+  v-model="form.subject_id"
+  :items="subjects"
+  item-title="name"
+  item-value="id"
+  label="Select Subject"
+  :rules="[(v) => !!v || 'Subject is required']"
+  required
+/>
+
+<!-- Readonly version for edit mode -->
+<v-text-field
+  v-else
+  class="mt-4"
+  variant="outlined"
+  color="#15803d"
+  :value="subjects.find((s) => s.id === form.subject_id)?.name || '—'"
+  label="Subject"
+  readonly
+/>
+
 
               <v-text-field
                 class="mt-4"
@@ -386,7 +483,7 @@ onMounted(async () => {
           <v-card-title class="text-lg font-bold">Confirm Delete</v-card-title>
           <v-card-text>
             Are you sure you want to delete this score for
-            <strong>{{ scoreToDelete?.student_name }}</strong
+            <strong>{{ scoreToDelete?.student_full_name }}</strong
             >?
           </v-card-text>
           <v-card-actions class="justify-end">

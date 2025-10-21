@@ -40,28 +40,11 @@ const data = ref({
   notifications: []
 })
 
-const kpis = ref({
-  total_fees_assigned: 0,
-  total_collected: 0,
-  pending_fees: 0,
-  overdue_fees: 0
-})
 
 
 /**
  * STUDENTS
  */
-const classMap = {
-  '54c2929a-de11-4829-87ab-5ccd2fdf8998': 'JSS1',
-  '2ab9da37-18d7-4b21-b089-c907c9fee25b': 'JSS2',
-  '7b614ee8-5f72-427b-bd78-eeef84d2347a': 'JSS3',
-  'e2679e5e-5fe9-44c1-bf2b-4b6aa0f82425': 'SSS1',
-  '608b08db-906d-4f11-86dc-09c6a0d13ff5': 'SSS2',
-  'b316c14c-8877-42b5-b0c6-c4370cc6e3a3': 'SSS3'
-}
-const mapClassIdToName = (classId) => {
-  return classMap[classId] || 'Unknown'
-}
 
 const loadStudents = async () => {
   try {
@@ -297,7 +280,6 @@ const fetchAll = async () => {
       loadStudents(),
       loadTeachers(),
       loadEmployees(),
-      loadRevenue(),
       loadExpenses(),
    
       // loadAttendanceSummary(),

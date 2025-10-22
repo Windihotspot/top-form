@@ -16,6 +16,7 @@ import RevenueView from '@/views/RevenueView.vue'
 import FeesView from '@/views/FeesView.vue'
 import ExamsBuilder from '@/views/ExamsBuilder.vue'
 import ExamsScoring from '@/views/ExamsScoring.vue'
+import InvoiceGenerate from '@/views/InvoiceGenerate.vue'
 
 
 const router = createRouter({
@@ -105,6 +106,11 @@ const router = createRouter({
       path: '/exams-scoring',
       name: 'exams-scoring',
       component: ExamsScoring
+    },
+    {
+      path: '/invoice-generate',
+      name: 'invoice-generate',
+      component: InvoiceGenerate
     },
     
   ]

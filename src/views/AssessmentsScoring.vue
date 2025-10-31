@@ -346,7 +346,7 @@ onMounted(async () => {
       <!-- Header -->
       <div class="bg-white flex rounded shadow justify-between items-center border-b p-4 mb-4">
         <div>
-          <h1 class="text-xl font-bold mt-4">Exam Scoring</h1>
+          <h1 class="text-md font-bold mt-4">Exam Scoring</h1>
           <p class="text-gray-500 text-sm mt-1">Manually enter and manage students' exam scores</p>
         </div>
 

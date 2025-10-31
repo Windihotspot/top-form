@@ -31,14 +31,14 @@ const sidebarItems = [
   },
 
    {
-    title: 'Exams Builder',
-    path: '/exams-builder',
+    title: 'Assessments',
+    path: '/assessments',
     icon: 'mdi-file-document-edit-outline'
 
   },
    {
-    title: 'Exams Scoring',
-    path: '/exams-scoring',
+    title: 'Scoring',
+    path: '/scoring',
     icon: 'mdi-clipboard-check-outline'
 
   },

@@ -1,20 +1,25 @@
 <template>
   <MainLayout>
     <div class="p-6 space-y-6">
-      <h1 class="text-2xl font-bold mb-4">Create Exam / Test</h1>
+      <h1 class="text-md font-bold mb-4">Create Assessments</h1>
 
-      <!-- Exam Meta -->
+      <!-- assessment Meta -->
       <v-card class="pa-4 space-y-4">
-        <v-text-field v-model="exam.title" label="Exam Title" variant="outlined" color="#15803d" />
+        <v-text-field
+          v-model="assessment.title"
+          label="assessment Title"
+          variant="outlined"
+          color="#15803d"
+        />
         <v-select
-          v-model="exam.component"
+          v-model="assessment.component"
           :items="components"
           label="Assessment Type"
           variant="outlined"
           color="#15803d"
         />
         <v-select
-          v-model="exam.class_id"
+          v-model="assessment.class_id"
           :items="schoolClasses"
           item-title="name"
           item-value="id"
@@ -23,28 +28,67 @@
           color="#15803d"
         />
         <v-select
-  v-model="exam.subject_id"
-  :items="schoolSubjects"
-  item-title="subject_name"
-  item-value="school_subject_id"
-  label="Subject"
-  variant="outlined"
-  color="#15803d"
-/>
+          v-model="assessment.subject_id"
+          :items="schoolSubjects"
+          item-title="subject_name"
+          item-value="school_subject_id"
+          label="Subject"
+          variant="outlined"
+          color="#15803d"
+        />
 
         <v-textarea
-          v-model="exam.instructions"
+          v-model="assessment.instructions"
           label="Instructions"
           variant="outlined"
           color="#15803d"
         />
         <v-text-field
-          v-model="exam.duration"
+          v-model="assessment.duration"
           label="Duration (minutes)"
           type="number"
           variant="outlined"
           color="#15803d"
         />
+
+        <div class="flex flex-col sm:flex-row gap-4">
+  <!-- Date Picker -->
+  <v-menu v-model="showDatePicker" transition="scale-transition" offset-y>
+    <template #activator="{ props }">
+      <v-text-field
+        v-bind="props"
+        v-model="formattedDate"
+        label="Assessment Date"
+        variant="outlined"
+        density="compact"
+        color="#15803d"
+        prepend-inner-icon="mdi-calendar"
+        readonly
+      />
+    </template>
+
+    <v-date-picker
+      v-model="dateOnly"
+      color="#15803d"
+      elevation="4"
+      show-adjacent-months
+    />
+  </v-menu>
+
+  <!-- Time Picker -->
+<!-- Time Picker (native input) -->
+<v-text-field
+  v-model="timeOnly"
+  label="Assessment Time"
+  type="time"
+  variant="outlined"
+  density="compact"
+  color="#15803d"
+
+/>
+
+</div>
+
       </v-card>
 
       <!-- Questions Section -->
@@ -147,25 +191,19 @@
       </div>
 
       <div class="flex justify-end gap-4">
-        <v-btn variant="outlined" color="grey" @click="previewExam">Preview</v-btn>
-        <v-btn color="success" @click="saveExam">Save Exam</v-btn>
+        <v-btn variant="outlined" color="grey" @click="previewAssessment">Preview</v-btn>
+        <v-btn color="success" @click="saveAssessment">Save assessment</v-btn>
       </div>
 
       <!-- Preview Dialog -->
-      <v-dialog v-model="showPreview" max-width="800px">
+      <v-dialog v-model="showPreview" max-width="800px" persistent>
         <v-card class="p-6">
-          <h2 class="text-xl font-bold mb-2">{{ exam.title }}</h2>
-          <p class="text-gray-600 mb-4">{{ exam.instructions }}</p>
+          <h2 class="text-xl font-bold mb-2">{{ assessment.title }}</h2>
+          <p class="text-gray-600 mb-4">{{ assessment.instructions }}</p>
+
           <div v-for="(q, index) in questions" :key="index" class="mb-6">
-            <p class="font-semibold mb-2">
-              Q{{ index + 1 }}.
-              <QuillEditor
-                :toolbar="editorToolbar"
-                v-model:content="q.question"
-                read-only
-                theme="bubble"
-              />
-            </p>
+            <p class="font-semibold mb-2">Q{{ index + 1 }}.</p>
+            <QuillEditor :content="q.question" read-only theme="bubble" />
             <div v-if="q.type !== 'theory'">
               <ul class="list-disc pl-6">
                 <li v-for="(opt, i) in q.options" :key="i">{{ opt }}</li>
@@ -181,32 +219,58 @@
 
 <script setup>
 import MainLayout from '@/layouts/full/MainLayout.vue'
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted,watch, computed } from 'vue'
 import { v4 as uuidv4 } from 'uuid'
 import { QuillEditor } from '@vueup/vue-quill'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 import { supabase } from '@/supabase'
 import { useAuthStore } from '@/stores/auth'
 import { ElMessage } from 'element-plus'
+import moment from 'moment'
 
+const showDatePicker = ref(false)
+
+const dateOnly = ref(null)
+const timeOnly = ref(null)
+
+// Formatted display values
+const formattedDate = computed(() =>
+  dateOnly.value ? moment(dateOnly.value).format('DD/MM/YYYY') : ''
+)
+
+// Automatically combine date + time into assessment.assessment_date
+watch([dateOnly, timeOnly], ([date, time]) => {
+  if (date && time) {
+    const combined = moment(
+      `${moment(date).format('YYYY-MM-DD')} ${time}`,
+      'YYYY-MM-DD HH:mm'
+    ).toISOString()
+    assessment.assessment_date = combined
+  }
+})
 const authStore = useAuthStore()
 const schoolId = authStore.admin?.school_id
 
-const components = ['Test', 'Exam', 'Assignment', 'Project', 'Quiz', 'Other']
+const components = ref([])
+const fetchComponents = async () => {
+  const { data, error } = await supabase.from('assessment_types').select('name')
+  if (!error) components.value = data.map((t) => t.name)
+}
+
 const questionTypes = ['objective', 'mcq', 'theory']
 const schoolClasses = ref([])
 const schoolSubjects = ref([])
 const questions = ref([])
 const showPreview = ref(false)
 
-const exam = reactive({
+const assessment = reactive({
   title: '',
   component: '',
   class_id: '',
   subject_id: '',
   instructions: '',
   duration: 60,
-  exam_date: ''
+  assessment_date: ''
 })
 
 /* ───────────── Fetch helpers ───────────── */
@@ -223,7 +287,7 @@ const fetchSchoolSubjects = async () => {
     const { data, error } = await supabase.rpc('sp_get_school_subjects', { p_school_id: schoolId })
     if (error) throw error
     schoolSubjects.value = data
-    console.log("school subjects:", data)
+    console.log('school subjects:', data)
   } catch (err) {
     console.error('Error fetching subjects:', err)
   }
@@ -245,84 +309,68 @@ const addQuestion = () => {
 const removeQuestion = (index) => questions.value.splice(index, 1)
 const addOption = (q) => q.options.push('')
 const removeOption = (q, i) => q.options.splice(i, 1)
-const previewExam = () => (showPreview.value = true)
+const previewAssessment = () => (showPreview.value = true)
 
-/* ───────────── Save Exam ───────────── */
-const saveExam = async () => {
-  const debug = true
+/* ───────────── Save assessment ───────────── */
+const saveAssessment = async () => {
   try {
-    console.log('🟢 Starting saveExam()')
-    const totalMarks = questions.value.reduce((sum, q) => sum + Number(q.marks || 0), 0)
-
-    const paperPayload = {
-      school_id: schoolId,
-      class_id: exam.class_id || null,
-      subject_id: exam.subject_id || null,
-      title: exam.title?.trim() || null,
-      component: exam.component || null,
-      instructions: exam.instructions || null,
-      duration: exam.duration || null,
-      total_marks: totalMarks,
-      exam_date: new Date()
+    const payload = {
+      p_school_id: schoolId,
+      p_class_id: assessment.class_id || null,
+      p_subject_id: assessment.subject_id || null,
+      p_title: assessment.title?.trim() || null,
+      p_component: assessment.component || null,
+      p_instructions: assessment.instructions || null,
+      p_duration: Number(assessment.duration) || 0,
+      p_assessment_date: assessment.assessment_date,
+      p_questions: questions.value.map((q) => ({
+        question_type: q.type,
+        question_content: q.question,
+        options: q.options,
+        correct_answer: q.correct_answer,
+        max_score: Number(q.marks || 0),
+        answer: q.answer
+      }))
     }
+    console.log('assessment payload:', payload)
+    const { data, error } = await supabase.rpc('sp_create_assessment_with_questions', payload)
+    if (error) throw error
 
-    if (debug) console.log('📝 Paper Payload:', paperPayload)
-    const { data: paper, error: paperError } = await supabase
-      .from('exam_papers')
-      .insert([paperPayload])
-      .select()
-      .single()
-
-    if (debug) console.log('📄 Paper Response:', paper, 'Error:', paperError)
-    if (paperError) throw paperError
-
-    const formattedQuestions = questions.value.map((q, i) => ({
-      exam_paper_id: paper.id,
-      question_number: i + 1,
-      question_content: q.question || '',
-      question_type: q.type || 'theory',
-      options: q.options?.length ? q.options : null,
-      correct_answer: q.correct_answer || null,
-      marks: Number(q.marks || 0),
-      answer: q.answer || null
-    }))
-
-    if (debug) console.log('🧩 Questions Payload:', formattedQuestions)
-    const { data: questionData, error: qError } = await supabase
-      .from('exam_questions')
-      .insert(formattedQuestions)
-      .select()
-
-    if (debug) console.log('📦 Question Response:', questionData, 'Error:', qError)
-    if (qError) throw qError
-
-    ElMessage.success('✅ Exam and questions saved successfully!')
+    ElMessage.success('✅ Assessment created successfully!')
     resetForm()
   } catch (err) {
-    console.error('❌ Failed to save exam:', err)
-    ElMessage.error(`Failed to save exam: ${err.message || err}`)
+    console.error('❌ Failed to save assessment:', err)
+    ElMessage.error(`Failed to save: ${err.message || err}`)
   }
 }
 
 const editorToolbar = [
-  ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+  ['bold', 'italic', 'underline', 'strike'], // toggled buttons
   ['blockquote', 'code-block'],
   [{ list: 'ordered' }, { list: 'bullet' }],
   [{ header: [1, 2, 3, false] }],
   [{ align: [] }],
-  ['clean']                                         // remove formatting
+  ['clean'] // remove formatting
 ]
+
+// const loadAssessment = async (id) => {
+//   const { data, error } = await supabase.rpc('sp_get_assessment', { p_assessment_id: id });
+//   if (!error) {
+//     assessment.value = data.assessment;
+//     questions.value = data.questions || [];
+//   }
+// };
 
 /* ───────────── Helpers ───────────── */
 const resetForm = () => {
-  Object.assign(exam, {
+  Object.assign(assessment, {
     title: '',
     component: '',
     class_id: '',
     subject_id: '',
     instructions: '',
     duration: 60,
-    exam_date: ''
+    assessment_date: ''
   })
   questions.value = []
   showPreview.value = false
@@ -330,6 +378,7 @@ const resetForm = () => {
 
 /* ───────────── Lifecycle ───────────── */
 onMounted(() => {
+  fetchComponents()
   fetchClasses()
   fetchSchoolSubjects()
 })

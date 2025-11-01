@@ -104,7 +104,7 @@ const submitForm = async () => {
             v-model="email"
             label="Email address"
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             :rules="emailRules"
             required
           />
@@ -115,7 +115,7 @@ const submitForm = async () => {
             :type="showPassword ? 'text' : 'password'"
             label="Password"
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             :rules="passwordRules"
             required
           >
@@ -139,7 +139,7 @@ const submitForm = async () => {
               no-uppercase
               variant="text"
               size="small"
-              color="#15803d"
+              color="#214ec8"
               class="normal-case text-none"
             >
               Forgot password?
@@ -167,7 +167,7 @@ const submitForm = async () => {
 
 <style scoped>
 .custom-btn {
-  background-color: #15803d;
+  background-color: #214ec8;
 }
 .v-btn {
   text-transform: none;

@@ -14,7 +14,7 @@ import ExamsView from '@/views/ExamsView.vue'
 import TransportView from '@/views/TransportView.vue'
 import RevenueView from '@/views/RevenueView.vue'
 import FeesView from '@/views/FeesView.vue'
-import AssessmentsView from '@/views/AssessmentsView.vue'
+import AssessmentViews from '@/views/AssessmentViews.vue'
 import ExamsScoring from '@/views/AssessmentsScoring.vue'
 import InvoiceGenerate from '@/views/InvoiceGenerate.vue'
 
@@ -98,10 +98,26 @@ const router = createRouter({
       component: Onboarding
     },
     {
-      path: '/assessments',
-      name: 'assessments',
-      component: AssessmentsView
-    },
+     path: '/assessments',
+     name: 'assessments',
+      component: AssessmentViews
+     },
+{
+  path: '/assessments/:id',
+  name: 'AssessmentDetail',
+  component: () => import('@/views/AssessmentDetail.vue')
+},
+{
+  path: '/assessments/edit/:id',
+  name: 'AssessmentEdit',
+  component: () => import('@/views/AssessmentEdit.vue')
+},
+{
+  path: '/assessments/create',
+  name: 'AssessmentCreate',
+  component: () => import('@/views/AssessmentsCreate.vue')
+}
+,
     {
       path: '/scoring',
       name: 'scoring',

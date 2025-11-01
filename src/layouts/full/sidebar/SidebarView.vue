@@ -124,7 +124,7 @@ onMounted(() => {
 }
 
 .custom-active {
-  color: #15803d !important; /* Active state color */
+  color: #214ec8 !important; /* Active state color */
   background-color: rgba(21, 128, 61, 0.1); /* Light green background matching the text */
   border-radius: 12px;
   position: relative;
@@ -132,11 +132,11 @@ onMounted(() => {
 }
 
 .custom-active .menu-item {
-  color: #15803d !important;
+  color: #214ec8 !important;
 }
 
 .custom-active .v-icon {
-  color: #15803d !important;
+  color: #214ec8 !important;
 }
 .active-bar {
   position: absolute;
@@ -145,7 +145,7 @@ onMounted(() => {
   transform: translateY(-50%);
   width: 4px;
   height: 40px; /* Adjust to match your button height */
-  background-color: #15803d;
+  background-color: #214ec8;
   border-radius: 8px;
 }
 .custom-active::after {
@@ -155,7 +155,7 @@ onMounted(() => {
   top: 12px;
   bottom: 12px;
   width: 4px;
-  background-color: #15803d; /* Blue vertical bar */
+  background-color: #214ec8; /* Blue vertical bar */
   border-radius: 4px;
 }
 ::v-deep(.custom-active::after) {
@@ -165,7 +165,7 @@ onMounted(() => {
   bottom: 8px;
   right: -4px;
   width: 4px;
-  background-color: #15803d;
+  background-color: #214ec8;
   border-radius: 4px;
 }
 </style>

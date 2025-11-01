@@ -345,7 +345,7 @@ onMounted(async () => {
     <div class="px-4 py-2">
       <!-- Header -->
       <div class="bg-white flex rounded shadow justify-between items-center border-b p-4 mb-4">
-        <div>
+        <div class="flex justify-between items-center"> 
           <h1 class="text-md font-bold mt-4">Exam Scoring</h1>
           <p class="text-gray-500 text-sm mt-1">Manually enter and manage students' exam scores</p>
         </div>
@@ -358,7 +358,7 @@ onMounted(async () => {
           <span
             class="bg-white text-blue-600 rounded-full p-1 flex items-center justify-center w-4 h-4 mr-2"
           >
-            <i class="fa-solid fa-plus text-sm text-[#15803d]"></i>
+            <i class="fa-solid fa-plus text-sm text-[#214ec8]"></i>
           </span>
           Add New Score
         </v-btn>
@@ -373,7 +373,7 @@ onMounted(async () => {
           item-value="id"
           label="Select Subject"
           variant="outlined"
-          color="#15803d"
+          color="#214ec8"
           class="w-72"
           @update:modelValue="getScores"
         />
@@ -437,7 +437,7 @@ onMounted(async () => {
             <v-form ref="formRef" v-model="isValid">
               <v-select
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 v-model="form.student_id"
                 :items="students"
                 item-title="full_name"
@@ -453,7 +453,7 @@ onMounted(async () => {
                 v-if="dialogMode === 'add'"
                 class="mt-4"
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 v-model="form.subject_id"
                 :items="subjects"
                 item-title="name"
@@ -468,7 +468,7 @@ onMounted(async () => {
                 v-else
                 class="mt-4"
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 :value="subjects.find((s) => s.id === form.subject_id)?.name || '—'"
                 label="Subject"
                 readonly
@@ -477,7 +477,7 @@ onMounted(async () => {
               <v-select
                 class="mt-4"
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 v-model="form.exam_paper_id"
                 :items="subjectExamPapers"
                 item-title="title"
@@ -490,7 +490,7 @@ onMounted(async () => {
               <v-text-field
                 class="mt-4"
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 v-model="form.score"
                 label="Score"
                 type="number"
@@ -501,7 +501,7 @@ onMounted(async () => {
               <v-textarea
                 class="mt-4"
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 v-model="form.remarks"
                 label="Remarks"
                 auto-grow
@@ -544,7 +544,7 @@ onMounted(async () => {
 
 <style scoped>
 .custom-btn {
-  background-color: #15803d;
+  background-color: #214ec8;
   text-transform: none;
 }
 .v-btn {

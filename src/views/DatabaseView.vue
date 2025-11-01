@@ -908,7 +908,7 @@ watch(tab, (newTab) => {
           <span
             class="bg-white text-blue-600 rounded-full p-1 flex items-center justify-center w-4 h-4 mr-2"
           >
-            <i class="fa-solid fa-plus text-sm text-[#15803d]"></i>
+            <i class="fa-solid fa-plus text-sm text-[#214ec8]"></i>
           </span>
           Add new record
         </v-btn>
@@ -1397,7 +1397,7 @@ watch(tab, (newTab) => {
           <button
             @click="activeTab = 'students'"
             :class="
-              activeTab === 'students' ? 'bg-[#15803d] text-white' : 'bg-gray-200 text-gray-700'
+              activeTab === 'students' ? 'bg-[#214ec8] text-white' : 'bg-gray-200 text-gray-700'
             "
             class="px-4 py-2 rounded transition"
           >
@@ -1406,7 +1406,7 @@ watch(tab, (newTab) => {
           <button
             @click="activeTab = 'teachers'"
             :class="
-              activeTab === 'teachers' ? 'bg-[#15803d] text-white' : 'bg-gray-200 text-gray-700'
+              activeTab === 'teachers' ? 'bg-[#214ec8] text-white' : 'bg-gray-200 text-gray-700'
             "
             class="px-4 py-2 rounded transition"
           >
@@ -1416,7 +1416,7 @@ watch(tab, (newTab) => {
           <button
             @click="activeTab = 'employees'"
             :class="
-              activeTab === 'employees' ? 'bg-[#15803d] text-white' : 'bg-gray-200 text-gray-700'
+              activeTab === 'employees' ? 'bg-[#214ec8] text-white' : 'bg-gray-200 text-gray-700'
             "
             class="px-4 py-2 rounded transition"
           >
@@ -1426,7 +1426,7 @@ watch(tab, (newTab) => {
           <button
             @click="activeTab = 'subjects'"
             :class="
-              activeTab === 'subjects' ? 'bg-[#15803d] text-white' : 'bg-gray-200 text-gray-700'
+              activeTab === 'subjects' ? 'bg-[#214ec8] text-white' : 'bg-gray-200 text-gray-700'
             "
             class="px-4 py-2 rounded transition"
           >
@@ -1436,7 +1436,7 @@ watch(tab, (newTab) => {
           <button
             @click="activeTab = 'classes'"
             :class="
-              activeTab === 'classes' ? 'bg-[#15803d] text-white' : 'bg-gray-200 text-gray-700'
+              activeTab === 'classes' ? 'bg-[#214ec8] text-white' : 'bg-gray-200 text-gray-700'
             "
             class="px-4 py-2 rounded transition"
           >
@@ -1445,7 +1445,7 @@ watch(tab, (newTab) => {
           <button
             @click="activeTab = 'expenses'"
             :class="
-              activeTab === 'expenses' ? 'bg-[#15803d] text-white' : 'bg-gray-200 text-gray-700'
+              activeTab === 'expenses' ? 'bg-[#214ec8] text-white' : 'bg-gray-200 text-gray-700'
             "
             class="px-4 py-2 rounded transition"
           >
@@ -1463,7 +1463,7 @@ watch(tab, (newTab) => {
                 <v-text-field
                   v-model="studentData.full_name"
                   label="Full Name"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Full name is required']"
@@ -1474,7 +1474,7 @@ watch(tab, (newTab) => {
                   v-model="studentData.email"
                   label="Email"
                   type="email"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[
@@ -1487,7 +1487,7 @@ watch(tab, (newTab) => {
                 <v-text-field
                   v-model="studentData.phone"
                   label="Phone"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Phone is required']"
@@ -1498,7 +1498,7 @@ watch(tab, (newTab) => {
                   v-model="studentData.gender"
                   :items="genderOptions"
                   label="Gender"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Gender is required']"
@@ -1512,7 +1512,7 @@ watch(tab, (newTab) => {
                       v-model="studentDobText"
                       label="Date of Birth"
                       readonly
-                      :color="'#15803d'"
+                      :color="'#214ec8'"
                       variant="outlined"
                       :rules="[(v) => !!v || 'Date of birth is required']"
                     />
@@ -1524,8 +1524,8 @@ watch(tab, (newTab) => {
                     scrollable
                   >
                     <template #actions>
-                      <v-btn text color="#15803d" @click="studentDobMenu = false">Cancel</v-btn>
-                      <v-btn text color="#15803d" @click="studentDobMenu = false">OK</v-btn>
+                      <v-btn text color="#214ec8" @click="studentDobMenu = false">Cancel</v-btn>
+                      <v-btn text color="#214ec8" @click="studentDobMenu = false">OK</v-btn>
                     </template>
                   </v-date-picker>
                 </v-menu>
@@ -1537,7 +1537,7 @@ watch(tab, (newTab) => {
                   item-title="name"
                   item-value="id"
                   label="Class"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Class is required']"
@@ -1547,7 +1547,7 @@ watch(tab, (newTab) => {
                 <v-text-field
                   v-model="studentData.address"
                   label="Address"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Address is required']"
@@ -1557,7 +1557,7 @@ watch(tab, (newTab) => {
                 <v-text-field
                   v-model="studentData.guardian_name"
                   label="Guardian Name"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Guardian name is required']"
@@ -1567,7 +1567,7 @@ watch(tab, (newTab) => {
                 <v-text-field
                   v-model="studentData.guardian_contact"
                   label="Guardian Contact"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Guardian contact is required']"
@@ -1576,7 +1576,7 @@ watch(tab, (newTab) => {
                 <!-- Avatar with preview -->
                 <div>
                   <v-file-input
-                    :color="'#15803d'"
+                    :color="'#214ec8'"
                     v-model="studentData.avatar_url"
                     label="Upload Avatar"
                     prepend-icon="mdi-account"
@@ -1605,7 +1605,7 @@ watch(tab, (newTab) => {
                 <v-btn variant="outlined" color="error" @click="resetFormAndClose"> Cancel </v-btn>
 
                 <!-- Proceed Button with Icon -->
-                <v-btn color="#15803d" variant="flat" @click="handlePreview">
+                <v-btn color="#214ec8" variant="flat" @click="handlePreview">
                   Proceed
                   <v-icon class="ml-4" start icon="mdi-arrow-right-circle" />
                 </v-btn>
@@ -1626,7 +1626,7 @@ watch(tab, (newTab) => {
                 <v-text-field
                   v-model="teacherData.full_name"
                   label="Full Name"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Full name is required']"
@@ -1635,7 +1635,7 @@ watch(tab, (newTab) => {
                   v-model="teacherData.email"
                   label="Email"
                   type="email"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Email is required']"
@@ -1643,7 +1643,7 @@ watch(tab, (newTab) => {
                 <v-text-field
                   v-model="teacherData.phone"
                   label="Phone"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Phone is required']"
@@ -1656,8 +1656,8 @@ watch(tab, (newTab) => {
                   label="Subject Specializations"
                   multiple
                   chips
-                  :color="'#15803d'"
-                  :chip-props="{ color: '#15803d', textColor: 'white' }"
+                  :color="'#214ec8'"
+                  :chip-props="{ color: '#214ec8', textColor: 'white' }"
                   variant="outlined"
                   density="comfortable"
                 />
@@ -1668,7 +1668,7 @@ watch(tab, (newTab) => {
                   item-title="name"
                   item-value="id"
                   label="Main Class Teacher"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                 />
@@ -1681,7 +1681,7 @@ watch(tab, (newTab) => {
                   label="Other Classes"
                   multiple
                   chips
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                 />
@@ -1690,7 +1690,7 @@ watch(tab, (newTab) => {
                   v-model="teacherData.gender"
                   :items="genderOptions"
                   label="Gender"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Gender is required']"
@@ -1700,7 +1700,7 @@ watch(tab, (newTab) => {
                 <v-menu :close-on-content-click="false" v-model="teacherDobMenu">
                   <template #activator="{ props }">
                     <v-text-field
-                      :color="'#15803d'"
+                      :color="'#214ec8'"
                       variant="outlined"
                       v-bind="props"
                       v-model="teacherDobText"
@@ -1719,7 +1719,7 @@ watch(tab, (newTab) => {
                 <v-text-field
                   v-model="teacherData.address"
                   label="Address"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Address is required']"
@@ -1730,7 +1730,7 @@ watch(tab, (newTab) => {
                   v-model="teacherData.avatar_url"
                   label="Upload Avatar"
                   prepend-icon="mdi-account"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Avatar is required']"
@@ -1747,7 +1747,7 @@ watch(tab, (newTab) => {
 
               <!-- Fixed submit button at bottom -->
               <div class="sticky bottom-0 bg-white mt-4 py-3 border-t flex justify-end">
-                <v-btn @click="handleTeacherPreview" color="#15803d" variant="flat">
+                <v-btn @click="handleTeacherPreview" color="#214ec8" variant="flat">
                   Save Teacher
                 </v-btn>
               </div>
@@ -1770,7 +1770,7 @@ watch(tab, (newTab) => {
                 <v-text-field
                   v-model="employeeData.full_name"
                   label="Full Name"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Full name is required']"
@@ -1781,7 +1781,7 @@ watch(tab, (newTab) => {
                   v-model="employeeData.email"
                   label="Email"
                   type="email"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Email is required']"
@@ -1791,7 +1791,7 @@ watch(tab, (newTab) => {
                 <v-text-field
                   v-model="employeeData.phone"
                   label="Phone"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Phone is required']"
@@ -1802,7 +1802,7 @@ watch(tab, (newTab) => {
                   v-model="employeeData.gender"
                   :items="genderOptions"
                   label="Gender"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Gender is required']"
@@ -1821,7 +1821,7 @@ watch(tab, (newTab) => {
                       label="Date of Birth"
                       readonly
                       v-bind="props"
-                      :color="'#15803d'"
+                      :color="'#214ec8'"
                       variant="outlined"
                     />
                   </template>
@@ -1856,7 +1856,7 @@ watch(tab, (newTab) => {
                       label="Hire Date"
                       readonly
                       v-bind="props"
-                      :color="'#15803d'"
+                      :color="'#214ec8'"
                       variant="outlined"
                     />
                   </template>
@@ -1872,7 +1872,7 @@ watch(tab, (newTab) => {
                   v-model="employeeData.salary"
                   label="Salary"
                   type="number"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Salary is required']"
@@ -1882,7 +1882,7 @@ watch(tab, (newTab) => {
                 <v-text-field
                   v-model="employeeData.address"
                   label="Address"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   :rules="[(v) => !!v || 'Address is required']"
@@ -1893,7 +1893,7 @@ watch(tab, (newTab) => {
                   v-model="employeeData.avatar_url"
                   label="Upload Avatar"
                   prepend-icon="mdi-account"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                   @change="previewEmployeeAvatar"
@@ -1910,7 +1910,7 @@ watch(tab, (newTab) => {
 
               <!-- Fixed Save Button -->
               <div class="flex justify-end mt-4">
-                <v-btn @click="handleEmployeePreview" color="#15803d" variant="flat">
+                <v-btn @click="handleEmployeePreview" color="#214ec8" variant="flat">
                   Save Employee
                 </v-btn>
               </div>
@@ -1934,7 +1934,7 @@ watch(tab, (newTab) => {
                   item-title="name"
                   label="Select Subject"
                   :rules="[(v) => !!v || 'Subject is required']"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                 />
@@ -1942,7 +1942,7 @@ watch(tab, (newTab) => {
                 <v-text-field
                   v-model="subjectData.custom_name"
                   label="Custom Name (optional)"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                 />
@@ -1950,7 +1950,7 @@ watch(tab, (newTab) => {
                 <v-select
                   v-model="subjectData.class_id"
                   :items="classList"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   item-title="name"
                   item-value="id"
@@ -1961,14 +1961,14 @@ watch(tab, (newTab) => {
                 <v-text-field
                   v-model="subjectData.custom_code"
                   label="Custom Code (optional)"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                 />
               </div>
 
               <div class="flex justify-end mt-4">
-                <v-btn type="submit" color="#15803d" variant="flat">Add Subject</v-btn>
+                <v-btn type="submit" color="#214ec8" variant="flat">Add Subject</v-btn>
               </div>
             </v-form>
           </div>
@@ -1982,7 +1982,7 @@ watch(tab, (newTab) => {
                   v-model="classData.name"
                   label="Class Name"
                   :rules="[(v) => !!v || 'Class name is required']"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                 />
@@ -1990,14 +1990,14 @@ watch(tab, (newTab) => {
                 <v-text-field
                   v-model="classData.level"
                   label="Section (optional)"
-                  :color="'#15803d'"
+                  :color="'#214ec8'"
                   variant="outlined"
                   density="comfortable"
                 />
               </div>
 
               <div class="flex justify-end mt-4">
-                <v-btn type="submit" color="#15803d" variant="flat">Add Class</v-btn>
+                <v-btn type="submit" color="#214ec8" variant="flat">Add Class</v-btn>
               </div>
             </v-form>
           </div>
@@ -2014,7 +2014,7 @@ watch(tab, (newTab) => {
               <div class="">
                 <v-select
                   variant="outlined"
-                  color="#15803d"
+                  color="#214ec8"
                   v-model="newCategory.category_id"
                   :items="categories"
                   item-value="id"
@@ -2030,14 +2030,14 @@ watch(tab, (newTab) => {
                     (v) => (v && v.length >= 5) || 'Must be at least 5 characters'
                   ]"
                   variant="outlined"
-                  color="#15803d"
+                  color="#214ec8"
                   v-model="newCategory.description"
                   label="Description"
                 />
               </div>
 
               <div class="flex justify-end mt-4">
-                <v-btn :disabled="!expenseFormValid" type="submit" color="#15803d" variant="flat"
+                <v-btn :disabled="!expenseFormValid" type="submit" color="#214ec8" variant="flat"
                   >Add Expense Categories</v-btn
                 >
               </div>
@@ -2082,7 +2082,7 @@ watch(tab, (newTab) => {
 
         <div class="flex justify-end mt-6 space-x-3">
           <v-btn variant="outlined" color="grey" @click="showPreviewModal = false"> Edit </v-btn>
-          <v-btn color="#15803d" variant="flat" @click="confirmSave"> Confirm & Save </v-btn>
+          <v-btn color="#214ec8" variant="flat" @click="confirmSave"> Confirm & Save </v-btn>
         </div>
       </div>
     </v-dialog>
@@ -2137,7 +2137,7 @@ watch(tab, (newTab) => {
           <v-btn variant="outlined" color="grey" @click="showTeacherPreviewModal = false">
             Edit
           </v-btn>
-          <v-btn color="#15803d" variant="flat" @click="confirmSaveTeacher"> Confirm & Save </v-btn>
+          <v-btn color="#214ec8" variant="flat" @click="confirmSaveTeacher"> Confirm & Save </v-btn>
         </div>
       </div>
     </v-dialog>
@@ -2178,7 +2178,7 @@ watch(tab, (newTab) => {
           <v-btn variant="outlined" color="grey" @click="showEmployeePreviewModal = false">
             Edit
           </v-btn>
-          <v-btn color="#15803d" variant="flat" @click="confirmSaveEmployee">
+          <v-btn color="#214ec8" variant="flat" @click="confirmSaveEmployee">
             Confirm & Save
           </v-btn>
         </div>
@@ -2195,7 +2195,7 @@ watch(tab, (newTab) => {
 }
 
 .custom-btn {
-  background-color: #15803d;
+  background-color: #214ec8;
 }
 .v-slider {
   --v-slider-track-size: 4px;
@@ -2218,7 +2218,7 @@ watch(tab, (newTab) => {
 }
 :deep(.v-tab__slider) {
   height: 4px !important; /* Adjust thickness */
-  background-color: #15803d !important; /* Change color if needed */
+  background-color: #214ec8 !important; /* Change color if needed */
 }
 .fade-enter-active,
 .fade-leave-active {

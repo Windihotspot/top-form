@@ -184,42 +184,42 @@ const handleFinishSignup = async () => {
         <v-form ref="schoolFormRef" v-model="isSchoolValid" v-if="currentStep === 0">
           <v-text-field
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             label="School Name"
             v-model="schoolForm.name"
             :rules="[required]"
           />
           <v-text-field
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             label="Address"
             v-model="schoolForm.address"
             :rules="[required]"
           />
           <v-text-field
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             label="City"
             v-model="schoolForm.city"
             :rules="[required]"
           />
           <v-text-field
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             label="State"
             v-model="schoolForm.state"
             :rules="[required]"
           />
           <v-text-field
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             label="Phone or Email"
             v-model="schoolForm.contact"
             :rules="[required]"
           />
           <v-text-field
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             label="School Type"
             v-model="schoolForm.type"
             :rules="[required]"
@@ -230,35 +230,35 @@ const handleFinishSignup = async () => {
         <v-form ref="adminFormRef" v-model="isAdminValid" v-else-if="currentStep === 1">
           <v-text-field
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             label="Full Name"
             v-model="adminForm.fullname"
             :rules="[required]"
           />
           <v-text-field
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             label="Email Address"
             v-model="adminForm.email"
             :rules="[required, emailRule]"
           />
           <v-text-field
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             label="Phone Number"
             v-model="adminForm.phone"
             :rules="[required]"
           />
           <v-text-field
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             label="Role"
             v-model="adminForm.role"
             :rules="[required]"
           />
           <v-text-field
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             label="Password"
             v-model="adminForm.password"
             type="password"
@@ -272,7 +272,7 @@ const handleFinishSignup = async () => {
           ></v-progress-linear>
           <v-text-field
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             label="Confirm Password"
             type="password"
             v-model="adminForm.confirmPassword"

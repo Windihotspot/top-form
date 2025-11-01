@@ -227,7 +227,7 @@ onMounted(() => {
           <span
             class="bg-white text-blue-600 rounded-full p-1 flex items-center justify-center w-4 h-4 mr-2"
           >
-            <i class="fa-solid fa-plus text-sm text-[#15803d]"></i>
+            <i class="fa-solid fa-plus text-sm text-[#214ec8]"></i>
           </span>
           Add new fee
         </v-btn>
@@ -304,7 +304,7 @@ onMounted(() => {
                 item-value="id"
                 label="Select Class"
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 :rules="[rules.required]"
               />
               <v-select
@@ -315,7 +315,7 @@ onMounted(() => {
                 label="Select Term"
                 class="mt-4"
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 :rules="[rules.required]"
               />
               <v-text-field
@@ -323,7 +323,7 @@ onMounted(() => {
                 label="Amount"
                 class="mt-4"
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 :rules="[rules.required]"
               />
               <v-menu
@@ -341,7 +341,7 @@ onMounted(() => {
       label="Due Date"
       readonly
       variant="outlined"
-      color="#15803d"
+      color="#214ec8"
       :rules="[rules.required]"
     />
   </template>
@@ -356,7 +356,7 @@ onMounted(() => {
                 label="Description"
                 class="mt-4"
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
               />
             </v-form>
           </v-card-text>
@@ -396,7 +396,7 @@ onMounted(() => {
 
 <style scoped>
 .custom-btn {
-  background-color: #15803d;
+  background-color: #214ec8;
   text-transform: none;
 }
 .v-btn {

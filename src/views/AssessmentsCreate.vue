@@ -1,7 +1,15 @@
 <template>
   <MainLayout>
     <div class="p-6 space-y-6">
-      <h1 class="text-md font-bold mb-4">Create Assessments</h1>
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h1 class="text-md font-bold">Create Assessments</h1>
+        </div>
+        <div>
+          <v-btn to="/assessments" class="" variant="plain" color="primary">View assessments</v-btn>
+        </div>
+      </div>
+      
 
       <!-- assessment Meta -->
       <v-card class="pa-4 space-y-4">
@@ -9,14 +17,14 @@
           v-model="assessment.title"
           label="assessment Title"
           variant="outlined"
-          color="#15803d"
+          color="#214ec8"
         />
         <v-select
           v-model="assessment.component"
           :items="components"
           label="Assessment Type"
           variant="outlined"
-          color="#15803d"
+          color="#214ec8"
         />
         <v-select
           v-model="assessment.class_id"
@@ -25,7 +33,7 @@
           item-value="id"
           label="Class"
           variant="outlined"
-          color="#15803d"
+          color="#214ec8"
         />
         <v-select
           v-model="assessment.subject_id"
@@ -34,21 +42,21 @@
           item-value="school_subject_id"
           label="Subject"
           variant="outlined"
-          color="#15803d"
+          color="#214ec8"
         />
 
         <v-textarea
           v-model="assessment.instructions"
           label="Instructions"
           variant="outlined"
-          color="#15803d"
+          color="#214ec8"
         />
         <v-text-field
           v-model="assessment.duration"
           label="Duration (minutes)"
           type="number"
           variant="outlined"
-          color="#15803d"
+          color="#214ec8"
         />
 
         <div class="flex flex-col sm:flex-row gap-4">
@@ -61,7 +69,7 @@
         label="Assessment Date"
         variant="outlined"
         density="compact"
-        color="#15803d"
+        color="#214ec8"
         prepend-inner-icon="mdi-calendar"
         readonly
       />
@@ -69,7 +77,7 @@
 
     <v-date-picker
       v-model="dateOnly"
-      color="#15803d"
+      color="#214ec8"
       elevation="4"
       show-adjacent-months
     />
@@ -83,7 +91,7 @@
   type="time"
   variant="outlined"
   density="compact"
-  color="#15803d"
+  color="#214ec8"
 
 />
 
@@ -122,7 +130,7 @@
             hide-details
             class="mb-3"
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
           />
 
           <label class="font-medium text-sm mb-1">Question Text</label>
@@ -143,7 +151,7 @@
                 hide-details
                 class="flex-1"
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
               />
               <v-btn
                 icon="mdi-delete"
@@ -164,7 +172,7 @@
               class="mt-3"
               density="compact"
               variant="outlined"
-              color="#15803d"
+              color="#214ec8"
             />
           </div>
 
@@ -184,7 +192,7 @@
             type="number"
             density="compact"
             variant="outlined"
-            color="#15803d"
+            color="#214ec8"
             class="mt-3 w-32"
           />
         </div>

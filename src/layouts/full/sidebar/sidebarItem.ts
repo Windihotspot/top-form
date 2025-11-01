@@ -32,7 +32,7 @@ const sidebarItems = [
 
    {
     title: 'Assessments',
-    path: '/assessments',
+    path: '/assessments/create',
     icon: 'mdi-file-document-edit-outline'
 
   },

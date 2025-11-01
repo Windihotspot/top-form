@@ -48,14 +48,14 @@
 
             <v-text-field
               variant="outlined"
-              color="#15803d"
+              color="#214ec8"
               v-model="admin.fullname"
               label="Full Name"
             />
 
             <v-text-field
               variant="outlined"
-              color="#15803d"
+              color="#214ec8"
               v-model="admin.email"
               label="Email address"
             />
@@ -64,7 +64,7 @@
               <!-- Phone Number with flag -->
               <v-text-field
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 v-model="admin.phone"
                 label="Phone Number"
                 type="tel"
@@ -92,7 +92,7 @@
 
             <v-text-field
               variant="outlined"
-              color="#15803d"
+              color="#214ec8"
               label="Password"
               v-model="admin.password"
               type="password"

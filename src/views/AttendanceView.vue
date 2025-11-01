@@ -384,7 +384,7 @@ const summaryDisplay = computed(() =>
         <span
           class="bg-white text-blue-600 rounded-full p-1 flex items-center justify-center w-4 h-4 mr-2"
         >
-          <i class="fa-solid fa-plus text-sm text-[#15803d]"></i>
+          <i class="fa-solid fa-plus text-sm text-[#214ec8]"></i>
         </span>
         Add new record
       </v-btn>
@@ -618,7 +618,7 @@ const summaryDisplay = computed(() =>
 
 <style scoped>
 .custom-btn {
-  background-color: #15803d;
+  background-color: #214ec8;
   text-transform: none;
 }
 .v-btn {

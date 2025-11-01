@@ -226,7 +226,6 @@ onMounted(() => {
           <h1 class="text-xl font-bold mt-4">Expenses</h1>
           <p class="text-gray-500 text-sm mt-1">View and Manage your expenses</p>
         </div>
-
         <v-btn
           @click="openAddDialog"
           size="medium"
@@ -235,7 +234,7 @@ onMounted(() => {
           <span
             class="bg-white text-blue-600 rounded-full p-1 flex items-center justify-center w-4 h-4 mr-2"
           >
-            <i class="fa-solid fa-plus text-sm text-[#15803d]"></i>
+            <i class="fa-solid fa-plus text-sm text-[#214ec8]"></i>
           </span>
           Add new expenses
         </v-btn>
@@ -350,7 +349,7 @@ onMounted(() => {
               <!-- Category -->
               <v-select
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 v-model="form.category"
                 :items="categories"
                 item-value="description"
@@ -363,7 +362,7 @@ onMounted(() => {
               <!-- Vendor -->
               <v-text-field
                 class="mt-4"
-                color="#15803d"
+                color="#214ec8"
                 variant="outlined"
                 v-model="form.vendor"
                 label="Vendor name"
@@ -375,7 +374,7 @@ onMounted(() => {
               <v-text-field
                 class="mt-4"
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 v-model="formattedAmount"
                 label="Amount"
                 :rules="[rules.required]"
@@ -386,7 +385,7 @@ onMounted(() => {
               <v-select
                 class="mt-4"
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 v-model="form.payment_method"
                 :items="['Cash', 'Bank', 'Card', 'Mobile', 'Other']"
                 label="Payment Method"
@@ -398,7 +397,7 @@ onMounted(() => {
               <v-text-field
                 class="mt-4"
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 v-model="form.date"
                 label="Date"
                 type="date"
@@ -410,7 +409,7 @@ onMounted(() => {
               <v-textarea
                 class="mt-4"
                 variant="outlined"
-                color="#15803d"
+                color="#214ec8"
                 v-model="form.description"
                 label="Description"
                 :rules="[rules.required]"
@@ -455,7 +454,7 @@ onMounted(() => {
 
 <style scoped>
 .custom-btn {
-  background-color: #15803d;
+  background-color: #214ec8;
   text-transform: none;
 }
 .v-btn{

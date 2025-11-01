@@ -434,7 +434,7 @@ onMounted(async () => {
           <span
             class="bg-white text-blue-600 rounded-full p-1 flex items-center justify-center w-4 h-4 mr-2"
           >
-            <i class="fa-solid fa-plus text-sm text-[#15803d]"></i>
+            <i class="fa-solid fa-plus text-sm text-[#214ec8]"></i>
           </span>
           Add a new payment
         </v-btn>
@@ -572,7 +572,7 @@ onMounted(async () => {
               item-value="id"
               label="Select Student"
               variant="outlined"
-              color="#15803d"
+              color="#214ec8"
               :rules="[(v) => !!v || 'Student is required']"
             />
 
@@ -584,7 +584,7 @@ onMounted(async () => {
               label="Select Fee"
               class="mt-4"
               variant="outlined"
-              color="#15803d"
+              color="#214ec8"
               :rules="[(v) => !!v || 'Fee is required']"
             />
 
@@ -593,7 +593,7 @@ onMounted(async () => {
               label="Amount"
               class="mt-4"
               variant="outlined"
-              color="#15803d"
+              color="#214ec8"
               :rules="[(v) => !!v || 'Amount is required']"
             />
 
@@ -603,7 +603,7 @@ onMounted(async () => {
               label="Payment Method"
               class="mt-4"
               variant="outlined"
-              color="#15803d"
+              color="#214ec8"
               :rules="[(v) => !!v || 'Method is required']"
             />
 
@@ -620,7 +620,7 @@ onMounted(async () => {
                   label="Payment Date"
                   readonly
                   variant="outlined"
-                  color="#15803d"
+                  color="#214ec8"
                   class="mt-4"
                 />
               </template>
@@ -635,7 +635,7 @@ onMounted(async () => {
               label="Reference (optional)"
               class="mt-4"
               variant="outlined"
-              color="#15803d"
+              color="#214ec8"
             />
           </v-form>
         </v-card-text>
@@ -671,7 +671,7 @@ onMounted(async () => {
 
 <style scoped>
 .custom-btn {
-  background-color: #15803d;
+  background-color: #214ec8;
   text-transform: none;
 }
 .v-btn {
